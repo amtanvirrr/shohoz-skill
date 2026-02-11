@@ -383,6 +383,7 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
+          duration_minutes: number
           id: string
           is_published: boolean
           lesson_id: string | null
@@ -393,6 +394,7 @@ export type Database = {
         Insert: {
           created_at?: string
           description?: string | null
+          duration_minutes?: number
           id?: string
           is_published?: boolean
           lesson_id?: string | null
@@ -403,6 +405,7 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string | null
+          duration_minutes?: number
           id?: string
           is_published?: boolean
           lesson_id?: string | null
