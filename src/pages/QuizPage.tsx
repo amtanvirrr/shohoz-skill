@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, XCircle, Clock, ArrowLeft, AlertTriangle, History } from "lucide-react";
+import { CheckCircle, XCircle, Clock, ArrowLeft, AlertTriangle, History, Trophy, Medal } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { format } from "date-fns";
 
@@ -11,6 +11,14 @@ interface QuizAttempt {
   score: number;
   total_questions: number;
   created_at: string;
+}
+
+interface LeaderboardEntry {
+  user_id: string;
+  full_name: string;
+  best_score: number;
+  attempts_count: number;
+  last_attempt_at: string;
 }
 
 interface Quiz {
@@ -43,6 +51,8 @@ const QuizPage = () => {
   const [submitted, setSubmitted] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const [attempts, setAttempts] = useState<Record<string, QuizAttempt[]>>({});
+  const [leaderboard, setLeaderboard] = useState<Record<string, LeaderboardEntry[]>>({});
+  const [showLeaderboard, setShowLeaderboard] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -79,6 +89,18 @@ const QuizPage = () => {
         }
       });
   }, [user, submitted]);
+
+  const fetchLeaderboard = async (quizId: string) => {
+    if (leaderboard[quizId]) {
+      setShowLeaderboard(showLeaderboard === quizId ? null : quizId);
+      return;
+    }
+    const { data } = await supabase.rpc("get_quiz_leaderboard", { _quiz_id: quizId, _limit: 10 });
+    if (data) {
+      setLeaderboard((prev) => ({ ...prev, [quizId]: data as LeaderboardEntry[] }));
+    }
+    setShowLeaderboard(quizId);
+  };
 
   // Timer
   useEffect(() => {
@@ -347,7 +369,40 @@ const QuizPage = () => {
                     <AlertTriangle className="h-3.5 w-3.5" /> নেগেটিভ মার্কিং ({quiz.negative_mark_value})
                   </p>
                 )}
-                <Button onClick={() => startQuiz(quiz)} className="mt-4 w-full">কুইজ শুরু করুন</Button>
+                <div className="mt-4 flex gap-2">
+                  <Button onClick={() => startQuiz(quiz)} className="flex-1">কুইজ শুরু করুন</Button>
+                  <Button variant="outline" size="icon" onClick={() => fetchLeaderboard(quiz.id)} title="লিডারবোর্ড">
+                    <Trophy className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                {/* Leaderboard */}
+                {showLeaderboard === quiz.id && leaderboard[quiz.id] && (
+                  <div className="mt-4 border-t border-border pt-3">
+                    <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                      <Trophy className="h-3.5 w-3.5 text-primary" /> টপ স্কোরার
+                    </p>
+                    {leaderboard[quiz.id].length === 0 ? (
+                      <p className="text-xs text-muted-foreground">এখনো কেউ অ্যাটেম্পট করেনি।</p>
+                    ) : (
+                      <div className="space-y-1.5">
+                        {leaderboard[quiz.id].map((entry, idx) => (
+                          <div key={entry.user_id} className={`flex items-center gap-2 rounded-md px-3 py-2 text-xs ${idx < 3 ? "bg-primary/5" : "bg-muted/50"}`}>
+                            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold">
+                              {idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `#${idx + 1}`}
+                            </span>
+                            <span className="flex-1 truncate font-medium text-foreground">
+                              {entry.full_name}
+                              {user && entry.user_id === user.id && <span className="ml-1 text-primary">(আপনি)</span>}
+                            </span>
+                            <span className="font-bold text-primary">{entry.best_score}</span>
+                            <span className="text-muted-foreground">({entry.attempts_count}×)</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Attempt History */}
                 {user && attempts[quiz.id] && attempts[quiz.id].length > 0 && (
