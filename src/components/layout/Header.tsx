@@ -1,12 +1,14 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { Menu, X, BookOpen, GraduationCap } from "lucide-react";
+import { Menu, X, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
 
 const navLinks = [
   { to: "/", label: "Home" },
   { to: "/courses", label: "Courses" },
   { to: "/books", label: "Books" },
+  { to: "/quizzes", label: "Quizzes" },
   { to: "/about", label: "About" },
   { to: "/contact", label: "Contact" },
 ];
@@ -14,6 +16,13 @@ const navLinks = [
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, isAdmin, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-card/80 backdrop-blur-lg">
@@ -42,12 +51,27 @@ const Header = () => {
         </nav>
 
         <div className="hidden items-center gap-3 md:flex">
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/login">Login</Link>
-          </Button>
-          <Button size="sm" asChild>
-            <Link to="/register">Register</Link>
-          </Button>
+          {user ? (
+            <>
+              {isAdmin && (
+                <Button variant="outline" size="sm" asChild>
+                  <Link to="/admin">Admin</Link>
+                </Button>
+              )}
+              <Button variant="ghost" size="sm" onClick={handleSignOut}>
+                Sign Out
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/login">Login</Link>
+              </Button>
+              <Button size="sm" asChild>
+                <Link to="/register">Register</Link>
+              </Button>
+            </>
+          )}
         </div>
 
         <button
@@ -77,12 +101,25 @@ const Header = () => {
             ))}
           </nav>
           <div className="mt-4 flex gap-3">
-            <Button variant="outline" size="sm" className="flex-1" asChild>
-              <Link to="/login">Login</Link>
-            </Button>
-            <Button size="sm" className="flex-1" asChild>
-              <Link to="/register">Register</Link>
-            </Button>
+            {user ? (
+              <>
+                {isAdmin && (
+                  <Button variant="outline" size="sm" className="flex-1" asChild>
+                    <Link to="/admin">Admin</Link>
+                  </Button>
+                )}
+                <Button variant="ghost" size="sm" className="flex-1" onClick={handleSignOut}>Sign Out</Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" size="sm" className="flex-1" asChild>
+                  <Link to="/login">Login</Link>
+                </Button>
+                <Button size="sm" className="flex-1" asChild>
+                  <Link to="/register">Register</Link>
+                </Button>
+              </>
+            )}
           </div>
         </div>
       )}
