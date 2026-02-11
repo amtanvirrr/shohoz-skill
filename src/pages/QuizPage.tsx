@@ -223,6 +223,47 @@ const QuizPage = () => {
                   <AlertTriangle className="h-4 w-4" /> নেগেটিভ মার্কিং: -{(results.wrong * selectedQuiz.negative_mark_value).toFixed(2)}
                 </p>
               )}
+
+              {/* Comparison with previous attempts */}
+              {user && selectedQuiz && attempts[selectedQuiz.id] && attempts[selectedQuiz.id].length > 0 && (() => {
+                const prev = attempts[selectedQuiz.id];
+                const lastAttempt = prev[0];
+                const bestScore = Math.max(...prev.map(a => a.score));
+                const avgScore = prev.reduce((s, a) => s + a.score, 0) / prev.length;
+                const diff = results.score - lastAttempt.score;
+
+                return (
+                  <div className="mt-4 rounded-xl border border-border bg-card p-5">
+                    <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                      <History className="h-4 w-4" /> পূর্ববর্তী অ্যাটেম্পটের সাথে তুলনা
+                    </h3>
+                    <div className="mt-3 grid grid-cols-3 gap-3 text-center">
+                      <div className="rounded-lg bg-muted/50 p-3">
+                        <p className="text-lg font-bold text-foreground">{lastAttempt.score}/{lastAttempt.total_questions}</p>
+                        <p className="text-[11px] text-muted-foreground">সর্বশেষ স্কোর</p>
+                      </div>
+                      <div className="rounded-lg bg-muted/50 p-3">
+                        <p className="text-lg font-bold text-foreground">{bestScore}/{questions.length}</p>
+                        <p className="text-[11px] text-muted-foreground">সর্বোচ্চ স্কোর</p>
+                      </div>
+                      <div className="rounded-lg bg-muted/50 p-3">
+                        <p className="text-lg font-bold text-foreground">{avgScore.toFixed(1)}</p>
+                        <p className="text-[11px] text-muted-foreground">গড় স্কোর</p>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex items-center justify-center gap-2 text-sm">
+                      {diff > 0 ? (
+                        <span className="flex items-center gap-1 font-semibold text-success">📈 +{diff.toFixed(diff % 1 !== 0 ? 2 : 0)} উন্নতি হয়েছে!</span>
+                      ) : diff < 0 ? (
+                        <span className="flex items-center gap-1 font-semibold text-destructive">📉 {diff.toFixed(diff % 1 !== 0 ? 2 : 0)} কমেছে</span>
+                      ) : (
+                        <span className="text-muted-foreground">আগের বারের সমান স্কোর</span>
+                      )}
+                    </div>
+                    <p className="mt-2 text-center text-[11px] text-muted-foreground">মোট {prev.length} বার অ্যাটেম্পট করেছেন</p>
+                  </div>
+                );
+              })()}
             </div>
           )}
 
