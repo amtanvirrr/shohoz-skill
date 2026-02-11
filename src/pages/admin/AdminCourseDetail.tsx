@@ -13,6 +13,15 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface Course {
   id: string;
@@ -54,6 +63,140 @@ interface Quiz {
 
 const lessonInitial = {
   title: "", content: "", duration: "", video_url: "", lesson_type: "text",
+};
+
+// Sortable lesson item component
+interface SortableLessonItemProps {
+  lesson: Lesson;
+  idx: number;
+  resources: LessonResource[];
+  lessonQuizzes: Quiz[];
+  getLessonIcon: (type: string) => React.ReactNode;
+  formatFileSize: (bytes: number) => string;
+  uploadingResource: string | null;
+  triggerResourceUpload: (lessonId: string) => void;
+  handleDeleteResource: (id: string) => void;
+  openAddQuiz: (lessonId: string) => void;
+  handleDeleteQuiz: (id: string) => void;
+  openEditLesson: (lesson: Lesson) => void;
+  handleDeleteLesson: (id: string) => void;
+  navigate: ReturnType<typeof useNavigate>;
+}
+
+const SortableLessonItem = ({
+  lesson, idx, resources: lessonResources, lessonQuizzes, getLessonIcon, formatFileSize,
+  uploadingResource, triggerResourceUpload, handleDeleteResource,
+  openAddQuiz, handleDeleteQuiz, openEditLesson, handleDeleteLesson, navigate,
+}: SortableLessonItemProps) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: lesson.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <AccordionItem value={lesson.id} className="rounded-lg border border-border bg-card">
+        <AccordionTrigger className="px-4 py-3 hover:no-underline">
+          <div className="flex w-full items-center gap-3 text-left">
+            <button
+              type="button"
+              className="cursor-grab touch-none text-muted-foreground hover:text-foreground"
+              {...attributes}
+              {...listeners}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <GripVertical className="h-4 w-4" />
+            </button>
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+              {idx + 1}
+            </span>
+            {getLessonIcon(lesson.lesson_type)}
+            <div className="flex-1">
+              <p className="font-medium text-foreground">{lesson.title}</p>
+              <p className="text-xs text-muted-foreground">
+                {lesson.lesson_type === "video" ? "🎥 Video" : lesson.lesson_type === "quiz" ? "❓ Quiz" : "📖 Text"}
+                {lesson.duration && ` • ${lesson.duration}`}
+                {lessonResources.length > 0 && ` • ${lessonResources.length} resource(s)`}
+                {lessonQuizzes.length > 0 && ` • ${lessonQuizzes.length} quiz(zes)`}
+              </p>
+            </div>
+          </div>
+        </AccordionTrigger>
+        <AccordionContent className="px-4 pb-4">
+          {lesson.content && (
+            <div className="mb-3 rounded-md bg-muted/50 p-3 text-sm text-muted-foreground">
+              {lesson.content.substring(0, 200)}{lesson.content.length > 200 && "..."}
+            </div>
+          )}
+          {lesson.video_url && (
+            <div className="mb-3 text-sm">
+              <span className="font-medium text-foreground">Video URL:</span>{" "}
+              <a href={lesson.video_url} target="_blank" rel="noreferrer" className="text-primary underline">{lesson.video_url}</a>
+            </div>
+          )}
+          <div className="mb-3">
+            <div className="mb-2 flex items-center justify-between">
+              <h4 className="text-sm font-semibold text-foreground">📁 Resources</h4>
+              <Button variant="outline" size="sm" onClick={() => triggerResourceUpload(lesson.id)} disabled={uploadingResource === lesson.id}>
+                <Upload className="mr-1 h-3 w-3" />
+                {uploadingResource === lesson.id ? "Uploading..." : "Upload"}
+              </Button>
+            </div>
+            {lessonResources.length === 0 ? (
+              <p className="text-xs text-muted-foreground">No resources yet.</p>
+            ) : (
+              <div className="space-y-1">
+                {lessonResources.map((res) => (
+                  <div key={res.id} className="flex items-center gap-2 rounded-md border border-border p-2 text-sm">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    <a href={res.file_url} target="_blank" rel="noreferrer" className="flex-1 truncate text-foreground hover:underline">{res.title}</a>
+                    <span className="text-xs text-muted-foreground">{formatFileSize(res.file_size)}</span>
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleDeleteResource(res.id)}>
+                      <Trash2 className="h-3 w-3 text-destructive" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="mb-3">
+            <div className="mb-2 flex items-center justify-between">
+              <h4 className="text-sm font-semibold text-foreground">❓ Quizzes</h4>
+              <Button variant="outline" size="sm" onClick={() => openAddQuiz(lesson.id)}>
+                <Plus className="mr-1 h-3 w-3" /> Add Quiz
+              </Button>
+            </div>
+            {lessonQuizzes.length === 0 ? (
+              <p className="text-xs text-muted-foreground">No quizzes for this lesson.</p>
+            ) : (
+              <div className="space-y-1">
+                {lessonQuizzes.map((quiz) => (
+                  <div key={quiz.id} className="flex items-center gap-2 rounded-md border border-border p-2 text-sm">
+                    <HelpCircle className="h-4 w-4 text-primary" />
+                    <span className="flex-1 text-foreground">{quiz.title}</span>
+                    <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => navigate(`/admin/quizzes`)}>Manage</Button>
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleDeleteQuiz(quiz.id)}>
+                      <Trash2 className="h-3 w-3 text-destructive" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="flex gap-2 border-t border-border pt-3">
+            <Button variant="outline" size="sm" onClick={() => openEditLesson(lesson)}>
+              <Pencil className="mr-1 h-3 w-3" /> Edit Lesson
+            </Button>
+            <Button variant="outline" size="sm" className="text-destructive" onClick={() => handleDeleteLesson(lesson.id)}>
+              <Trash2 className="mr-1 h-3 w-3" /> Delete
+            </Button>
+          </div>
+        </AccordionContent>
+      </AccordionItem>
+    </div>
+  );
 };
 
 const AdminCourseDetail = () => {
@@ -266,6 +409,29 @@ const AdminCourseDetail = () => {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
+  // ---- Drag & Drop ----
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = lessons.findIndex((l) => l.id === active.id);
+    const newIndex = lessons.findIndex((l) => l.id === over.id);
+    const reordered = arrayMove(lessons, oldIndex, newIndex);
+    setLessons(reordered);
+
+    // Update sort_order in DB
+    const updates = reordered.map((l, i) =>
+      supabase.from("lessons").update({ sort_order: i }).eq("id", l.id)
+    );
+    await Promise.all(updates);
+    toast({ title: "Lesson order updated" });
+  };
+
   if (loading) return <p className="py-12 text-center text-muted-foreground">Loading...</p>;
   if (!course) return <p className="py-12 text-center text-muted-foreground">Course not found.</p>;
 
@@ -296,125 +462,31 @@ const AdminCourseDetail = () => {
           No lessons yet. Add your first lesson to build the curriculum!
         </p>
       ) : (
-        <Accordion type="multiple" className="space-y-2">
-          {lessons.map((lesson, idx) => {
-            const lessonResources = resources[lesson.id] || [];
-            const lessonQuizzes = quizzes.filter((q) => q.lesson_id === lesson.id);
-
-            return (
-              <AccordionItem key={lesson.id} value={lesson.id} className="rounded-lg border border-border bg-card">
-                <AccordionTrigger className="px-4 py-3 hover:no-underline">
-                  <div className="flex w-full items-center gap-3 text-left">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
-                      {idx + 1}
-                    </span>
-                    {getLessonIcon(lesson.lesson_type)}
-                    <div className="flex-1">
-                      <p className="font-medium text-foreground">{lesson.title}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {lesson.lesson_type === "video" ? "🎥 Video" : lesson.lesson_type === "quiz" ? "❓ Quiz" : "📖 Text"}
-                        {lesson.duration && ` • ${lesson.duration}`}
-                        {lessonResources.length > 0 && ` • ${lessonResources.length} resource(s)`}
-                        {lessonQuizzes.length > 0 && ` • ${lessonQuizzes.length} quiz(zes)`}
-                      </p>
-                    </div>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="px-4 pb-4">
-                  {/* Lesson content preview */}
-                  {lesson.content && (
-                    <div className="mb-3 rounded-md bg-muted/50 p-3 text-sm text-muted-foreground">
-                      {lesson.content.substring(0, 200)}{lesson.content.length > 200 && "..."}
-                    </div>
-                  )}
-                  {lesson.video_url && (
-                    <div className="mb-3 text-sm">
-                      <span className="font-medium text-foreground">Video URL:</span>{" "}
-                      <a href={lesson.video_url} target="_blank" rel="noreferrer" className="text-primary underline">{lesson.video_url}</a>
-                    </div>
-                  )}
-
-                  {/* Resources */}
-                  <div className="mb-3">
-                    <div className="mb-2 flex items-center justify-between">
-                      <h4 className="text-sm font-semibold text-foreground">📁 Resources</h4>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => triggerResourceUpload(lesson.id)}
-                        disabled={uploadingResource === lesson.id}
-                      >
-                        <Upload className="mr-1 h-3 w-3" />
-                        {uploadingResource === lesson.id ? "Uploading..." : "Upload"}
-                      </Button>
-                    </div>
-                    {lessonResources.length === 0 ? (
-                      <p className="text-xs text-muted-foreground">No resources yet.</p>
-                    ) : (
-                      <div className="space-y-1">
-                        {lessonResources.map((res) => (
-                          <div key={res.id} className="flex items-center gap-2 rounded-md border border-border p-2 text-sm">
-                            <FileText className="h-4 w-4 text-muted-foreground" />
-                            <a href={res.file_url} target="_blank" rel="noreferrer" className="flex-1 truncate text-foreground hover:underline">
-                              {res.title}
-                            </a>
-                            <span className="text-xs text-muted-foreground">{formatFileSize(res.file_size)}</span>
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleDeleteResource(res.id)}>
-                              <Trash2 className="h-3 w-3 text-destructive" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Quizzes */}
-                  <div className="mb-3">
-                    <div className="mb-2 flex items-center justify-between">
-                      <h4 className="text-sm font-semibold text-foreground">❓ Quizzes</h4>
-                      <Button variant="outline" size="sm" onClick={() => openAddQuiz(lesson.id)}>
-                        <Plus className="mr-1 h-3 w-3" /> Add Quiz
-                      </Button>
-                    </div>
-                    {lessonQuizzes.length === 0 ? (
-                      <p className="text-xs text-muted-foreground">No quizzes for this lesson.</p>
-                    ) : (
-                      <div className="space-y-1">
-                        {lessonQuizzes.map((quiz) => (
-                          <div key={quiz.id} className="flex items-center gap-2 rounded-md border border-border p-2 text-sm">
-                            <HelpCircle className="h-4 w-4 text-primary" />
-                            <span className="flex-1 text-foreground">{quiz.title}</span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 text-xs"
-                              onClick={() => navigate(`/admin/quizzes`)}
-                            >
-                              Manage
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleDeleteQuiz(quiz.id)}>
-                              <Trash2 className="h-3 w-3 text-destructive" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex gap-2 border-t border-border pt-3">
-                    <Button variant="outline" size="sm" onClick={() => openEditLesson(lesson)}>
-                      <Pencil className="mr-1 h-3 w-3" /> Edit Lesson
-                    </Button>
-                    <Button variant="outline" size="sm" className="text-destructive" onClick={() => handleDeleteLesson(lesson.id)}>
-                      <Trash2 className="mr-1 h-3 w-3" /> Delete
-                    </Button>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            );
-          })}
-        </Accordion>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={lessons.map((l) => l.id)} strategy={verticalListSortingStrategy}>
+            <Accordion type="multiple" className="space-y-2">
+              {lessons.map((lesson, idx) => (
+                <SortableLessonItem
+                  key={lesson.id}
+                  lesson={lesson}
+                  idx={idx}
+                  resources={resources[lesson.id] || []}
+                  lessonQuizzes={quizzes.filter((q) => q.lesson_id === lesson.id)}
+                  getLessonIcon={getLessonIcon}
+                  formatFileSize={formatFileSize}
+                  uploadingResource={uploadingResource}
+                  triggerResourceUpload={triggerResourceUpload}
+                  handleDeleteResource={handleDeleteResource}
+                  openAddQuiz={openAddQuiz}
+                  handleDeleteQuiz={handleDeleteQuiz}
+                  openEditLesson={openEditLesson}
+                  handleDeleteLesson={handleDeleteLesson}
+                  navigate={navigate}
+                />
+              ))}
+            </Accordion>
+          </SortableContext>
+        </DndContext>
       )}
 
       {/* Hidden file input for resources */}
