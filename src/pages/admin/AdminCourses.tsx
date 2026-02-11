@@ -1,11 +1,12 @@
 import { useEffect, useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Upload, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Upload, X, BookOpen } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 interface Course {
@@ -34,6 +35,7 @@ const initialForm = {
 };
 
 const AdminCourses = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
@@ -208,6 +210,9 @@ const AdminCourses = () => {
                   </td>
                   <td className="py-3">
                     <div className="flex gap-1">
+                      <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/courses/${course.id}`)} title="Manage Lessons">
+                        <BookOpen className="mr-1 h-4 w-4" /> Lessons
+                      </Button>
                       <Button variant="ghost" size="icon" onClick={() => openEdit(course)}><Pencil className="h-4 w-4" /></Button>
                       <Button variant="ghost" size="icon" onClick={() => handleDelete(course.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                     </div>
