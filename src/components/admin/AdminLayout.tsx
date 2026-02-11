@@ -1,0 +1,96 @@
+import { useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  BookOpen, GraduationCap, Users, ShoppingCart, Settings,
+  LayoutDashboard, HelpCircle, LogOut, Menu, X, ChevronRight
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+const sidebarLinks = [
+  { to: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/admin/books", label: "Books", icon: BookOpen },
+  { to: "/admin/courses", label: "Courses", icon: GraduationCap },
+  { to: "/admin/orders", label: "Orders", icon: ShoppingCart },
+  { to: "/admin/users", label: "Users", icon: Users },
+  { to: "/admin/quizzes", label: "Quizzes", icon: HelpCircle },
+  { to: "/admin/settings", label: "Settings", icon: Settings },
+];
+
+const AdminLayout = ({ children }: { children: React.ReactNode }) => {
+  const { signOut } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
+
+  return (
+    <div className="flex min-h-screen bg-background">
+      {/* Sidebar */}
+      <aside className={`fixed inset-y-0 left-0 z-50 w-64 border-r border-border bg-card transition-transform lg:relative lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
+        <div className="flex h-16 items-center justify-between border-b border-border px-4">
+          <Link to="/admin" className="flex items-center gap-2 font-display text-lg font-bold text-foreground">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+              <BookOpen className="h-4 w-4 text-primary-foreground" />
+            </div>
+            Admin Panel
+          </Link>
+          <button onClick={() => setSidebarOpen(false)} className="lg:hidden">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <nav className="flex flex-col gap-1 p-3">
+          {sidebarLinks.map((link) => {
+            const Icon = link.icon;
+            const isActive = location.pathname === link.to;
+            return (
+              <Link
+                key={link.to}
+                to={link.to}
+                onClick={() => setSidebarOpen(false)}
+                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                  isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                {link.label}
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="absolute bottom-0 left-0 right-0 border-t border-border p-3">
+          <Link to="/" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-secondary">
+            <ChevronRight className="h-4 w-4" /> View Site
+          </Link>
+          <button onClick={handleSignOut} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-destructive hover:bg-destructive/10">
+            <LogOut className="h-4 w-4" /> Sign Out
+          </button>
+        </div>
+      </aside>
+
+      {/* Overlay */}
+      {sidebarOpen && <div className="fixed inset-0 z-40 bg-foreground/20 lg:hidden" onClick={() => setSidebarOpen(false)} />}
+
+      {/* Main */}
+      <div className="flex-1">
+        <header className="flex h-16 items-center border-b border-border bg-card px-4 lg:px-6">
+          <button onClick={() => setSidebarOpen(true)} className="mr-4 lg:hidden">
+            <Menu className="h-5 w-5" />
+          </button>
+          <h2 className="font-display text-lg font-semibold text-foreground">
+            {sidebarLinks.find((l) => l.to === location.pathname)?.label || "Admin"}
+          </h2>
+        </header>
+        <main className="p-4 lg:p-6">{children}</main>
+      </div>
+    </div>
+  );
+};
+
+export default AdminLayout;

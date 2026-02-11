@@ -3,7 +3,10 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/hooks/useAuth";
 import Layout from "@/components/layout/Layout";
+import AdminLayout from "@/components/admin/AdminLayout";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
@@ -11,6 +14,16 @@ import CoursesPage from "./pages/CoursesPage";
 import BooksPage from "./pages/BooksPage";
 import CourseDetail from "./pages/CourseDetail";
 import BookDetail from "./pages/BookDetail";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import QuizPage from "./pages/QuizPage";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminBooks from "./pages/admin/AdminBooks";
+import AdminCourses from "./pages/admin/AdminCourses";
+import AdminOrders from "./pages/admin/AdminOrders";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminQuizzes from "./pages/admin/AdminQuizzes";
+import AdminSettings from "./pages/admin/AdminSettings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -21,18 +34,32 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Layout>
+        <AuthProvider>
           <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/courses" element={<CoursesPage />} />
-            <Route path="/books" element={<BooksPage />} />
-            <Route path="/course/:id" element={<CourseDetail />} />
-            <Route path="/book/:id" element={<BookDetail />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="*" element={<NotFound />} />
+            {/* Public routes with Layout */}
+            <Route path="/" element={<Layout><Index /></Layout>} />
+            <Route path="/courses" element={<Layout><CoursesPage /></Layout>} />
+            <Route path="/books" element={<Layout><BooksPage /></Layout>} />
+            <Route path="/course/:id" element={<Layout><CourseDetail /></Layout>} />
+            <Route path="/book/:id" element={<Layout><BookDetail /></Layout>} />
+            <Route path="/quizzes" element={<Layout><QuizPage /></Layout>} />
+            <Route path="/about" element={<Layout><About /></Layout>} />
+            <Route path="/contact" element={<Layout><Contact /></Layout>} />
+            <Route path="/login" element={<Layout><Login /></Layout>} />
+            <Route path="/register" element={<Layout><Register /></Layout>} />
+
+            {/* Admin routes */}
+            <Route path="/admin" element={<ProtectedRoute adminOnly><AdminLayout><AdminDashboard /></AdminLayout></ProtectedRoute>} />
+            <Route path="/admin/books" element={<ProtectedRoute adminOnly><AdminLayout><AdminBooks /></AdminLayout></ProtectedRoute>} />
+            <Route path="/admin/courses" element={<ProtectedRoute adminOnly><AdminLayout><AdminCourses /></AdminLayout></ProtectedRoute>} />
+            <Route path="/admin/orders" element={<ProtectedRoute adminOnly><AdminLayout><AdminOrders /></AdminLayout></ProtectedRoute>} />
+            <Route path="/admin/users" element={<ProtectedRoute adminOnly><AdminLayout><AdminUsers /></AdminLayout></ProtectedRoute>} />
+            <Route path="/admin/quizzes" element={<ProtectedRoute adminOnly><AdminLayout><AdminQuizzes /></AdminLayout></ProtectedRoute>} />
+            <Route path="/admin/settings" element={<ProtectedRoute adminOnly><AdminLayout><AdminSettings /></AdminLayout></ProtectedRoute>} />
+
+            <Route path="*" element={<Layout><NotFound /></Layout>} />
           </Routes>
-        </Layout>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
