@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, BookOpen, Clock, PlayCircle, Users } from "lucide-react";
+import { ArrowLeft, BookOpen, Clock, PlayCircle, Users, Video, FileText, HelpCircle, ChevronDown } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
 
 interface DbCourse {
@@ -23,6 +24,23 @@ interface DbLesson {
   title: string;
   duration: string;
   sort_order: number;
+  lesson_type: string;
+  content: string | null;
+  video_url: string;
+}
+
+interface DbResource {
+  id: string;
+  lesson_id: string;
+  title: string;
+  file_url: string;
+  file_type: string;
+}
+
+interface DbQuiz {
+  id: string;
+  title: string;
+  lesson_id: string | null;
 }
 
 const CourseDetail = () => {
@@ -32,6 +50,8 @@ const CourseDetail = () => {
   const [course, setCourse] = useState<DbCourse | null>(null);
   const [lessons, setLessons] = useState<DbLesson[]>([]);
   const [loading, setLoading] = useState(true);
+  const [resources, setResources] = useState<Record<string, DbResource[]>>({});
+  const [quizzes, setQuizzes] = useState<DbQuiz[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<"bkash" | "nagad">("bkash");
   const [submitting, setSubmitting] = useState(false);
 
@@ -40,9 +60,25 @@ const CourseDetail = () => {
     Promise.all([
       supabase.from("courses").select("*").eq("id", id).maybeSingle(),
       supabase.from("lessons").select("*").eq("course_id", id).order("sort_order"),
-    ]).then(([courseRes, lessonsRes]) => {
+    ]).then(async ([courseRes, lessonsRes]) => {
       setCourse(courseRes.data as DbCourse | null);
-      setLessons((lessonsRes.data as DbLesson[]) || []);
+      const lessonData = (lessonsRes.data as DbLesson[]) || [];
+      setLessons(lessonData);
+
+      const lessonIds = lessonData.map((l) => l.id);
+      if (lessonIds.length > 0) {
+        const [resRes, quizRes] = await Promise.all([
+          supabase.from("lesson_resources").select("id, lesson_id, title, file_url, file_type").in("lesson_id", lessonIds).order("sort_order"),
+          supabase.from("quizzes").select("id, title, lesson_id").not("lesson_id", "is", null),
+        ]);
+        const grouped: Record<string, DbResource[]> = {};
+        ((resRes.data as DbResource[]) || []).forEach((r) => {
+          if (!grouped[r.lesson_id]) grouped[r.lesson_id] = [];
+          grouped[r.lesson_id].push(r);
+        });
+        setResources(grouped);
+        setQuizzes(((quizRes.data as DbQuiz[]) || []).filter((q) => q.lesson_id && lessonIds.includes(q.lesson_id)));
+      }
       setLoading(false);
     });
   }, [id]);
@@ -114,20 +150,87 @@ const CourseDetail = () => {
 
             {lessons.length > 0 && (
               <div className="mt-10">
-                <h2 className="text-2xl font-bold text-foreground">Course Content</h2>
-                <div className="mt-4 space-y-2">
-                  {lessons.map((lesson, i) => (
-                    <div key={lesson.id} className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">{i + 1}</span>
-                        <span className="text-sm font-medium text-card-foreground">{lesson.title}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Clock className="h-3.5 w-3.5" /> {lesson.duration}
-                      </div>
-                    </div>
-                  ))}
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-bold text-foreground">কারিকুলাম</h2>
+                  <span className="text-sm text-muted-foreground">{lessons.length} টি লেসন</span>
                 </div>
+                <Accordion type="multiple" className="mt-4 space-y-2">
+                  {lessons.map((lesson, i) => {
+                    const lessonResources = resources[lesson.id] || [];
+                    const lessonQuizzes = quizzes.filter((q) => q.lesson_id === lesson.id);
+
+                    return (
+                      <AccordionItem key={lesson.id} value={lesson.id} className="rounded-lg border border-border bg-card">
+                        <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                          <div className="flex w-full items-center gap-3 text-left">
+                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                              {i + 1}
+                            </span>
+                            {lesson.lesson_type === "video" ? (
+                              <Video className="h-4 w-4 shrink-0 text-primary" />
+                            ) : (
+                              <BookOpen className="h-4 w-4 shrink-0 text-primary" />
+                            )}
+                            <div className="flex-1">
+                              <p className="text-sm font-medium text-card-foreground">{lesson.title}</p>
+                              <div className="mt-0.5 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                                {lesson.lesson_type === "video" && <span>🎥 ভিডিও</span>}
+                                {lesson.duration && <span>⏱ {lesson.duration}</span>}
+                                {lessonResources.length > 0 && <span>📁 {lessonResources.length} রিসোর্স</span>}
+                                {lessonQuizzes.length > 0 && <span>❓ {lessonQuizzes.length} কুইজ</span>}
+                              </div>
+                            </div>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-4 pb-4">
+                          {lesson.content && (
+                            <p className="mb-3 text-sm leading-relaxed text-muted-foreground">
+                              {lesson.content}
+                            </p>
+                          )}
+
+                          {lessonResources.length > 0 && (
+                            <div className="mb-3">
+                              <h4 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">📁 রিসোর্স</h4>
+                              <div className="space-y-1">
+                                {lessonResources.map((res) => (
+                                  <a
+                                    key={res.id}
+                                    href={res.file_url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="flex items-center gap-2 rounded-md border border-border p-2 text-sm text-foreground transition-colors hover:bg-muted/50"
+                                  >
+                                    <FileText className="h-4 w-4 text-muted-foreground" />
+                                    <span className="flex-1 truncate">{res.title}</span>
+                                  </a>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {lessonQuizzes.length > 0 && (
+                            <div>
+                              <h4 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">❓ কুইজ</h4>
+                              <div className="space-y-1">
+                                {lessonQuizzes.map((quiz) => (
+                                  <div key={quiz.id} className="flex items-center gap-2 rounded-md border border-border p-2 text-sm">
+                                    <HelpCircle className="h-4 w-4 text-primary" />
+                                    <span className="text-foreground">{quiz.title}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {!lesson.content && lessonResources.length === 0 && lessonQuizzes.length === 0 && (
+                            <p className="text-xs text-muted-foreground">এই লেসনের বিস্তারিত কোর্সে এনরোল করলে দেখা যাবে।</p>
+                          )}
+                        </AccordionContent>
+                      </AccordionItem>
+                    );
+                  })}
+                </Accordion>
               </div>
             )}
           </div>
