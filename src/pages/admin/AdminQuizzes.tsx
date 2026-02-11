@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, ArrowLeft, Clock } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 
@@ -16,6 +16,7 @@ interface Quiz {
   negative_marking: boolean;
   negative_mark_value: number;
   is_published: boolean;
+  duration_minutes: number;
 }
 
 interface Question {
@@ -37,18 +38,27 @@ const AdminQuizzes = () => {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Quiz | null>(null);
-  const [form, setForm] = useState({ title: "", description: "", negative_marking: false, negative_mark_value: "0.25", is_published: true });
+  const [form, setForm] = useState({ title: "", description: "", negative_marking: false, negative_mark_value: "0.25", is_published: true, duration_minutes: "10" });
 
-  // Question management
   const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [qDialogOpen, setQDialogOpen] = useState(false);
   const [editingQ, setEditingQ] = useState<Question | null>(null);
   const [qForm, setQForm] = useState({ question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_option: "a", explanation: "" });
+  const [questionCounts, setQuestionCounts] = useState<Record<string, number>>({});
 
   const fetchQuizzes = async () => {
-    const { data } = await supabase.from("quizzes").select("*").order("created_at", { ascending: false });
-    setQuizzes((data as Quiz[]) || []);
+    const { data } = await supabase.from("quizzes").select("*, quiz_questions(id)").order("created_at", { ascending: false });
+    if (data) {
+      const counts: Record<string, number> = {};
+      const mapped = data.map((q: any) => {
+        counts[q.id] = q.quiz_questions?.length || 0;
+        const { quiz_questions, ...rest } = q;
+        return rest as Quiz;
+      });
+      setQuestionCounts(counts);
+      setQuizzes(mapped);
+    }
     setLoading(false);
   };
 
@@ -60,19 +70,26 @@ const AdminQuizzes = () => {
   useEffect(() => { fetchQuizzes(); }, []);
 
   const resetForm = () => {
-    setForm({ title: "", description: "", negative_marking: false, negative_mark_value: "0.25", is_published: true });
+    setForm({ title: "", description: "", negative_marking: false, negative_mark_value: "0.25", is_published: true, duration_minutes: "10" });
     setEditing(null);
   };
 
   const openEdit = (quiz: Quiz) => {
     setEditing(quiz);
-    setForm({ title: quiz.title, description: quiz.description || "", negative_marking: quiz.negative_marking, negative_mark_value: String(quiz.negative_mark_value), is_published: quiz.is_published });
+    setForm({ title: quiz.title, description: quiz.description || "", negative_marking: quiz.negative_marking, negative_mark_value: String(quiz.negative_mark_value), is_published: quiz.is_published, duration_minutes: String(quiz.duration_minutes) });
     setDialogOpen(true);
   };
 
   const handleSave = async () => {
     if (!form.title) { toast({ title: "Title required", variant: "destructive" }); return; }
-    const payload = { title: form.title, description: form.description || null, negative_marking: form.negative_marking, negative_mark_value: parseFloat(form.negative_mark_value), is_published: form.is_published };
+    const payload = {
+      title: form.title,
+      description: form.description || null,
+      negative_marking: form.negative_marking,
+      negative_mark_value: parseFloat(form.negative_mark_value),
+      is_published: form.is_published,
+      duration_minutes: parseInt(form.duration_minutes) || 10,
+    };
 
     if (editing) {
       const { error } = await supabase.from("quizzes").update(payload).eq("id", editing.id);
@@ -90,6 +107,7 @@ const AdminQuizzes = () => {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this quiz and all its questions?")) return;
+    await supabase.from("quiz_questions").delete().eq("quiz_id", id);
     await supabase.from("quizzes").delete().eq("id", id);
     toast({ title: "Quiz deleted" });
     if (selectedQuiz?.id === id) setSelectedQuiz(null);
@@ -138,29 +156,53 @@ const AdminQuizzes = () => {
     fetchQuestions(selectedQuiz!.id);
   };
 
+  // ── Question management view ──
   if (selectedQuiz) {
     return (
       <div>
-        <Button variant="ghost" onClick={() => setSelectedQuiz(null)} className="mb-4">← Back to Quizzes</Button>
+        <Button variant="ghost" onClick={() => { setSelectedQuiz(null); fetchQuizzes(); }} className="mb-4">
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Quizzes
+        </Button>
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-foreground">{selectedQuiz.title} — Questions</h1>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">{selectedQuiz.title}</h1>
+            <p className="text-sm text-muted-foreground">
+              {questions.length} টি প্রশ্ন • {selectedQuiz.duration_minutes} মিনিট
+              {selectedQuiz.negative_marking && ` • নেগেটিভ মার্কিং (${selectedQuiz.negative_mark_value})`}
+            </p>
+          </div>
           <Dialog open={qDialogOpen} onOpenChange={(open) => { setQDialogOpen(open); if (!open) resetQForm(); }}>
             <DialogTrigger asChild><Button><Plus className="mr-2 h-4 w-4" /> Add Question</Button></DialogTrigger>
             <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
               <DialogHeader><DialogTitle>{editingQ ? "Edit" : "Add"} Question</DialogTitle></DialogHeader>
               <div className="space-y-4 pt-4">
-                <div><Label>Question *</Label><Textarea value={qForm.question} onChange={(e) => setQForm({ ...qForm, question: e.target.value })} className="mt-1" rows={3} /></div>
-                <div><Label>Option A *</Label><Input value={qForm.option_a} onChange={(e) => setQForm({ ...qForm, option_a: e.target.value })} className="mt-1" /></div>
-                <div><Label>Option B *</Label><Input value={qForm.option_b} onChange={(e) => setQForm({ ...qForm, option_b: e.target.value })} className="mt-1" /></div>
-                <div><Label>Option C *</Label><Input value={qForm.option_c} onChange={(e) => setQForm({ ...qForm, option_c: e.target.value })} className="mt-1" /></div>
-                <div><Label>Option D *</Label><Input value={qForm.option_d} onChange={(e) => setQForm({ ...qForm, option_d: e.target.value })} className="mt-1" /></div>
-                <div>
-                  <Label>Correct Answer</Label>
-                  <select value={qForm.correct_option} onChange={(e) => setQForm({ ...qForm, correct_option: e.target.value })} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
-                    <option value="a">A</option><option value="b">B</option><option value="c">C</option><option value="d">D</option>
-                  </select>
+                <div><Label>প্রশ্ন *</Label><Textarea value={qForm.question} onChange={(e) => setQForm({ ...qForm, question: e.target.value })} className="mt-1" rows={3} placeholder="প্রশ্নটি লিখুন..." /></div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div><Label>Option A *</Label><Input value={qForm.option_a} onChange={(e) => setQForm({ ...qForm, option_a: e.target.value })} className="mt-1" /></div>
+                  <div><Label>Option B *</Label><Input value={qForm.option_b} onChange={(e) => setQForm({ ...qForm, option_b: e.target.value })} className="mt-1" /></div>
+                  <div><Label>Option C *</Label><Input value={qForm.option_c} onChange={(e) => setQForm({ ...qForm, option_c: e.target.value })} className="mt-1" /></div>
+                  <div><Label>Option D *</Label><Input value={qForm.option_d} onChange={(e) => setQForm({ ...qForm, option_d: e.target.value })} className="mt-1" /></div>
                 </div>
-                <div><Label>Explanation</Label><Textarea value={qForm.explanation} onChange={(e) => setQForm({ ...qForm, explanation: e.target.value })} className="mt-1" rows={2} /></div>
+                <div>
+                  <Label>সঠিক উত্তর</Label>
+                  <div className="mt-2 flex gap-2">
+                    {["a", "b", "c", "d"].map((opt) => (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => setQForm({ ...qForm, correct_option: opt })}
+                        className={`flex h-10 w-10 items-center justify-center rounded-lg border-2 text-sm font-bold transition-colors ${
+                          qForm.correct_option === opt
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-border bg-card text-muted-foreground hover:border-primary/50"
+                        }`}
+                      >
+                        {opt.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div><Label>ব্যাখ্যা (Explanation)</Label><Textarea value={qForm.explanation} onChange={(e) => setQForm({ ...qForm, explanation: e.target.value })} className="mt-1" rows={3} placeholder="উত্তরের ব্যাখ্যা দিন (ঐচ্ছিক)..." /></div>
                 <Button onClick={handleSaveQ} className="w-full">{editingQ ? "Update" : "Add"} Question</Button>
               </div>
             </DialogContent>
@@ -168,26 +210,26 @@ const AdminQuizzes = () => {
         </div>
 
         {questions.length === 0 ? (
-          <p className="mt-8 text-center text-muted-foreground">No questions yet.</p>
+          <p className="mt-8 text-center text-muted-foreground">কোনো প্রশ্ন নেই। "Add Question" বাটনে ক্লিক করে প্রশ্ন যোগ করুন।</p>
         ) : (
           <div className="mt-6 space-y-3">
             {questions.map((q, i) => (
               <div key={q.id} className="rounded-lg border border-border bg-card p-4">
                 <div className="flex items-start justify-between">
-                  <p className="font-medium text-foreground"><span className="mr-2 text-muted-foreground">Q{i + 1}.</span>{q.question}</p>
+                  <p className="font-medium text-foreground"><span className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">{i + 1}</span>{q.question}</p>
                   <div className="flex gap-1 shrink-0 ml-2">
                     <Button variant="ghost" size="icon" onClick={() => openEditQ(q)}><Pencil className="h-4 w-4" /></Button>
                     <Button variant="ghost" size="icon" onClick={() => deleteQ(q.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                   </div>
                 </div>
-                <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
+                <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
                   {["a", "b", "c", "d"].map((opt) => (
-                    <div key={opt} className={`rounded px-2 py-1 ${q.correct_option === opt ? "bg-success/10 text-success font-medium" : "text-muted-foreground"}`}>
-                      {opt.toUpperCase()}) {(q as any)[`option_${opt}`]}
+                    <div key={opt} className={`rounded-lg px-3 py-2 ${q.correct_option === opt ? "bg-success/10 text-success font-medium border border-success/20" : "bg-muted/50 text-muted-foreground"}`}>
+                      <span className="mr-1 font-bold">{opt.toUpperCase()})</span> {(q as any)[`option_${opt}`]}
                     </div>
                   ))}
                 </div>
-                {q.explanation && <p className="mt-2 text-xs text-muted-foreground italic">💡 {q.explanation}</p>}
+                {q.explanation && <p className="mt-3 rounded-lg bg-primary/5 p-3 text-sm text-primary">💡 {q.explanation}</p>}
               </div>
             ))}
           </div>
@@ -196,6 +238,7 @@ const AdminQuizzes = () => {
     );
   }
 
+  // ── Quiz list view ──
   return (
     <div>
       <div className="flex items-center justify-between">
@@ -205,8 +248,9 @@ const AdminQuizzes = () => {
           <DialogContent className="sm:max-w-lg">
             <DialogHeader><DialogTitle>{editing ? "Edit" : "Add"} Quiz</DialogTitle></DialogHeader>
             <div className="space-y-4 pt-4">
-              <div><Label>Title *</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="mt-1" /></div>
-              <div><Label>Description</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="mt-1" rows={3} /></div>
+              <div><Label>Title *</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="mt-1" placeholder="কুইজের শিরোনাম" /></div>
+              <div><Label>Description</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="mt-1" rows={3} placeholder="কুইজের বিবরণ (ঐচ্ছিক)" /></div>
+              <div><Label>সময়সীমা (মিনিট)</Label><Input type="number" min="1" value={form.duration_minutes} onChange={(e) => setForm({ ...form, duration_minutes: e.target.value })} className="mt-1" /></div>
               <div className="flex items-center justify-between">
                 <Label>Negative Marking</Label>
                 <Switch checked={form.negative_marking} onCheckedChange={(v) => setForm({ ...form, negative_marking: v })} />
@@ -228,12 +272,17 @@ const AdminQuizzes = () => {
       ) : (
         <div className="mt-6 space-y-3">
           {quizzes.map((quiz) => (
-            <div key={quiz.id} className="flex items-center justify-between rounded-lg border border-border bg-card p-4">
-              <div className="cursor-pointer" onClick={() => openQuestions(quiz)}>
+            <div key={quiz.id} className="flex items-center justify-between rounded-lg border border-border bg-card p-4 transition-colors hover:bg-muted/30">
+              <div className="cursor-pointer flex-1" onClick={() => openQuestions(quiz)}>
                 <p className="font-medium text-foreground">{quiz.title}</p>
-                <p className="text-xs text-muted-foreground">{quiz.description || "No description"}</p>
+                <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                  {quiz.description && <span>{quiz.description}</span>}
+                  <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {quiz.duration_minutes} মিনিট</span>
+                  <span>{questionCounts[quiz.id] || 0} টি প্রশ্ন</span>
+                  {quiz.negative_marking && <span className="text-destructive">নেগেটিভ মার্কিং ({quiz.negative_mark_value})</span>}
+                </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 ml-3">
                 <span className={`rounded-full px-2 py-0.5 text-xs ${quiz.is_published ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`}>
                   {quiz.is_published ? "Published" : "Draft"}
                 </span>
