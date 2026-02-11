@@ -12,13 +12,21 @@ interface DbCourse {
   image_url: string;
   category: string;
   duration: string;
+  lesson_count?: number;
 }
 
 const CoursesPage = () => {
   const [courses, setCourses] = useState<DbCourse[]>([]);
 
   useEffect(() => {
-    supabase.from("courses").select("*").eq("is_published", true).order("created_at", { ascending: false }).then(({ data }) => setCourses(data || []));
+    supabase.from("courses").select("*, lessons(id)").eq("is_published", true).order("created_at", { ascending: false }).then(({ data }) => {
+      const mapped = (data || []).map((c: any) => ({
+        id: c.id, title: c.title, instructor: c.instructor, price: c.price,
+        original_price: c.original_price, image_url: c.image_url, category: c.category,
+        duration: c.duration, lesson_count: c.lessons?.length || 0,
+      }));
+      setCourses(mapped);
+    });
   }, []);
 
   return (
@@ -39,6 +47,7 @@ const CoursesPage = () => {
                   <h3 className="mt-3 font-display text-lg font-semibold text-card-foreground line-clamp-2">{course.title}</h3>
                   <p className="mt-1 text-sm text-muted-foreground">{course.instructor}</p>
                   <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1"><BookOpen className="h-3.5 w-3.5" /> {course.lesson_count} টি লেসন</span>
                     <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {course.duration}</span>
                   </div>
                   <div className="mt-4 flex items-center gap-2">
