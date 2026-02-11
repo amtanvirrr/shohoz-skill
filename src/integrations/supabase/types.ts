@@ -17,43 +17,55 @@ export type Database = {
       books: {
         Row: {
           author: string
+          book_type: string
           category: string
           created_at: string
           demo_pdf_url: string | null
           description: string
+          ebook_file_url: string | null
           id: string
           image_url: string
           is_published: boolean
           original_price: number | null
+          page_count: number | null
           price: number
+          stock_quantity: number | null
           title: string
           updated_at: string
         }
         Insert: {
           author?: string
+          book_type?: string
           category?: string
           created_at?: string
           demo_pdf_url?: string | null
           description?: string
+          ebook_file_url?: string | null
           id?: string
           image_url?: string
           is_published?: boolean
           original_price?: number | null
+          page_count?: number | null
           price?: number
+          stock_quantity?: number | null
           title: string
           updated_at?: string
         }
         Update: {
           author?: string
+          book_type?: string
           category?: string
           created_at?: string
           demo_pdf_url?: string | null
           description?: string
+          ebook_file_url?: string | null
           id?: string
           image_url?: string
           is_published?: boolean
           original_price?: number | null
+          page_count?: number | null
           price?: number
+          stock_quantity?: number | null
           title?: string
           updated_at?: string
         }
