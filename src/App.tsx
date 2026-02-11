@@ -20,6 +20,7 @@ import QuizPage from "./pages/QuizPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminBooks from "./pages/admin/AdminBooks";
 import AdminCourses from "./pages/admin/AdminCourses";
+import AdminCourseDetail from "./pages/admin/AdminCourseDetail";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminQuizzes from "./pages/admin/AdminQuizzes";
@@ -52,6 +53,7 @@ const App = () => (
             <Route path="/admin" element={<ProtectedRoute adminOnly><AdminLayout><AdminDashboard /></AdminLayout></ProtectedRoute>} />
             <Route path="/admin/books" element={<ProtectedRoute adminOnly><AdminLayout><AdminBooks /></AdminLayout></ProtectedRoute>} />
             <Route path="/admin/courses" element={<ProtectedRoute adminOnly><AdminLayout><AdminCourses /></AdminLayout></ProtectedRoute>} />
+            <Route path="/admin/courses/:id" element={<ProtectedRoute adminOnly><AdminLayout><AdminCourseDetail /></AdminLayout></ProtectedRoute>} />
             <Route path="/admin/orders" element={<ProtectedRoute adminOnly><AdminLayout><AdminOrders /></AdminLayout></ProtectedRoute>} />
             <Route path="/admin/users" element={<ProtectedRoute adminOnly><AdminLayout><AdminUsers /></AdminLayout></ProtectedRoute>} />
             <Route path="/admin/quizzes" element={<ProtectedRoute adminOnly><AdminLayout><AdminQuizzes /></AdminLayout></ProtectedRoute>} />

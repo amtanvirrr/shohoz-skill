@@ -116,6 +116,47 @@ export type Database = {
         }
         Relationships: []
       }
+      lesson_resources: {
+        Row: {
+          created_at: string
+          file_size: number | null
+          file_type: string
+          file_url: string
+          id: string
+          lesson_id: string
+          sort_order: number
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          file_size?: number | null
+          file_type?: string
+          file_url?: string
+          id?: string
+          lesson_id: string
+          sort_order?: number
+          title: string
+        }
+        Update: {
+          created_at?: string
+          file_size?: number | null
+          file_type?: string
+          file_url?: string
+          id?: string
+          lesson_id?: string
+          sort_order?: number
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_resources_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lessons: {
         Row: {
           content: string | null
@@ -123,8 +164,10 @@ export type Database = {
           created_at: string
           duration: string
           id: string
+          lesson_type: string
           sort_order: number
           title: string
+          video_url: string | null
         }
         Insert: {
           content?: string | null
@@ -132,8 +175,10 @@ export type Database = {
           created_at?: string
           duration?: string
           id?: string
+          lesson_type?: string
           sort_order?: number
           title: string
+          video_url?: string | null
         }
         Update: {
           content?: string | null
@@ -141,8 +186,10 @@ export type Database = {
           created_at?: string
           duration?: string
           id?: string
+          lesson_type?: string
           sort_order?: number
           title?: string
+          video_url?: string | null
         }
         Relationships: [
           {
@@ -338,6 +385,7 @@ export type Database = {
           description: string | null
           id: string
           is_published: boolean
+          lesson_id: string | null
           negative_mark_value: number
           negative_marking: boolean
           title: string
@@ -347,6 +395,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_published?: boolean
+          lesson_id?: string | null
           negative_mark_value?: number
           negative_marking?: boolean
           title: string
@@ -356,11 +405,20 @@ export type Database = {
           description?: string | null
           id?: string
           is_published?: boolean
+          lesson_id?: string | null
           negative_mark_value?: number
           negative_marking?: boolean
           title?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "quizzes_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       site_settings: {
         Row: {
