@@ -2,8 +2,16 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, XCircle, Clock, ArrowLeft, AlertTriangle } from "lucide-react";
+import { CheckCircle, XCircle, Clock, ArrowLeft, AlertTriangle, History } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { format } from "date-fns";
+
+interface QuizAttempt {
+  id: string;
+  score: number;
+  total_questions: number;
+  created_at: string;
+}
 
 interface Quiz {
   id: string;
@@ -34,6 +42,7 @@ const QuizPage = () => {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
+  const [attempts, setAttempts] = useState<Record<string, QuizAttempt[]>>({});
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -50,6 +59,26 @@ const QuizPage = () => {
       }
     });
   }, []);
+
+  // Fetch user's past attempts
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("quiz_attempts")
+      .select("id, score, total_questions, created_at, quiz_id")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .then(({ data }) => {
+        if (data) {
+          const grouped: Record<string, QuizAttempt[]> = {};
+          data.forEach((a: any) => {
+            if (!grouped[a.quiz_id]) grouped[a.quiz_id] = [];
+            grouped[a.quiz_id].push(a);
+          });
+          setAttempts(grouped);
+        }
+      });
+  }, [user, submitted]);
 
   // Timer
   useEffect(() => {
@@ -278,6 +307,27 @@ const QuizPage = () => {
                   </p>
                 )}
                 <Button onClick={() => startQuiz(quiz)} className="mt-4 w-full">কুইজ শুরু করুন</Button>
+
+                {/* Attempt History */}
+                {user && attempts[quiz.id] && attempts[quiz.id].length > 0 && (
+                  <div className="mt-4 border-t border-border pt-3">
+                    <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+                      <History className="h-3.5 w-3.5" /> আগের অ্যাটেম্পট ({attempts[quiz.id].length})
+                    </p>
+                    <div className="max-h-32 space-y-1.5 overflow-y-auto">
+                      {attempts[quiz.id].slice(0, 5).map((att, idx) => (
+                        <div key={att.id} className="flex items-center justify-between rounded-md bg-muted/50 px-3 py-1.5 text-xs">
+                          <span className="text-muted-foreground">
+                            #{attempts[quiz.id].length - idx} · {format(new Date(att.created_at), "dd MMM yyyy, hh:mm a")}
+                          </span>
+                          <span className={`font-bold ${att.score >= att.total_questions * 0.5 ? "text-success" : "text-destructive"}`}>
+                            {att.score}/{att.total_questions}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
