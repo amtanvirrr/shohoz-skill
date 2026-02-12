@@ -34,6 +34,9 @@ interface BrandingFields {
   pathao_store_id: string;
   redx_api_token: string;
   redx_pickup_store_id: string;
+  contact_email: string;
+  contact_phone: string;
+  contact_address: string;
 }
 
 const defaultBranding: BrandingFields = {
@@ -63,6 +66,9 @@ const defaultBranding: BrandingFields = {
   pathao_store_id: "",
   redx_api_token: "",
   redx_pickup_store_id: "",
+  contact_email: "",
+  contact_phone: "",
+  contact_address: "",
 };
 
 const ALL_KEYS = Object.keys(defaultBranding) as (keyof BrandingFields)[];
@@ -202,6 +208,24 @@ const AdminSettings = () => {
               <li><strong>ViewContent</strong> — কোর্স/বই ডিটেইল পেজে</li>
             </ul>
             <p className="mt-2">ইভেন্টগুলো Client + Server উভয় দিক থেকে পাঠানো হয় (Deduplication Event ID সহ)।</p>
+          </div>
+        </div>
+
+        {/* Contact Information */}
+        <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+          <h3 className="font-display text-lg font-semibold text-foreground">যোগাযোগ তথ্য</h3>
+          <p className="text-sm text-muted-foreground">কন্টাক্ট পেজ এবং ফুটারে প্রদর্শিত যোগাযোগের তথ্য পরিবর্তন করুন।</p>
+          <div>
+            <Label htmlFor="contact_email">ইমেইল</Label>
+            <Input id="contact_email" value={fields.contact_email} onChange={(e) => handleChange("contact_email", e.target.value)} className="mt-1" placeholder="info@shikhonhub.com" />
+          </div>
+          <div>
+            <Label htmlFor="contact_phone">ফোন নম্বর</Label>
+            <Input id="contact_phone" value={fields.contact_phone} onChange={(e) => handleChange("contact_phone", e.target.value)} className="mt-1" placeholder="+880 1XXX-XXXXXX" />
+          </div>
+          <div>
+            <Label htmlFor="contact_address">ঠিকানা</Label>
+            <Input id="contact_address" value={fields.contact_address} onChange={(e) => handleChange("contact_address", e.target.value)} className="mt-1" placeholder="Dhaka, Bangladesh" />
           </div>
         </div>
 

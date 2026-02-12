@@ -116,15 +116,15 @@ const Footer = () => {
             <div className="mt-3 flex flex-col gap-2">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Mail className="h-4 w-4" />
-                info@shikhonhub.com
+                {settings.contact_email || "info@shikhonhub.com"}
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Phone className="h-4 w-4" />
-                +880 1XXX-XXXXXX
+                {settings.contact_phone || "+880 1XXX-XXXXXX"}
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <MapPin className="h-4 w-4" />
-                Dhaka, Bangladesh
+                {settings.contact_address || "Dhaka, Bangladesh"}
               </div>
             </div>
           </div>

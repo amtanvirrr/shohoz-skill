@@ -11,6 +11,9 @@ export interface SiteSettings {
   favicon_url: string;
   facebook_pixel_id: string;
   facebook_test_event_code: string;
+  contact_email: string;
+  contact_phone: string;
+  contact_address: string;
 }
 
 const defaults: SiteSettings = {
@@ -23,6 +26,9 @@ const defaults: SiteSettings = {
   favicon_url: "/favicon.webp",
   facebook_pixel_id: "",
   facebook_test_event_code: "",
+  contact_email: "info@shikhonhub.com",
+  contact_phone: "+880 1XXX-XXXXXX",
+  contact_address: "Dhaka, Bangladesh",
 };
 
 const SETTING_KEYS = Object.keys(defaults) as (keyof SiteSettings)[];
