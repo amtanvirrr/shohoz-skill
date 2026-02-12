@@ -462,6 +462,38 @@ export type Database = {
           },
         ]
       }
+      reading_progress: {
+        Row: {
+          book_id: string
+          id: string
+          last_page: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          book_id: string
+          id?: string
+          last_page?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          book_id?: string
+          id?: string
+          last_page?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reading_progress_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       site_settings: {
         Row: {
           id: string

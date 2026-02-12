@@ -1,34 +1,41 @@
 import { useParams, Link } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { ArrowLeft, BookOpen, Loader2 } from "lucide-react";
+import { ArrowLeft, BookOpen, Loader2, Bookmark } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 const EbookReader = () => {
   const { bookId } = useParams();
   const { user } = useAuth();
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [basePdfUrl, setBasePdfUrl] = useState<string | null>(null);
   const [bookTitle, setBookTitle] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lastPage, setLastPage] = useState(1);
+  const [pageInput, setPageInput] = useState("1");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!bookId || !user) return;
 
     const fetchEbook = async () => {
-      // Fetch book title
-      const { data: book } = await supabase
-        .from("books")
-        .select("title")
-        .eq("id", bookId)
-        .single();
-      if (book) setBookTitle(book.title);
+      // Fetch book title & reading progress in parallel
+      const [bookRes, progressRes, sessionRes] = await Promise.all([
+        supabase.from("books").select("title").eq("id", bookId).single(),
+        supabase.from("reading_progress").select("last_page").eq("user_id", user.id).eq("book_id", bookId).maybeSingle(),
+        supabase.auth.getSession(),
+      ]);
 
-      // Get signed URL from edge function
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData?.session?.access_token;
+      if (bookRes.data) setBookTitle(bookRes.data.title);
+      const savedPage = progressRes.data?.last_page || 1;
+      setLastPage(savedPage);
+      setPageInput(String(savedPage));
 
+      const token = sessionRes.data?.session?.access_token;
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/serve-ebook?book_id=${bookId}`,
         {
@@ -47,13 +54,37 @@ const EbookReader = () => {
       }
 
       const { url } = await res.json();
-      // Append toolbar=0 to hide PDF download/print toolbar
-      setPdfUrl(url + "#toolbar=0&navpanes=0");
+      setBasePdfUrl(url);
+      setPdfUrl(url + `#toolbar=0&navpanes=0&page=${savedPage}`);
       setLoading(false);
     };
 
     fetchEbook();
   }, [bookId, user]);
+
+  const savePageProgress = useCallback(async () => {
+    if (!bookId || !user) return;
+    const page = parseInt(pageInput);
+    if (isNaN(page) || page < 1) return;
+
+    setSaving(true);
+    const { error } = await supabase.from("reading_progress").upsert(
+      { user_id: user.id, book_id: bookId, last_page: page, updated_at: new Date().toISOString() },
+      { onConflict: "user_id,book_id" }
+    );
+    setSaving(false);
+
+    if (error) {
+      toast.error("পেজ সেভ করা যায়নি");
+    } else {
+      setLastPage(page);
+      toast.success(`পেজ ${page} সেভ করা হয়েছে`);
+      // Navigate PDF to saved page
+      if (basePdfUrl) {
+        setPdfUrl(basePdfUrl + `#toolbar=0&navpanes=0&page=${page}`);
+      }
+    }
+  }, [bookId, user, pageInput, basePdfUrl]);
 
   // Prevent right-click context menu
   useEffect(() => {
@@ -93,7 +124,33 @@ const EbookReader = () => {
             <ArrowLeft className="h-4 w-4 mr-1" /> ড্যাশবোর্ড
           </Link>
         </Button>
-        <span className="text-sm font-medium text-foreground truncate">{bookTitle}</span>
+        <span className="text-sm font-medium text-foreground truncate flex-1">{bookTitle}</span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground whitespace-nowrap">পেজ:</span>
+          <Input
+            type="number"
+            min={1}
+            value={pageInput}
+            onChange={(e) => setPageInput(e.target.value)}
+            className="w-16 h-8 text-center text-sm"
+            onKeyDown={(e) => e.key === "Enter" && savePageProgress()}
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={savePageProgress}
+            disabled={saving}
+            className="gap-1"
+          >
+            <Bookmark className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">{saving ? "সেভ হচ্ছে..." : "সেভ"}</span>
+          </Button>
+          {lastPage > 1 && (
+            <span className="text-xs text-muted-foreground hidden sm:inline">
+              (সর্বশেষ: পেজ {lastPage})
+            </span>
+          )}
+        </div>
       </div>
 
       {/* PDF Viewer */}
