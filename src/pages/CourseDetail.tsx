@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { ArrowLeft, BookOpen, Clock, PlayCircle, Users, Video, FileText, HelpCircle, ChevronDown, Star, Send, Smartphone } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
@@ -74,6 +75,7 @@ const CourseDetail = () => {
   const [resources, setResources] = useState<Record<string, DbResource[]>>({});
   const [quizzes, setQuizzes] = useState<DbQuiz[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<string>("bkash");
+  const [transactionId, setTransactionId] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [reviews, setReviews] = useState<DbReview[]>([]);
   const [hasPurchased, setHasPurchased] = useState(false);
@@ -146,6 +148,10 @@ const CourseDetail = () => {
       toast({ title: "Please login first", description: "You need to be logged in to purchase courses.", variant: "destructive" });
       return;
     }
+    if (!transactionId.trim()) {
+      toast({ title: "Transaction ID দিন", description: "পেমেন্ট করার পর Transaction ID লিখুন", variant: "destructive" });
+      return;
+    }
     setSubmitting(true);
     const { data, error } = await supabase.from("orders").insert({
       customer_name: user.user_metadata?.full_name || "User",
@@ -157,13 +163,15 @@ const CourseDetail = () => {
       price: course.price,
       payment_method: paymentMethod as any,
       user_id: user.id,
+      transaction_id: transactionId.trim(),
     }).select("order_id").single();
     setSubmitting(false);
 
     if (error) {
       toast({ title: "Purchase failed", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Purchase Initiated! 🎉", description: `Order ID: ${data.order_id}. Complete payment via ${paymentMethod === "bkash" ? "bKash" : "Nagad"}.` });
+      toast({ title: "Purchase Initiated! 🎉", description: `Order ID: ${data.order_id}. পেমেন্ট ভেরিফিকেশনের পর কোর্স অ্যাক্সেস পাবেন।` });
+      setTransactionId("");
     }
   };
 
@@ -420,7 +428,14 @@ const CourseDetail = () => {
                   );
                 })()}
               </div>
-              <Button onClick={handlePurchase} size="lg" className="mt-6 w-full" disabled={submitting}>
+
+              {/* Transaction ID field */}
+              <div className="mt-4">
+                <Label htmlFor="courseTxnId" className="text-sm font-medium">Transaction ID *</Label>
+                <Input id="courseTxnId" value={transactionId} onChange={(e) => setTransactionId(e.target.value)} className="mt-1" placeholder="যেমন: TXN1234ABCD" />
+              </div>
+
+              <Button onClick={handlePurchase} size="lg" className="mt-4 w-full" disabled={submitting}>
                 {submitting ? "Processing..." : "Purchase Course"}
               </Button>
               <ul className="mt-6 space-y-2 text-xs text-muted-foreground">
