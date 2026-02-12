@@ -63,20 +63,28 @@ const Index = () => {
   }, []);
 
   const handleTrack = async () => {
-    if (!trackOrderId || !trackPhone) {
-      toast({ title: "Please enter Order ID and Phone Number", variant: "destructive" });
+    if (!trackOrderId && !trackPhone) {
+      toast({ title: "অর্ডার আইডি অথবা ফোন নাম্বার দিন", variant: "destructive" });
       return;
     }
-    const { data, error } = await supabase
-      .from("orders")
-      .select("order_id, status, product_title, created_at, customer_phone")
-      .eq("order_id", trackOrderId)
-      .eq("customer_phone", trackPhone)
-      .maybeSingle();
 
-    if (error || !data) {
+    let query = supabase
+      .from("orders")
+      .select("order_id, status, product_title, created_at, customer_phone");
+
+    if (trackOrderId && trackPhone) {
+      query = query.eq("order_id", trackOrderId).eq("customer_phone", trackPhone);
+    } else if (trackOrderId) {
+      query = query.eq("order_id", trackOrderId);
+    } else {
+      query = query.eq("customer_phone", trackPhone);
+    }
+
+    const { data, error } = await query.order("created_at", { ascending: false }).limit(5);
+
+    if (error || !data || data.length === 0) {
       setTrackResult(null);
-      toast({ title: "Order not found", description: "Please check your Order ID and Phone Number.", variant: "destructive" });
+      toast({ title: "অর্ডার পাওয়া যায়নি", description: "অর্ডার আইডি অথবা ফোন নাম্বার চেক করুন।", variant: "destructive" });
     } else {
       setTrackResult(data);
     }
@@ -223,16 +231,21 @@ const Index = () => {
             <h2 className="mt-4 text-2xl font-bold text-foreground">Track Your Order</h2>
             <p className="mt-2 text-sm text-muted-foreground">আপনার অর্ডারের বর্তমান অবস্থা জানুন</p>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              <Input placeholder="Order ID" value={trackOrderId} onChange={(e) => setTrackOrderId(e.target.value)} />
-              <Input placeholder="Phone Number" value={trackPhone} onChange={(e) => setTrackPhone(e.target.value)} />
+              <Input placeholder="অর্ডার আইডি" value={trackOrderId} onChange={(e) => setTrackOrderId(e.target.value)} />
+              <Input placeholder="ফোন নাম্বার" value={trackPhone} onChange={(e) => setTrackPhone(e.target.value)} />
               <Button className="shrink-0" onClick={handleTrack}>Track</Button>
             </div>
+            <p className="mt-2 text-xs text-muted-foreground">যেকোনো একটি দিলেই হবে</p>
             {trackResult && (
-              <div className="mt-4 rounded-lg border border-border bg-card p-4 text-left">
-                <p className="text-sm"><span className="font-medium">Order:</span> {trackResult.order_id}</p>
-                <p className="text-sm"><span className="font-medium">Product:</span> {trackResult.product_title}</p>
-                <p className="text-sm"><span className="font-medium">Status:</span> {statusLabels[trackResult.status] || trackResult.status}</p>
-                <p className="text-xs text-muted-foreground mt-1">Placed: {new Date(trackResult.created_at).toLocaleDateString()}</p>
+              <div className="mt-4 space-y-3">
+                {trackResult.map((order: any, idx: number) => (
+                  <div key={idx} className="rounded-lg border border-border bg-card p-4 text-left">
+                    <p className="text-sm"><span className="font-medium">Order:</span> {order.order_id}</p>
+                    <p className="text-sm"><span className="font-medium">Product:</span> {order.product_title}</p>
+                    <p className="text-sm"><span className="font-medium">Status:</span> {statusLabels[order.status] || order.status}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Placed: {new Date(order.created_at).toLocaleDateString()}</p>
+                  </div>
+                ))}
               </div>
             )}
           </div>
