@@ -211,8 +211,8 @@ const UserDashboard = () => {
                         <h3 className="font-semibold text-foreground line-clamp-1">{course.title}</h3>
                         <p className="mt-1 text-sm text-muted-foreground">{course.instructor} • {course.duration}</p>
                         <Button size="sm" className="mt-3 w-full gap-2" asChild>
-                          <Link to={`/course/${course.id}`}>
-                            <ExternalLink className="h-4 w-4" /> কোর্সে যান
+                          <Link to={`/enrolled/${course.id}`}>
+                            <PlayCircle className="h-4 w-4" /> কোর্স শুরু করুন
                           </Link>
                         </Button>
                       </div>

@@ -19,6 +19,7 @@ import Register from "./pages/Register";
 import QuizPage from "./pages/QuizPage";
 import UserDashboard from "./pages/UserDashboard";
 import EbookReader from "./pages/EbookReader";
+import EnrolledCourse from "./pages/EnrolledCourse";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminBooks from "./pages/admin/AdminBooks";
 import AdminCourses from "./pages/admin/AdminCourses";
@@ -52,6 +53,7 @@ const App = () => (
             <Route path="/register" element={<Layout><Register /></Layout>} />
             <Route path="/dashboard" element={<ProtectedRoute><Layout><UserDashboard /></Layout></ProtectedRoute>} />
             <Route path="/read/:bookId" element={<ProtectedRoute><EbookReader /></ProtectedRoute>} />
+            <Route path="/enrolled/:id" element={<ProtectedRoute><Layout><EnrolledCourse /></Layout></ProtectedRoute>} />
 
             {/* Admin routes */}
             <Route path="/admin" element={<ProtectedRoute adminOnly><AdminLayout><AdminDashboard /></AdminLayout></ProtectedRoute>} />
