@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { BookOpen, PlayCircle, Download, ExternalLink } from "lucide-react";
+import { BookOpen, PlayCircle, Download, ExternalLink, ShoppingBag, Clock, CheckCircle, Truck, XCircle, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 
 interface Order {
   id: string;
@@ -35,8 +36,23 @@ interface CourseInfo {
   duration: string;
 }
 
+const statusConfig: Record<string, { label: string; icon: React.ElementType; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+  pending: { label: "পেন্ডিং", icon: Clock, variant: "secondary" },
+  confirmed: { label: "কনফার্মড", icon: CheckCircle, variant: "default" },
+  shipped: { label: "শিপড", icon: Truck, variant: "outline" },
+  delivered: { label: "ডেলিভারড", icon: Package, variant: "default" },
+  cancelled: { label: "বাতিল", icon: XCircle, variant: "destructive" },
+};
+
+const paymentMethodLabels: Record<string, string> = {
+  cod: "ক্যাশ অন ডেলিভারি",
+  bkash: "বিকাশ",
+  nagad: "নগদ",
+};
+
 const UserDashboard = () => {
   const { user } = useAuth();
+  const [allOrders, setAllOrders] = useState<Order[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [books, setBooks] = useState<Map<string, BookInfo>>(new Map());
   const [courses, setCourses] = useState<Map<string, CourseInfo>>(new Map());
@@ -46,19 +62,22 @@ const UserDashboard = () => {
     if (!user) return;
 
     const fetchData = async () => {
-      // Fetch user's orders that are confirmed/delivered
-      const { data: orderData } = await supabase
+      // Fetch ALL user orders
+      const { data: allOrderData } = await supabase
         .from("orders")
         .select("*")
         .eq("user_id", user.id)
-        .in("status", ["confirmed", "delivered"])
         .order("created_at", { ascending: false });
 
-      const userOrders = (orderData || []) as Order[];
-      setOrders(userOrders);
+      const allUserOrders = (allOrderData || []) as Order[];
+      setAllOrders(allUserOrders);
 
-      // Fetch book details for book orders
-      const bookIds = userOrders.filter(o => o.product_type === "book").map(o => o.product_id);
+      // Filter confirmed/delivered for content access
+      const accessOrders = allUserOrders.filter(o => ["confirmed", "delivered"].includes(o.status));
+      setOrders(accessOrders);
+
+      // Fetch book details for ALL book orders
+      const bookIds = [...new Set(allUserOrders.filter(o => o.product_type === "book").map(o => o.product_id))];
       if (bookIds.length > 0) {
         const { data: bookData } = await supabase
           .from("books")
@@ -69,8 +88,8 @@ const UserDashboard = () => {
         setBooks(bookMap);
       }
 
-      // Fetch course details for course orders
-      const courseIds = userOrders.filter(o => o.product_type === "course").map(o => o.product_id);
+      // Fetch course details for ALL course orders
+      const courseIds = [...new Set(allUserOrders.filter(o => o.product_type === "course").map(o => o.product_id))];
       if (courseIds.length > 0) {
         const { data: courseData } = await supabase
           .from("courses")
@@ -107,18 +126,22 @@ const UserDashboard = () => {
     <div className="py-10 lg:py-16">
       <div className="container mx-auto px-4">
         <h1 className="text-3xl font-bold text-foreground">আমার ড্যাশবোর্ড</h1>
-        <p className="mt-2 text-muted-foreground">আপনার কেনা ইবুক ও কোর্স এখান থেকে এক্সেস করুন</p>
+        <p className="mt-2 text-muted-foreground">আপনার কেনা ইবুক, কোর্স ও অর্ডার হিস্ট্রি এখান থেকে দেখুন</p>
 
         <Tabs defaultValue="ebooks" className="mt-8">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
-            <TabsTrigger value="ebooks" className="gap-2">
+          <TabsList className="grid w-full max-w-lg grid-cols-3">
+            <TabsTrigger value="ebooks" className="gap-1.5 text-xs sm:text-sm">
               <BookOpen className="h-4 w-4" /> ইবুক ({ebookOrders.length})
             </TabsTrigger>
-            <TabsTrigger value="courses" className="gap-2">
+            <TabsTrigger value="courses" className="gap-1.5 text-xs sm:text-sm">
               <PlayCircle className="h-4 w-4" /> কোর্স ({courseOrders.length})
+            </TabsTrigger>
+            <TabsTrigger value="orders" className="gap-1.5 text-xs sm:text-sm">
+              <ShoppingBag className="h-4 w-4" /> অর্ডার ({allOrders.length})
             </TabsTrigger>
           </TabsList>
 
+          {/* Ebook Tab */}
           <TabsContent value="ebooks" className="mt-6">
             {ebookOrders.length === 0 ? (
               <div className="rounded-xl border border-border bg-card p-10 text-center">
@@ -163,6 +186,7 @@ const UserDashboard = () => {
             )}
           </TabsContent>
 
+          {/* Course Tab */}
           <TabsContent value="courses" className="mt-6">
             {courseOrders.length === 0 ? (
               <div className="rounded-xl border border-border bg-card p-10 text-center">
@@ -191,6 +215,54 @@ const UserDashboard = () => {
                             <ExternalLink className="h-4 w-4" /> কোর্সে যান
                           </Link>
                         </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Order History Tab */}
+          <TabsContent value="orders" className="mt-6">
+            {allOrders.length === 0 ? (
+              <div className="rounded-xl border border-border bg-card p-10 text-center">
+                <ShoppingBag className="mx-auto h-12 w-12 text-muted-foreground/40" />
+                <h3 className="mt-4 text-lg font-semibold text-foreground">কোনো অর্ডার নেই</h3>
+                <p className="mt-1 text-sm text-muted-foreground">আপনি এখনো কোনো অর্ডার করেননি।</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {allOrders.map((order) => {
+                  const sc = statusConfig[order.status] || statusConfig.pending;
+                  const StatusIcon = sc.icon;
+                  return (
+                    <div key={order.id} className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-mono text-xs text-muted-foreground">{order.order_id}</span>
+                          <Badge variant={sc.variant} className="gap-1 text-xs">
+                            <StatusIcon className="h-3 w-3" /> {sc.label}
+                          </Badge>
+                        </div>
+                        <h4 className="mt-1 font-semibold text-foreground line-clamp-1">{order.product_title}</h4>
+                        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                          <span>{order.product_type === "book" ? "বই" : "কোর্স"}</span>
+                          <span>৳{order.price}</span>
+                          <span>{paymentMethodLabels[order.payment_method] || order.payment_method}</span>
+                          <span>{new Date(order.created_at).toLocaleDateString("bn-BD")}</span>
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 gap-2">
+                        {order.product_type === "book" ? (
+                          <Button size="sm" variant="outline" asChild>
+                            <Link to={`/book/${order.product_id}`}>বিস্তারিত</Link>
+                          </Button>
+                        ) : (
+                          <Button size="sm" variant="outline" asChild>
+                            <Link to={`/course/${order.product_id}`}>বিস্তারিত</Link>
+                          </Button>
+                        )}
                       </div>
                     </div>
                   );
