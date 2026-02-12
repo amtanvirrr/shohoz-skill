@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import {
   BookOpen, GraduationCap, Users, ShoppingCart, Settings,
-  LayoutDashboard, HelpCircle, LogOut, Menu, X, ChevronRight, Star, FileText, MessageCircle, Mail, CreditCard
+  LayoutDashboard, HelpCircle, LogOut, Menu, X, ChevronRight, Star, FileText, MessageCircle, Mail, CreditCard, Truck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -20,6 +20,7 @@ const sidebarLinks = [
   { to: "/admin/comments", label: "Comments", icon: MessageCircle },
   { to: "/admin/newsletter", label: "Newsletter", icon: Mail },
   { to: "/admin/payments", label: "Payments", icon: CreditCard },
+  { to: "/admin/shipping", label: "Shipping", icon: Truck },
   { to: "/admin/settings", label: "Settings", icon: Settings },
 ];
 

@@ -33,6 +33,17 @@ interface MfsMethod {
   process_message: string;
 }
 
+interface ShippingZone {
+  id: string;
+  zone_name: string;
+  zone_label: string;
+  shipping_rate: number;
+  free_shipping_minimum: number | null;
+  delivery_time_min: number;
+  delivery_time_max: number;
+  delivery_time_unit: string;
+}
+
 const BookDetail = () => {
   const { id } = useParams();
   const { user } = useAuth();
@@ -43,6 +54,8 @@ const BookDetail = () => {
   const [order, setOrder] = useState({ name: "", phone: "", email: "", address: "", paymentMethod: "bkash", transactionId: "" });
   const [submitting, setSubmitting] = useState(false);
   const [mfsMethods, setMfsMethods] = useState<MfsMethod[]>([]);
+  const [shippingZones, setShippingZones] = useState<ShippingZone[]>([]);
+  const [selectedZone, setSelectedZone] = useState<string>("");
   const isPhysical = book?.book_type === "physical";
 
   useEffect(() => {
@@ -50,7 +63,8 @@ const BookDetail = () => {
     Promise.all([
       supabase.from("books").select("*").eq("id", id).maybeSingle(),
       supabase.from("payment_methods").select("*").eq("is_active", true).order("sort_order"),
-    ]).then(([bookRes, mfsRes]) => {
+      supabase.from("shipping_zones").select("*").eq("is_active", true).order("sort_order"),
+    ]).then(([bookRes, mfsRes, shippingRes]) => {
       const b = bookRes.data as DbBook | null;
       setBook(b);
       if (b) {
@@ -65,6 +79,9 @@ const BookDetail = () => {
       const mfsData = (mfsRes.data as MfsMethod[]) || [];
       setMfsMethods(mfsData);
       if (mfsData.length > 0) setOrder(o => ({ ...o, paymentMethod: mfsData[0].provider }));
+      const szData = (shippingRes.data as ShippingZone[]) || [];
+      setShippingZones(szData);
+      if (szData.length > 0) setSelectedZone(szData[0].zone_name);
       setLoading(false);
     });
   }, [id]);
@@ -82,6 +99,12 @@ const BookDetail = () => {
     );
   }
 
+  const activeZone = shippingZones.find(z => z.zone_name === selectedZone);
+  const shippingCost = isPhysical && activeZone
+    ? (activeZone.free_shipping_minimum && book.price >= activeZone.free_shipping_minimum ? 0 : activeZone.shipping_rate)
+    : 0;
+  const totalPrice = book.price + shippingCost;
+
   const handleOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!order.name || !order.phone) {
@@ -92,12 +115,17 @@ const BookDetail = () => {
       toast({ title: "Please enter your delivery address", variant: "destructive" });
       return;
     }
+    if (isPhysical && !selectedZone) {
+      toast({ title: "শিপিং জোন সিলেক্ট করুন", variant: "destructive" });
+      return;
+    }
     if (!isPhysical && !order.transactionId.trim()) {
       toast({ title: "Transaction ID দিন", description: "পেমেন্ট করার পর Transaction ID লিখুন", variant: "destructive" });
       return;
     }
     setSubmitting(true);
     const paymentMethod = isPhysical ? "cod" : order.paymentMethod;
+    const notesText = isPhysical && activeZone ? `Shipping: ${activeZone.zone_label} (৳${shippingCost})` : null;
     const { data, error } = await supabase.from("orders").insert({
       customer_name: order.name,
       customer_phone: order.phone,
@@ -106,10 +134,11 @@ const BookDetail = () => {
       product_type: "book" as any,
       product_id: book.id,
       product_title: book.title,
-      price: book.price,
+      price: totalPrice,
       payment_method: paymentMethod as any,
       user_id: user?.id || null,
       transaction_id: !isPhysical ? order.transactionId.trim() : null,
+      notes: notesText,
     }).select("order_id").single();
     setSubmitting(false);
 
@@ -120,7 +149,7 @@ const BookDetail = () => {
         content_name: book.title,
         content_type: "book",
         content_ids: [book.id],
-        value: book.price,
+        value: totalPrice,
         currency: "BDT",
         order_id: data.order_id,
       }, { em: order.email || undefined, ph: order.phone || undefined });
@@ -168,6 +197,51 @@ const BookDetail = () => {
                 {isPhysical && (
                   <div><Label htmlFor="address">Full Address *</Label><Textarea id="address" rows={3} value={order.address} onChange={(e) => setOrder({ ...order, address: e.target.value })} className="mt-1" /></div>
                 )}
+
+                {/* Shipping Zone Selector for physical books */}
+                {isPhysical && shippingZones.length > 0 && (
+                  <div className="space-y-2">
+                    <Label>ডেলিভারি জোন *</Label>
+                    <div className="flex flex-wrap gap-3">
+                      {shippingZones.map((z) => (
+                        <Button
+                          key={z.id}
+                          type="button"
+                          variant={selectedZone === z.zone_name ? "default" : "outline"}
+                          className="flex-1"
+                          onClick={() => setSelectedZone(z.zone_name)}
+                        >
+                          {z.zone_label}
+                        </Button>
+                      ))}
+                    </div>
+                    {activeZone && (
+                      <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">শিপিং চার্জ:</span>
+                          {shippingCost === 0 ? (
+                            <span className="font-medium text-green-600">ফ্রি শিপিং ✅</span>
+                          ) : (
+                            <span className="font-medium text-foreground">৳{shippingCost}</span>
+                          )}
+                        </div>
+                        {activeZone.free_shipping_minimum && shippingCost > 0 && (
+                          <p className="text-xs text-muted-foreground">
+                            ৳{activeZone.free_shipping_minimum}+ অর্ডারে ফ্রি শিপিং
+                          </p>
+                        )}
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">ডেলিভারি সময়:</span>
+                          <span className="font-medium text-foreground">
+                            {activeZone.delivery_time_min}-{activeZone.delivery_time_max}{" "}
+                            {activeZone.delivery_time_unit === "days" ? "দিন" : activeZone.delivery_time_unit === "hours" ? "ঘণ্টা" : "সপ্তাহ"}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {isPhysical ? (
                   <div className="rounded-lg bg-secondary p-3 text-sm text-muted-foreground">💵 Payment: <span className="font-medium text-foreground">Cash on Delivery</span></div>
                 ) : (
@@ -220,7 +294,27 @@ const BookDetail = () => {
                   </div>
                 )}
 
-                <Button type="submit" size="lg" className="w-full" disabled={submitting}>{submitting ? "Placing Order..." : isPhysical ? "Place Order" : "Buy Now"}</Button>
+                {/* Order Summary for physical */}
+                {isPhysical && (
+                  <div className="rounded-lg border border-border bg-card p-4 space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">বইয়ের মূল্য:</span>
+                      <span className="font-medium text-foreground">৳{book.price}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">শিপিং:</span>
+                      <span className={`font-medium ${shippingCost === 0 ? "text-green-600" : "text-foreground"}`}>
+                        {shippingCost === 0 ? "ফ্রি" : `৳${shippingCost}`}
+                      </span>
+                    </div>
+                    <div className="border-t border-border pt-2 flex justify-between">
+                      <span className="font-semibold text-foreground">সর্বমোট:</span>
+                      <span className="text-lg font-bold text-primary">৳{totalPrice}</span>
+                    </div>
+                  </div>
+                )}
+
+                <Button type="submit" size="lg" className="w-full" disabled={submitting}>{submitting ? "Placing Order..." : isPhysical ? `Place Order — ৳${totalPrice}` : "Buy Now"}</Button>
               </form>
             </div>
           </div>
