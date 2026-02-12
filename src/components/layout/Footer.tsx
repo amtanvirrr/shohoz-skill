@@ -5,11 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 const Footer = () => {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
+  const { settings } = useSiteSettings();
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,11 +83,11 @@ const Footer = () => {
         <div className="grid gap-8 md:grid-cols-4">
           <div>
             <Link to="/" className="flex items-center gap-2 font-display text-lg font-bold text-foreground">
-              <img src="/favicon.webp" alt="Shohoz Skill" className="h-8 w-8 rounded-lg" />
-              Shohoz Skill
+              <img src={settings.footer_logo_url || "/favicon.webp"} alt={settings.site_name} className="h-8 w-8 rounded-lg" />
+              {settings.site_name}
             </Link>
             <p className="mt-3 text-sm text-muted-foreground">
-              আপনার শেখার সেরা প্ল্যাটফর্ম। কোর্স, বই, এবং আরও অনেক কিছু এক জায়গায়।
+              {settings.site_description}
             </p>
           </div>
 
@@ -129,7 +131,7 @@ const Footer = () => {
         </div>
 
         <div className="mt-10 border-t border-border pt-6 text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} ShikhonHub. All rights reserved.
+          {settings.copyright_text || `© ${new Date().getFullYear()} ShikhonHub. All rights reserved.`}
         </div>
       </div>
     </footer>
