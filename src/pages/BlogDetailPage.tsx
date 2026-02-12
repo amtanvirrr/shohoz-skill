@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, User, ArrowLeft, ArrowRight, Tag, MessageCircle, Trash2, Send, Facebook, Share2, Link2, Copy, Eye, ChevronLeft, ChevronRight, Clock, List, ArrowUp, Minus, Plus, Type } from "lucide-react";
+import { Calendar, User, ArrowLeft, ArrowRight, Tag, MessageCircle, Trash2, Send, Facebook, Share2, Link2, Copy, Eye, ChevronLeft, ChevronRight, Clock, List, ArrowUp, Minus, Plus, Type, Bookmark, BookmarkCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -47,6 +47,35 @@ const BlogDetailPage = () => {
   const [fontSize, setFontSize] = useState(18);
   const [readProgress, setReadProgress] = useState(0);
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const [isBookmarked, setIsBookmarked] = useState(false);
+
+  // Check bookmark status
+  useEffect(() => {
+    if (!user || !post?.id) return;
+    supabase
+      .from("bookmarks")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("blog_post_id", post.id)
+      .maybeSingle()
+      .then(({ data }) => setIsBookmarked(!!data));
+  }, [user, post?.id]);
+
+  const toggleBookmark = async () => {
+    if (!user || !post) {
+      toast.error("বুকমার্ক করতে লগইন করুন");
+      return;
+    }
+    if (isBookmarked) {
+      await supabase.from("bookmarks").delete().eq("user_id", user.id).eq("blog_post_id", post.id);
+      setIsBookmarked(false);
+      toast.success("বুকমার্ক সরানো হয়েছে");
+    } else {
+      await supabase.from("bookmarks").insert({ user_id: user.id, blog_post_id: post.id });
+      setIsBookmarked(true);
+      toast.success("বুকমার্কে সেভ করা হয়েছে");
+    }
+  };
 
   // Reading progress & back-to-top
   useEffect(() => {
@@ -238,8 +267,17 @@ const BlogDetailPage = () => {
           </span>
         </div>
 
-        {/* Title */}
-        <h1 className="mb-6 font-display text-3xl font-bold text-foreground md:text-4xl">{post.title}</h1>
+        {/* Title + Bookmark */}
+        <div className="mb-6 flex items-start justify-between gap-4">
+          <h1 className="font-display text-3xl font-bold text-foreground md:text-4xl">{post.title}</h1>
+          <button
+            onClick={toggleBookmark}
+            className={`mt-1 shrink-0 rounded-full p-2 transition-colors ${isBookmarked ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
+            title={isBookmarked ? "বুকমার্ক সরান" : "বুকমার্কে সেভ করুন"}
+          >
+            {isBookmarked ? <BookmarkCheck className="h-5 w-5" /> : <Bookmark className="h-5 w-5" />}
+          </button>
+        </div>
 
         {/* Cover */}
         {post.cover_image_url && (
