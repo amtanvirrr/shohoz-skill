@@ -139,17 +139,17 @@ const AdminHero = () => {
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">হিরো ব্যানার</h1>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-xl font-bold text-foreground sm:text-2xl">হিরো ব্যানার</h1>
         <Button onClick={saveSettings} disabled={saving} className="gap-2">
           <Save className="h-4 w-4" />
           {saving ? "সেভ হচ্ছে..." : "সেটিংস সেভ করুন"}
         </Button>
       </div>
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-2">
+      <div className="mt-6 grid gap-6 sm:mt-8 lg:grid-cols-2 lg:gap-8">
         {/* Left: Text & Buttons & Stats */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           <div className="rounded-xl border border-border bg-card p-6 space-y-4">
             <h3 className="font-display text-lg font-semibold text-foreground">টেক্সট</h3>
             <div>

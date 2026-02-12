@@ -173,8 +173,8 @@ const AdminBooks = () => {
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Books</h1>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-xl font-bold text-foreground sm:text-2xl">Books</h1>
         <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
           <DialogTrigger asChild>
             <Button><Plus className="mr-2 h-4 w-4" /> Add Book</Button>
@@ -288,43 +288,60 @@ const AdminBooks = () => {
       ) : books.length === 0 ? (
         <p className="mt-8 text-center text-muted-foreground">No books yet. Add your first book!</p>
       ) : (
-        <div className="mt-6 overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-border text-muted-foreground">
-              <tr><th className="pb-3 pr-4">Title</th><th className="pb-3 pr-4">Type</th><th className="pb-3 pr-4">Author</th><th className="pb-3 pr-4">Price</th><th className="pb-3 pr-4">Status</th><th className="pb-3">Actions</th></tr>
-            </thead>
-            <tbody>
-              {books.map((book) => (
-                <tr key={book.id} className="border-b border-border">
-                  <td className="py-3 pr-4 font-medium text-foreground">
-                    <div className="flex items-center gap-2">
-                      {book.image_url && <img src={book.image_url} alt="" className="h-10 w-8 rounded object-cover" />}
-                      {book.title}
-                    </div>
-                  </td>
-                  <td className="py-3 pr-4">
-                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                      {book.book_type === "ebook" ? "📱 E-Book" : "📦 Physical"}
-                    </span>
-                  </td>
-                  <td className="py-3 pr-4 text-muted-foreground">{book.author}</td>
-                  <td className="py-3 pr-4">৳{book.price}</td>
-                  <td className="py-3 pr-4">
-                    <span className={`rounded-full px-2 py-0.5 text-xs ${book.is_published ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`}>
-                      {book.is_published ? "Published" : "Draft"}
-                    </span>
-                  </td>
-                  <td className="py-3">
-                    <div className="flex gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => openEdit(book)}><Pencil className="h-4 w-4" /></Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(book.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <>
+          {/* Desktop table */}
+          <div className="mt-6 hidden overflow-x-auto md:block">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b border-border text-muted-foreground">
+                <tr><th className="pb-3 pr-4">Title</th><th className="pb-3 pr-4">Type</th><th className="pb-3 pr-4">Author</th><th className="pb-3 pr-4">Price</th><th className="pb-3 pr-4">Status</th><th className="pb-3">Actions</th></tr>
+              </thead>
+              <tbody>
+                {books.map((book) => (
+                  <tr key={book.id} className="border-b border-border">
+                    <td className="py-3 pr-4 font-medium text-foreground">
+                      <div className="flex items-center gap-2">
+                        {book.image_url && <img src={book.image_url} alt="" className="h-10 w-8 rounded object-cover" />}
+                        {book.title}
+                      </div>
+                    </td>
+                    <td className="py-3 pr-4"><span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">{book.book_type === "ebook" ? "📱 E-Book" : "📦 Physical"}</span></td>
+                    <td className="py-3 pr-4 text-muted-foreground">{book.author}</td>
+                    <td className="py-3 pr-4">৳{book.price}</td>
+                    <td className="py-3 pr-4"><span className={`rounded-full px-2 py-0.5 text-xs ${book.is_published ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`}>{book.is_published ? "Published" : "Draft"}</span></td>
+                    <td className="py-3">
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => openEdit(book)}><Pencil className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(book.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile cards */}
+          <div className="mt-4 space-y-3 md:hidden">
+            {books.map((book) => (
+              <div key={book.id} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
+                {book.image_url && <img src={book.image_url} alt="" className="h-16 w-12 shrink-0 rounded object-cover" />}
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-medium text-foreground text-sm line-clamp-1">{book.title}</h4>
+                  <p className="text-xs text-muted-foreground">{book.author}</p>
+                  <div className="mt-1 flex items-center gap-2 text-xs">
+                    <span className="font-semibold text-foreground">৳{book.price}</span>
+                    <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">{book.book_type === "ebook" ? "E-Book" : "Physical"}</span>
+                    <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${book.is_published ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`}>{book.is_published ? "Published" : "Draft"}</span>
+                  </div>
+                </div>
+                <div className="flex shrink-0 flex-col gap-1">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(book)}><Pencil className="h-3.5 w-3.5" /></Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDelete(book.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );

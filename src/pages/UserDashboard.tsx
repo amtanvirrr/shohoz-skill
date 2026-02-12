@@ -189,24 +189,26 @@ const UserDashboard = () => {
         <h1 className="text-3xl font-bold text-foreground">আমার ড্যাশবোর্ড</h1>
         <p className="mt-2 text-muted-foreground">আপনার কেনা ইবুক, কোর্স ও অর্ডার হিস্ট্রি এখান থেকে দেখুন</p>
 
-        <Tabs defaultValue="ebooks" className="mt-8">
-          <TabsList className="grid w-full max-w-3xl grid-cols-5">
-            <TabsTrigger value="ebooks" className="gap-1.5 text-xs sm:text-sm">
-              <BookOpen className="h-4 w-4" /> ইবুক ({ebookOrders.length})
-            </TabsTrigger>
-            <TabsTrigger value="courses" className="gap-1.5 text-xs sm:text-sm">
-              <PlayCircle className="h-4 w-4" /> কোর্স ({courseOrders.length})
-            </TabsTrigger>
-            <TabsTrigger value="bookmarks" className="gap-1.5 text-xs sm:text-sm">
-              <Bookmark className="h-4 w-4" /> বুকমার্ক ({bookmarkedPosts.length})
-            </TabsTrigger>
-            <TabsTrigger value="orders" className="gap-1.5 text-xs sm:text-sm">
-              <ShoppingBag className="h-4 w-4" /> অর্ডার ({allOrders.length})
-            </TabsTrigger>
-            <TabsTrigger value="profile" className="gap-1.5 text-xs sm:text-sm">
-              <UserCircle className="h-4 w-4" /> প্রোফাইল
-            </TabsTrigger>
-          </TabsList>
+        <Tabs defaultValue="ebooks" className="mt-6 sm:mt-8">
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+            <TabsList className="inline-flex w-auto min-w-full sm:grid sm:w-full sm:max-w-3xl sm:grid-cols-5">
+              <TabsTrigger value="ebooks" className="gap-1 whitespace-nowrap text-xs sm:text-sm">
+                <BookOpen className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> ইবুক ({ebookOrders.length})
+              </TabsTrigger>
+              <TabsTrigger value="courses" className="gap-1 whitespace-nowrap text-xs sm:text-sm">
+                <PlayCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> কোর্স ({courseOrders.length})
+              </TabsTrigger>
+              <TabsTrigger value="bookmarks" className="gap-1 whitespace-nowrap text-xs sm:text-sm">
+                <Bookmark className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> বুকমার্ক ({bookmarkedPosts.length})
+              </TabsTrigger>
+              <TabsTrigger value="orders" className="gap-1 whitespace-nowrap text-xs sm:text-sm">
+                <ShoppingBag className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> অর্ডার ({allOrders.length})
+              </TabsTrigger>
+              <TabsTrigger value="profile" className="gap-1 whitespace-nowrap text-xs sm:text-sm">
+                <UserCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> প্রোফাইল
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Ebook Tab */}
           <TabsContent value="ebooks" className="mt-6">

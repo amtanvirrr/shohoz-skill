@@ -104,19 +104,19 @@ const Index = () => {
       <HeroBanner />
 
       {/* Featured Courses */}
-      <section className="py-16 lg:py-20">
+      <section className="py-10 sm:py-16 lg:py-20">
         <div className="container mx-auto px-4">
-          <div className="flex items-end justify-between">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h2 className="text-3xl font-bold text-foreground">Featured Courses</h2>
-              <p className="mt-2 text-muted-foreground">ক্যারিয়ার গড়তে সেরা কোর্সগুলো</p>
+              <h2 className="text-2xl font-bold text-foreground sm:text-3xl">Featured Courses</h2>
+              <p className="mt-1 text-sm text-muted-foreground sm:mt-2 sm:text-base">ক্যারিয়ার গড়তে সেরা কোর্সগুলো</p>
             </div>
-            <Link to="/courses" className="hidden items-center gap-1 text-sm font-medium text-primary hover:underline md:flex">
+            <Link to="/courses" className="hidden items-center gap-1 text-sm font-medium text-primary hover:underline sm:flex">
               View All <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
           {dbCourses.length > 0 ? (
-            <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-6 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 sm:gap-6 sm:mt-8">
               {dbCourses.map((course) => (
                 <Link key={course.id} to={`/course/${course.id}`} className="group overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all hover:shadow-md">
                   {course.image_url && <div className="aspect-video overflow-hidden"><img src={course.image_url} alt={course.title} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" /></div>}
@@ -138,21 +138,24 @@ const Index = () => {
           ) : (
             <p className="mt-8 text-center text-muted-foreground">No courses available yet. Check back soon!</p>
           )}
+          <Link to="/courses" className="mt-4 flex items-center justify-center gap-1 text-sm font-medium text-primary hover:underline sm:hidden">
+            View All Courses <ArrowRight className="h-4 w-4" />
+          </Link>
         </div>
       </section>
 
       {/* Featured Books */}
-      <section className="bg-secondary/50 py-16 lg:py-20">
+      <section className="bg-secondary/50 py-10 sm:py-16 lg:py-20">
         <div className="container mx-auto px-4">
-          <div className="flex items-end justify-between">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h2 className="text-3xl font-bold text-foreground">Featured Books</h2>
-              <p className="mt-2 text-muted-foreground">নিজেকে এক ধাপ এগিয়ে নিন</p>
+              <h2 className="text-2xl font-bold text-foreground sm:text-3xl">Featured Books</h2>
+              <p className="mt-1 text-sm text-muted-foreground sm:mt-2 sm:text-base">নিজেকে এক ধাপ এগিয়ে নিন</p>
             </div>
-            <Link to="/books" className="hidden items-center gap-1 text-sm font-medium text-primary hover:underline md:flex">View All <ArrowRight className="h-4 w-4" /></Link>
+            <Link to="/books" className="hidden items-center gap-1 text-sm font-medium text-primary hover:underline sm:flex">View All <ArrowRight className="h-4 w-4" /></Link>
           </div>
           {dbBooks.length > 0 ? (
-            <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-6 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 sm:gap-6 sm:mt-8">
               {dbBooks.map((book) => (
                 <Link key={book.id} to={`/book/${book.id}`} className="group overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all hover:shadow-md">
                   {book.image_url && <div className="aspect-[3/4] overflow-hidden"><img src={book.image_url} alt={book.title} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" /></div>}
@@ -176,11 +179,11 @@ const Index = () => {
 
       {/* Reviews */}
       {dbReviews.length > 0 && (
-        <section className="py-16 lg:py-20">
+      <section className="py-10 sm:py-16 lg:py-20">
           <div className="container mx-auto px-4">
-            <h2 className="text-center text-3xl font-bold text-foreground">What Our Students Say</h2>
+            <h2 className="text-center text-2xl font-bold text-foreground sm:text-3xl">What Our Students Say</h2>
             <p className="mx-auto mt-2 text-center text-muted-foreground">আমাদের শিক্ষার্থীদের মতামত</p>
-            <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="mt-6 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 sm:mt-10 sm:gap-6">
               {dbReviews.map((review) => (
                 <div key={review.id} className="rounded-xl border border-border bg-card p-5 shadow-sm">
                   <div className="flex gap-0.5">
@@ -201,7 +204,7 @@ const Index = () => {
       )}
 
       {/* Track Order */}
-      <section className="bg-secondary/50 py-16">
+      <section className="bg-secondary/50 py-10 sm:py-16">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-lg text-center">
             <Search className="mx-auto h-10 w-10 text-primary" />

@@ -96,18 +96,22 @@ const HeroBanner = () => {
   ];
 
   return (
-    <section className="relative overflow-hidden bg-primary" style={{ aspectRatio: "2.5 / 1" }}>
-      <div className="absolute inset-0 flex h-full">
+    <section className="relative overflow-hidden bg-primary">
+      {/* Desktop: fixed 2.5:1 aspect ratio, Mobile: auto height stacked */}
+      <div className="flex flex-col md:flex-row md:items-stretch" style={{ aspectRatio: undefined }}>
+        {/* On md+, use aspect-ratio on the wrapper */}
+        <div className="hidden md:block absolute inset-0" style={{ aspectRatio: "2.5 / 1" }} />
+        
         {/* Left half - content */}
-        <div className="flex w-1/2 flex-col justify-center px-6 sm:px-10 lg:px-16">
-          <h1 className="text-xl font-bold text-primary-foreground sm:text-2xl lg:text-4xl xl:text-5xl leading-tight">
+        <div className="relative z-10 flex w-full flex-col justify-center px-5 py-8 sm:px-8 sm:py-10 md:w-1/2 md:py-0 lg:px-16">
+          <h1 className="text-2xl font-bold text-primary-foreground sm:text-3xl lg:text-4xl xl:text-5xl leading-tight">
             {settings.hero_title}
           </h1>
           <p className="mt-3 text-sm text-primary-foreground/80 sm:text-base lg:text-lg max-w-lg">
             {settings.hero_subtitle}
           </p>
           <div className="mt-4 flex flex-wrap gap-2 sm:gap-3 lg:mt-6">
-            <Button variant="accent" size="sm" asChild className="lg:text-base lg:px-6 lg:py-3">
+            <Button variant="accent" size="sm" asChild className="text-xs sm:text-sm lg:text-base lg:px-6 lg:py-3">
               <Link to={settings.hero_btn1_link}>
                 <GraduationCap className="mr-1.5 h-4 w-4" />
                 {settings.hero_btn1_text}
@@ -116,7 +120,7 @@ const HeroBanner = () => {
             <Button
               variant="hero"
               size="sm"
-              className="bg-primary-foreground/15 hover:bg-primary-foreground/25 border border-primary-foreground/30 lg:text-base lg:px-6 lg:py-3"
+              className="bg-primary-foreground/15 hover:bg-primary-foreground/25 border border-primary-foreground/30 text-xs sm:text-sm lg:text-base lg:px-6 lg:py-3"
               asChild
             >
               <Link to={settings.hero_btn2_link}>
@@ -139,57 +143,69 @@ const HeroBanner = () => {
         </div>
 
         {/* Right half - media slider */}
-        <div className="relative w-1/2 overflow-hidden">
-          {slides.length > 0 ? (
-            <>
-              {slides.map((slide, idx) => (
-                <div
-                  key={slide.id}
-                  className="absolute inset-0 transition-opacity duration-700"
-                  style={{ opacity: idx === currentSlide ? 1 : 0 }}
-                >
-                  {slide.media_type === "video" ? (
-                    <video
-                      src={slide.media_url}
-                      autoPlay
-                      loop
-                      muted
-                      playsInline
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <img
-                      src={slide.media_url}
-                      alt=""
-                      className="h-full w-full object-cover"
-                    />
-                  )}
-                </div>
-              ))}
-              {/* Dots */}
-              {slides.length > 1 && (
-                <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5">
-                  {slides.map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setCurrentSlide(i)}
-                      className={`h-2 w-2 rounded-full transition-all ${
-                        i === currentSlide
-                          ? "bg-primary-foreground w-5"
-                          : "bg-primary-foreground/40"
-                      }`}
-                    />
-                  ))}
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="flex h-full items-center justify-center bg-primary-foreground/5">
-              <p className="text-primary-foreground/30 text-sm">No media added</p>
-            </div>
-          )}
+        <div className="relative w-full overflow-hidden md:w-1/2" style={{ minHeight: "200px" }}>
+          {/* Mobile: aspect-video, Desktop: fill parent */}
+          <div className="aspect-video md:aspect-auto md:absolute md:inset-0">
+            {slides.length > 0 ? (
+              <>
+                {slides.map((slide, idx) => (
+                  <div
+                    key={slide.id}
+                    className="absolute inset-0 transition-opacity duration-700"
+                    style={{ opacity: idx === currentSlide ? 1 : 0 }}
+                  >
+                    {slide.media_type === "video" ? (
+                      <video
+                        src={slide.media_url}
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <img
+                        src={slide.media_url}
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
+                    )}
+                  </div>
+                ))}
+                {/* Dots */}
+                {slides.length > 1 && (
+                  <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5 z-10">
+                    {slides.map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setCurrentSlide(i)}
+                        className={`h-2 w-2 rounded-full transition-all ${
+                          i === currentSlide
+                            ? "bg-primary-foreground w-5"
+                            : "bg-primary-foreground/40"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="flex h-full items-center justify-center bg-primary-foreground/5">
+                <p className="text-primary-foreground/30 text-sm">No media added</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* Desktop aspect ratio overlay */}
+      <style>{`
+        @media (min-width: 768px) {
+          section.relative.overflow-hidden.bg-primary > div:first-child {
+            aspect-ratio: 2.5 / 1;
+          }
+        }
+      `}</style>
     </section>
   );
 };
