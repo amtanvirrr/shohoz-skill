@@ -135,7 +135,19 @@ const EnrolledCourse = () => {
 
   if (!course) return null;
 
-  const currentLesson = lessons.find((l) => l.id === activeLesson);
+const currentLesson = lessons.find((l) => l.id === activeLesson);
+
+  // Convert YouTube URLs to embeddable format
+  const getEmbedUrl = (url: string): string => {
+    // Handle youtu.be/VIDEO_ID
+    const shortMatch = url.match(/youtu\.be\/([a-zA-Z0-9_-]+)/);
+    if (shortMatch) return `https://www.youtube.com/embed/${shortMatch[1]}`;
+    // Handle youtube.com/watch?v=VIDEO_ID
+    const longMatch = url.match(/youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/);
+    if (longMatch) return `https://www.youtube.com/embed/${longMatch[1]}`;
+    // Already embed or other URL
+    return url;
+  };
 
   return (
     <div className="py-6 lg:py-10">
@@ -162,7 +174,7 @@ const EnrolledCourse = () => {
                   <div className="overflow-hidden rounded-xl border border-border bg-black">
                     <div className="aspect-video">
                       <iframe
-                        src={currentLesson.video_url}
+                        src={getEmbedUrl(currentLesson.video_url)}
                         className="h-full w-full border-0"
                         title={currentLesson.title}
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
