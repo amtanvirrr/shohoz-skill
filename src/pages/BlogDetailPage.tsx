@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, User, ArrowLeft, Tag, MessageCircle, Trash2, Send, Facebook, Share2, Link2, Copy, Eye } from "lucide-react";
+import { Calendar, User, ArrowLeft, ArrowRight, Tag, MessageCircle, Trash2, Send, Facebook, Share2, Link2, Copy, Eye, ChevronLeft, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -42,6 +42,8 @@ const BlogDetailPage = () => {
   const [newComment, setNewComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>([]);
+  const [prevPost, setPrevPost] = useState<{ slug: string; title: string } | null>(null);
+  const [nextPost, setNextPost] = useState<{ slug: string; title: string } | null>(null);
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -53,9 +55,31 @@ const BlogDetailPage = () => {
         .single();
       setPost(data as BlogPost | null);
       setLoading(false);
-      // Increment view count
       if (data?.id) {
         supabase.rpc("increment_blog_view", { post_id: data.id });
+      }
+      // Fetch prev/next posts
+      if (data?.published_at) {
+        const [{ data: prev }, { data: next }] = await Promise.all([
+          supabase
+            .from("blog_posts")
+            .select("slug, title")
+            .eq("is_published", true)
+            .lt("published_at", data.published_at)
+            .order("published_at", { ascending: false })
+            .limit(1)
+            .single(),
+          supabase
+            .from("blog_posts")
+            .select("slug, title")
+            .eq("is_published", true)
+            .gt("published_at", data.published_at)
+            .order("published_at", { ascending: true })
+            .limit(1)
+            .single(),
+        ]);
+        setPrevPost(prev as { slug: string; title: string } | null);
+        setNextPost(next as { slug: string; title: string } | null);
       }
     };
     fetchPost();
@@ -300,6 +324,30 @@ const BlogDetailPage = () => {
             </div>
           )}
         </div>
+
+        {/* Prev / Next Navigation */}
+        {(prevPost || nextPost) && (
+          <div className="mt-12 grid gap-4 border-t border-border pt-8 sm:grid-cols-2">
+            {prevPost ? (
+              <Link to={`/blog/${prevPost.slug}`} className="group flex items-center gap-3 rounded-lg border border-border bg-card p-4 transition-colors hover:border-primary/30">
+                <ChevronLeft className="h-5 w-5 shrink-0 text-muted-foreground group-hover:text-primary" />
+                <div className="min-w-0">
+                  <span className="text-xs text-muted-foreground">পূর্ববর্তী আর্টিকেল</span>
+                  <p className="truncate font-medium text-foreground group-hover:text-primary">{prevPost.title}</p>
+                </div>
+              </Link>
+            ) : <div />}
+            {nextPost ? (
+              <Link to={`/blog/${nextPost.slug}`} className="group flex items-center justify-end gap-3 rounded-lg border border-border bg-card p-4 text-right transition-colors hover:border-primary/30">
+                <div className="min-w-0">
+                  <span className="text-xs text-muted-foreground">পরবর্তী আর্টিকেল</span>
+                  <p className="truncate font-medium text-foreground group-hover:text-primary">{nextPost.title}</p>
+                </div>
+                <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground group-hover:text-primary" />
+              </Link>
+            ) : <div />}
+          </div>
+        )}
 
         {/* Related Posts */}
         {relatedPosts.length > 0 && (
