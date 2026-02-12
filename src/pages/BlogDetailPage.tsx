@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, User, ArrowLeft, ArrowRight, Tag, MessageCircle, Trash2, Send, Facebook, Share2, Link2, Copy, Eye, ChevronLeft, ChevronRight, Clock } from "lucide-react";
+import { Calendar, User, ArrowLeft, ArrowRight, Tag, MessageCircle, Trash2, Send, Facebook, Share2, Link2, Copy, Eye, ChevronLeft, ChevronRight, Clock, List } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -224,11 +224,60 @@ const BlogDetailPage = () => {
           </div>
         )}
 
+        {/* Table of Contents */}
+        {(() => {
+          const headingRegex = /<h([2-4])[^>]*>(.*?)<\/h[2-4]>/gi;
+          const headings: { level: number; text: string; id: string }[] = [];
+          let match;
+          while ((match = headingRegex.exec(post.content)) !== null) {
+            const text = match[2].replace(/<[^>]*>/g, '');
+            const id = text.toLowerCase().replace(/[^\u0980-\u09FFa-z0-9\s]/g, '').replace(/\s+/g, '-');
+            headings.push({ level: parseInt(match[1]), text, id });
+          }
+          if (headings.length < 2) return null;
+          return (
+            <div className="mb-8 rounded-lg border border-border bg-card p-5">
+              <h2 className="mb-3 flex items-center gap-2 text-base font-bold text-foreground">
+                <List className="h-4 w-4" /> সূচিপত্র
+              </h2>
+              <nav className="space-y-1">
+                {headings.map((h, i) => (
+                  <a
+                    key={i}
+                    href={`#${h.id}`}
+                    className="block text-sm text-muted-foreground transition-colors hover:text-primary"
+                    style={{ paddingLeft: `${(h.level - 2) * 16}px` }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      document.getElementById(h.id)?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                  >
+                    {h.text}
+                  </a>
+                ))}
+              </nav>
+            </div>
+          );
+        })()}
+
         {/* Content */}
-        <div
-          className="prose prose-lg max-w-none dark:prose-invert prose-headings:font-display prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground prose-img:rounded-xl"
-          dangerouslySetInnerHTML={{ __html: post.content }}
-        />
+        {(() => {
+          // Inject IDs into headings for anchor links
+          const contentWithIds = post.content.replace(
+            /<h([2-4])([^>]*)>(.*?)<\/h([2-4])>/gi,
+            (_, level, attrs, inner, closeLevel) => {
+              const text = inner.replace(/<[^>]*>/g, '');
+              const id = text.toLowerCase().replace(/[^\u0980-\u09FFa-z0-9\s]/g, '').replace(/\s+/g, '-');
+              return `<h${level}${attrs} id="${id}">${inner}</h${closeLevel}>`;
+            }
+          );
+          return (
+            <div
+              className="prose prose-lg max-w-none dark:prose-invert prose-headings:font-display prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground prose-img:rounded-xl"
+              dangerouslySetInnerHTML={{ __html: contentWithIds }}
+            />
+          );
+        })()}
 
         {/* Tags */}
         {post.tags && post.tags.length > 0 && (
