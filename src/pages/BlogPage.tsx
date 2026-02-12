@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, User, ArrowRight, Search, Eye } from "lucide-react";
+import { Calendar, User, ArrowRight, Search, Eye, TrendingUp } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 
@@ -38,6 +38,7 @@ const BlogPage = () => {
   }, []);
 
   const categories = [...new Set(posts.map((p) => p.category).filter(Boolean))];
+  const popularPosts = [...posts].sort((a, b) => (b.view_count || 0) - (a.view_count || 0)).slice(0, 5);
 
   const filtered = posts.filter((p) => {
     const matchSearch = !search || p.title.toLowerCase().includes(search.toLowerCase()) || p.excerpt.toLowerCase().includes(search.toLowerCase());
@@ -89,71 +90,102 @@ const BlogPage = () => {
         </div>
       </div>
 
-      {/* Posts */}
-      {loading ? (
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="animate-pulse rounded-xl border border-border bg-card p-4">
-              <div className="mb-4 h-48 rounded-lg bg-muted" />
-              <div className="mb-2 h-4 w-1/3 rounded bg-muted" />
-              <div className="mb-2 h-6 rounded bg-muted" />
-              <div className="h-4 w-2/3 rounded bg-muted" />
+      <div className="flex flex-col gap-8 lg:flex-row">
+        {/* Main Content */}
+        <div className="flex-1">
+          {/* Posts */}
+          {loading ? (
+            <div className="grid gap-8 md:grid-cols-2">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="animate-pulse rounded-xl border border-border bg-card p-4">
+                  <div className="mb-4 h-48 rounded-lg bg-muted" />
+                  <div className="mb-2 h-4 w-1/3 rounded bg-muted" />
+                  <div className="mb-2 h-6 rounded bg-muted" />
+                  <div className="h-4 w-2/3 rounded bg-muted" />
+                </div>
+              ))}
             </div>
-          ))}
+          ) : filtered.length === 0 ? (
+            <p className="py-16 text-center text-muted-foreground">কোনো আর্টিকেল পাওয়া যায়নি।</p>
+          ) : (
+            <div className="grid gap-8 md:grid-cols-2">
+              {filtered.map((post) => (
+                <Link
+                  key={post.id}
+                  to={`/blog/${post.slug}`}
+                  className="group overflow-hidden rounded-xl border border-border bg-card transition-all hover:border-primary/30 hover:shadow-lg"
+                >
+                  {post.cover_image_url && (
+                    <div className="aspect-video overflow-hidden">
+                      <img
+                        src={post.cover_image_url}
+                        alt={post.title}
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                    </div>
+                  )}
+                  <div className="p-5">
+                    {post.category && (
+                      <Badge variant="secondary" className="mb-3">
+                        {post.category}
+                      </Badge>
+                    )}
+                    <h2 className="mb-2 font-display text-lg font-bold text-foreground line-clamp-2 group-hover:text-primary">
+                      {post.title}
+                    </h2>
+                    <p className="mb-4 text-sm text-muted-foreground line-clamp-3">{post.excerpt}</p>
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <div className="flex items-center gap-3">
+                        {post.author_name && (
+                          <span className="flex items-center gap-1">
+                            <User className="h-3 w-3" /> {post.author_name}
+                          </span>
+                        )}
+                        {post.published_at && (
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            {new Date(post.published_at).toLocaleDateString("bn-BD")}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Eye className="h-3 w-3" /> {post.view_count || 0}
+                      </div>
+                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
-      ) : filtered.length === 0 ? (
-        <p className="py-16 text-center text-muted-foreground">কোনো আর্টিকেল পাওয়া যায়নি।</p>
-      ) : (
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((post) => (
-            <Link
-              key={post.id}
-              to={`/blog/${post.slug}`}
-              className="group overflow-hidden rounded-xl border border-border bg-card transition-all hover:border-primary/30 hover:shadow-lg"
-            >
-              {post.cover_image_url && (
-                <div className="aspect-video overflow-hidden">
-                  <img
-                    src={post.cover_image_url}
-                    alt={post.title}
-                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                </div>
-              )}
-              <div className="p-5">
-                {post.category && (
-                  <Badge variant="secondary" className="mb-3">
-                    {post.category}
-                  </Badge>
-                )}
-                <h2 className="mb-2 font-display text-lg font-bold text-foreground line-clamp-2 group-hover:text-primary">
-                  {post.title}
-                </h2>
-                <p className="mb-4 text-sm text-muted-foreground line-clamp-3">{post.excerpt}</p>
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <div className="flex items-center gap-3">
-                    {post.author_name && (
-                      <span className="flex items-center gap-1">
-                        <User className="h-3 w-3" /> {post.author_name}
+
+        {/* Sidebar - Popular Posts */}
+        {!loading && popularPosts.length > 0 && (
+          <aside className="w-full shrink-0 lg:w-72 xl:w-80">
+            <div className="sticky top-24 rounded-xl border border-border bg-card p-5">
+              <h3 className="mb-4 flex items-center gap-2 font-display text-lg font-bold text-foreground">
+                <TrendingUp className="h-5 w-5 text-primary" /> জনপ্রিয় আর্টিকেল
+              </h3>
+              <div className="space-y-4">
+                {popularPosts.map((p, i) => (
+                  <Link key={p.id} to={`/blog/${p.slug}`} className="group flex gap-3">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+                      {i + 1}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground line-clamp-2 group-hover:text-primary transition-colors">{p.title}</p>
+                      <span className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                        <Eye className="h-3 w-3" /> {p.view_count || 0} বার পড়া হয়েছে
                       </span>
-                    )}
-                    {post.published_at && (
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {new Date(post.published_at).toLocaleDateString("bn-BD")}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Eye className="h-3 w-3" /> {post.view_count || 0}
-                  </div>
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                </div>
+                    </div>
+                  </Link>
+                ))}
               </div>
-            </Link>
-          ))}
-        </div>
-      )}
+            </div>
+          </aside>
+        )}
+      </div>
     </div>
   );
 };
