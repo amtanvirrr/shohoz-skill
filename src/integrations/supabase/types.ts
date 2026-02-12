@@ -69,6 +69,7 @@ export type Database = {
           tags: string[] | null
           title: string
           updated_at: string
+          view_count: number
         }
         Insert: {
           author_name?: string
@@ -86,6 +87,7 @@ export type Database = {
           tags?: string[] | null
           title: string
           updated_at?: string
+          view_count?: number
         }
         Update: {
           author_name?: string
@@ -103,6 +105,7 @@ export type Database = {
           tags?: string[] | null
           title?: string
           updated_at?: string
+          view_count?: number
         }
         Relationships: []
       }
@@ -694,6 +697,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_blog_view: { Args: { post_id: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "user"
