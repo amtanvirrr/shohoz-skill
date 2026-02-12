@@ -31,6 +31,9 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminQuizzes from "./pages/admin/AdminQuizzes";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminReviews from "./pages/admin/AdminReviews";
+import AdminBlog from "./pages/admin/AdminBlog";
+import BlogPage from "./pages/BlogPage";
+import BlogDetailPage from "./pages/BlogDetailPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -51,6 +54,8 @@ const App = () => (
             <Route path="/book/:id" element={<Layout><BookDetail /></Layout>} />
             <Route path="/quizzes" element={<Layout><QuizPage /></Layout>} />
             <Route path="/about" element={<Layout><About /></Layout>} />
+            <Route path="/blog" element={<Layout><BlogPage /></Layout>} />
+            <Route path="/blog/:slug" element={<Layout><BlogDetailPage /></Layout>} />
             <Route path="/contact" element={<Layout><Contact /></Layout>} />
             <Route path="/login" element={<Layout><Login /></Layout>} />
             <Route path="/register" element={<Layout><Register /></Layout>} />
@@ -70,6 +75,7 @@ const App = () => (
             <Route path="/admin/quizzes" element={<ProtectedRoute adminOnly><AdminLayout><AdminQuizzes /></AdminLayout></ProtectedRoute>} />
             <Route path="/admin/settings" element={<ProtectedRoute adminOnly><AdminLayout><AdminSettings /></AdminLayout></ProtectedRoute>} />
             <Route path="/admin/reviews" element={<ProtectedRoute adminOnly><AdminLayout><AdminReviews /></AdminLayout></ProtectedRoute>} />
+            <Route path="/admin/blog" element={<ProtectedRoute adminOnly><AdminLayout><AdminBlog /></AdminLayout></ProtectedRoute>} />
 
             <Route path="*" element={<Layout><NotFound /></Layout>} />
           </Routes>
