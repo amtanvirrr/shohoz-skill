@@ -35,9 +35,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 border-r border-border bg-card transition-transform lg:relative lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="flex h-16 items-center justify-between border-b border-border px-4">
           <Link to="/admin" className="flex items-center gap-2 font-display text-lg font-bold text-foreground">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-              <BookOpen className="h-4 w-4 text-primary-foreground" />
-            </div>
+            <img src="/favicon.webp" alt="Shohoz Skill" className="h-8 w-8 rounded-lg" />
             Admin Panel
           </Link>
           <button onClick={() => setSidebarOpen(false)} className="lg:hidden">
