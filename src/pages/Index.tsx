@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-import heroBg from "@/assets/hero-bg.jpg";
+import HeroBanner from "@/components/HeroBanner";
 
 interface DbBook {
   id: string;
@@ -101,30 +101,7 @@ const Index = () => {
   return (
     <div>
       {/* Hero */}
-      <section className="relative overflow-hidden bg-primary py-20 lg:py-28">
-        <div className="absolute inset-0 opacity-20" style={{ backgroundImage: `url(${heroBg})`, backgroundSize: "cover", backgroundPosition: "center" }} />
-        <div className="container relative mx-auto px-4 text-center">
-          <h1 className="mx-auto max-w-3xl text-4xl font-bold text-primary-foreground lg:text-5xl xl:text-6xl">
-            শেখার নতুন দিগন্ত — কোর্স ও বই এক জায়গায়
-          </h1>
-          <p className="mx-auto mt-5 max-w-xl text-lg text-primary-foreground/80">
-            প্রফেশনাল কোর্স, হ্যান্ডপিকড বই এবং কোয়ালিটি কন্টেন্ট দিয়ে আপনার স্কিল ডেভেলপ করুন।
-          </p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-            <Button variant="accent" size="lg" asChild>
-              <Link to="/courses"><GraduationCap className="mr-2 h-5 w-5" /> Explore Courses</Link>
-            </Button>
-            <Button variant="hero" className="bg-primary-foreground/15 hover:bg-primary-foreground/25 border border-primary-foreground/30" size="lg" asChild>
-              <Link to="/books"><BookOpen className="mr-2 h-5 w-5" /> Browse Books</Link>
-            </Button>
-          </div>
-          <div className="mt-10 flex items-center justify-center gap-8 text-sm text-primary-foreground/70">
-            <div className="flex items-center gap-2"><Users className="h-4 w-4" /> 5,000+ Students</div>
-            <div className="flex items-center gap-2"><BookOpen className="h-4 w-4" /> 50+ Books</div>
-            <div className="flex items-center gap-2"><GraduationCap className="h-4 w-4" /> 30+ Courses</div>
-          </div>
-        </div>
-      </section>
+      <HeroBanner />
 
       {/* Featured Courses */}
       <section className="py-16 lg:py-20">
