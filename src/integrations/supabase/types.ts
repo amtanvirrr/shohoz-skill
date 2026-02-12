@@ -494,6 +494,53 @@ export type Database = {
           },
         ]
       }
+      reviews: {
+        Row: {
+          comment: string
+          course_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          is_admin_added: boolean
+          rating: number
+          reviewer_name: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          comment?: string
+          course_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_admin_added?: boolean
+          rating?: number
+          reviewer_name?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          comment?: string
+          course_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_admin_added?: boolean
+          rating?: number
+          reviewer_name?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       site_settings: {
         Row: {
           id: string

@@ -3,9 +3,11 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, BookOpen, Clock, PlayCircle, Users, Video, FileText, HelpCircle, ChevronDown } from "lucide-react";
+import { ArrowLeft, BookOpen, Clock, PlayCircle, Users, Video, FileText, HelpCircle, ChevronDown, Star, Send } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 interface DbCourse {
   id: string;
@@ -43,6 +45,14 @@ interface DbQuiz {
   lesson_id: string | null;
 }
 
+interface DbReview {
+  id: string;
+  reviewer_name: string;
+  rating: number;
+  comment: string;
+  created_at: string;
+}
+
 const CourseDetail = () => {
   const { id } = useParams();
   const { user } = useAuth();
@@ -54,16 +64,22 @@ const CourseDetail = () => {
   const [quizzes, setQuizzes] = useState<DbQuiz[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<"bkash" | "nagad">("bkash");
   const [submitting, setSubmitting] = useState(false);
+  const [reviews, setReviews] = useState<DbReview[]>([]);
+  const [hasPurchased, setHasPurchased] = useState(false);
+  const [reviewForm, setReviewForm] = useState({ rating: 5, comment: "" });
+  const [submittingReview, setSubmittingReview] = useState(false);
 
   useEffect(() => {
     if (!id) return;
     Promise.all([
       supabase.from("courses").select("*").eq("id", id).maybeSingle(),
       supabase.from("lessons").select("*").eq("course_id", id).order("sort_order"),
-    ]).then(async ([courseRes, lessonsRes]) => {
+      supabase.from("reviews").select("id, reviewer_name, rating, comment, created_at").eq("course_id", id).eq("is_active", true).order("created_at", { ascending: false }),
+    ]).then(async ([courseRes, lessonsRes, reviewsRes]) => {
       setCourse(courseRes.data as DbCourse | null);
       const lessonData = (lessonsRes.data as DbLesson[]) || [];
       setLessons(lessonData);
+      setReviews((reviewsRes.data as DbReview[]) || []);
 
       const lessonIds = lessonData.map((l) => l.id);
       if (lessonIds.length > 0) {
@@ -82,6 +98,19 @@ const CourseDetail = () => {
       setLoading(false);
     });
   }, [id]);
+
+  // Check if user has purchased this course
+  useEffect(() => {
+    if (!user || !id) return;
+    supabase.from("orders")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("product_id", id)
+      .eq("product_type", "course")
+      .in("status", ["confirmed", "delivered"])
+      .limit(1)
+      .then(({ data }) => setHasPurchased((data || []).length > 0));
+  }, [user, id]);
 
   if (loading) return <div className="flex min-h-[50vh] items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>;
 
@@ -119,6 +148,33 @@ const CourseDetail = () => {
       toast({ title: "Purchase failed", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Purchase Initiated! 🎉", description: `Order ID: ${data.order_id}. Complete payment via ${paymentMethod === "bkash" ? "bKash" : "Nagad"}.` });
+    }
+  };
+
+  const handleSubmitReview = async () => {
+    if (!user || !id) return;
+    if (!reviewForm.comment.trim()) {
+      toast({ title: "Please write a comment", variant: "destructive" });
+      return;
+    }
+    setSubmittingReview(true);
+    const { data: profile } = await supabase.from("profiles").select("full_name").eq("user_id", user.id).maybeSingle();
+    const { error } = await supabase.from("reviews").insert({
+      course_id: id,
+      user_id: user.id,
+      reviewer_name: profile?.full_name || user.user_metadata?.full_name || "User",
+      rating: reviewForm.rating,
+      comment: reviewForm.comment,
+    });
+    setSubmittingReview(false);
+    if (error) {
+      toast({ title: "Failed to submit review", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Review submitted! 🎉" });
+      setReviewForm({ rating: 5, comment: "" });
+      // Refresh reviews
+      const { data } = await supabase.from("reviews").select("id, reviewer_name, rating, comment, created_at").eq("course_id", id).eq("is_active", true).order("created_at", { ascending: false });
+      setReviews((data as DbReview[]) || []);
     }
   };
 
@@ -233,6 +289,58 @@ const CourseDetail = () => {
                 </Accordion>
               </div>
             )}
+
+            {/* Reviews Section */}
+            <div className="mt-10">
+              <h2 className="text-2xl font-bold text-foreground">রিভিউ ({reviews.length})</h2>
+
+              {/* Review Form for purchased users */}
+              {hasPurchased && (
+                <div className="mt-4 rounded-xl border border-border bg-card p-5">
+                  <h3 className="text-sm font-semibold text-foreground">আপনার রিভিউ দিন</h3>
+                  <div className="mt-3 flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <button key={n} onClick={() => setReviewForm((f) => ({ ...f, rating: n }))} className="p-0.5">
+                        <Star className={`h-5 w-5 ${n <= reviewForm.rating ? "fill-primary text-primary" : "text-muted-foreground"}`} />
+                      </button>
+                    ))}
+                  </div>
+                  <Textarea
+                    rows={3}
+                    placeholder="আপনার মতামত লিখুন..."
+                    value={reviewForm.comment}
+                    onChange={(e) => setReviewForm((f) => ({ ...f, comment: e.target.value }))}
+                    className="mt-3"
+                  />
+                  <Button onClick={handleSubmitReview} disabled={submittingReview} size="sm" className="mt-3">
+                    <Send className="mr-2 h-4 w-4" /> {submittingReview ? "Submitting..." : "Submit Review"}
+                  </Button>
+                </div>
+              )}
+
+              {reviews.length === 0 ? (
+                <p className="mt-4 text-sm text-muted-foreground">এখনো কোনো রিভিউ নেই।</p>
+              ) : (
+                <div className="mt-4 space-y-4">
+                  {reviews.map((r) => (
+                    <div key={r.id} className="rounded-lg border border-border bg-card p-4">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium text-foreground">{r.reviewer_name}</span>
+                        <div className="flex items-center gap-0.5">
+                          {Array.from({ length: r.rating }).map((_, i) => (
+                            <Star key={i} className="h-3.5 w-3.5 fill-primary text-primary" />
+                          ))}
+                        </div>
+                      </div>
+                      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{r.comment}</p>
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        {new Date(r.created_at).toLocaleDateString("bn-BD")}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="lg:col-span-1">
