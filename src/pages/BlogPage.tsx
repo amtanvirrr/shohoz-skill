@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, User, ArrowRight, Search, Eye, TrendingUp } from "lucide-react";
+import { Calendar, User, ArrowRight, Search, Eye, TrendingUp, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 
@@ -10,6 +10,7 @@ interface BlogPost {
   title: string;
   slug: string;
   excerpt: string;
+  content: string;
   cover_image_url: string;
   category: string;
   tags: string[];
@@ -28,7 +29,7 @@ const BlogPage = () => {
     const fetchPosts = async () => {
       const { data } = await supabase
         .from("blog_posts")
-        .select("id, title, slug, excerpt, cover_image_url, category, tags, author_name, published_at, view_count")
+        .select("id, title, slug, excerpt, content, cover_image_url, category, tags, author_name, published_at, view_count")
         .eq("is_published", true)
         .order("published_at", { ascending: false });
       setPosts((data as BlogPost[]) || []);
@@ -148,8 +149,13 @@ const BlogPage = () => {
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Eye className="h-3 w-3" /> {post.view_count || 0}
+                      <div className="flex items-center gap-3">
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" /> {Math.max(1, Math.ceil(post.content.replace(/<[^>]*>/g, '').split(/\s+/).length / 200))} মিনিট
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Eye className="h-3 w-3" /> {post.view_count || 0}
+                        </span>
                       </div>
                       <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                     </div>

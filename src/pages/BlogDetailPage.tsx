@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, User, ArrowLeft, ArrowRight, Tag, MessageCircle, Trash2, Send, Facebook, Share2, Link2, Copy, Eye, ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar, User, ArrowLeft, ArrowRight, Tag, MessageCircle, Trash2, Send, Facebook, Share2, Link2, Copy, Eye, ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -208,6 +208,9 @@ const BlogDetailPage = () => {
           )}
           <span className="flex items-center gap-1 text-sm text-muted-foreground">
             <Eye className="h-3.5 w-3.5" /> {post.view_count} বার পড়া হয়েছে
+          </span>
+          <span className="flex items-center gap-1 text-sm text-muted-foreground">
+            <Clock className="h-3.5 w-3.5" /> {Math.max(1, Math.ceil(post.content.replace(/<[^>]*>/g, '').split(/\s+/).length / 200))} মিনিট পড়তে লাগবে
           </span>
         </div>
 
