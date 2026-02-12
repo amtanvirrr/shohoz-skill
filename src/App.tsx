@@ -32,6 +32,7 @@ import AdminQuizzes from "./pages/admin/AdminQuizzes";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminReviews from "./pages/admin/AdminReviews";
 import AdminBlog from "./pages/admin/AdminBlog";
+import AdminNewsletter from "./pages/admin/AdminNewsletter";
 import AdminComments from "./pages/admin/AdminComments";
 import BlogPage from "./pages/BlogPage";
 import BlogDetailPage from "./pages/BlogDetailPage";
@@ -78,6 +79,7 @@ const App = () => (
             <Route path="/admin/reviews" element={<ProtectedRoute adminOnly><AdminLayout><AdminReviews /></AdminLayout></ProtectedRoute>} />
             <Route path="/admin/blog" element={<ProtectedRoute adminOnly><AdminLayout><AdminBlog /></AdminLayout></ProtectedRoute>} />
             <Route path="/admin/comments" element={<ProtectedRoute adminOnly><AdminLayout><AdminComments /></AdminLayout></ProtectedRoute>} />
+            <Route path="/admin/newsletter" element={<ProtectedRoute adminOnly><AdminLayout><AdminNewsletter /></AdminLayout></ProtectedRoute>} />
 
             <Route path="*" element={<Layout><NotFound /></Layout>} />
           </Routes>

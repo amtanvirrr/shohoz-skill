@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import {
   BookOpen, GraduationCap, Users, ShoppingCart, Settings,
-  LayoutDashboard, HelpCircle, LogOut, Menu, X, ChevronRight, Star, FileText, MessageCircle
+  LayoutDashboard, HelpCircle, LogOut, Menu, X, ChevronRight, Star, FileText, MessageCircle, Mail
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -17,6 +17,7 @@ const sidebarLinks = [
   { to: "/admin/reviews", label: "Reviews", icon: Star },
   { to: "/admin/blog", label: "Blog", icon: FileText },
   { to: "/admin/comments", label: "Comments", icon: MessageCircle },
+  { to: "/admin/newsletter", label: "Newsletter", icon: Mail },
   { to: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
