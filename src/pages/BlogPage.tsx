@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, User, ArrowRight, Search, Eye, TrendingUp, Clock } from "lucide-react";
+import { Calendar, User, ArrowRight, Search, Eye, TrendingUp, Clock, Tag } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 
@@ -24,6 +24,7 @@ const BlogPage = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedTag, setSelectedTag] = useState("");
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -39,12 +40,14 @@ const BlogPage = () => {
   }, []);
 
   const categories = [...new Set(posts.map((p) => p.category).filter(Boolean))];
+  const allTags = [...new Set(posts.flatMap((p) => p.tags || []).filter(Boolean))];
   const popularPosts = [...posts].sort((a, b) => (b.view_count || 0) - (a.view_count || 0)).slice(0, 5);
 
   const filtered = posts.filter((p) => {
     const matchSearch = !search || p.title.toLowerCase().includes(search.toLowerCase()) || p.excerpt.toLowerCase().includes(search.toLowerCase());
     const matchCat = !selectedCategory || p.category === selectedCategory;
-    return matchSearch && matchCat;
+    const matchTag = !selectedTag || (p.tags && p.tags.includes(selectedTag));
+    return matchSearch && matchCat && matchTag;
   });
 
   return (
@@ -90,6 +93,32 @@ const BlogPage = () => {
           ))}
         </div>
       </div>
+
+      {/* Tag Filter */}
+      {allTags.length > 0 && (
+        <div className="mb-8 flex flex-wrap items-center gap-2">
+          <Tag className="h-4 w-4 text-muted-foreground" />
+          <button
+            onClick={() => setSelectedTag("")}
+            className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+              !selectedTag ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            সব ট্যাগ
+          </button>
+          {allTags.map((tag) => (
+            <button
+              key={tag}
+              onClick={() => setSelectedTag(tag)}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                selectedTag === tag ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {tag}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="flex flex-col gap-8 lg:flex-row">
         {/* Main Content */}
