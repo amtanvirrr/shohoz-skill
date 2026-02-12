@@ -53,6 +53,9 @@ const Header = () => {
         <div className="hidden items-center gap-3 md:flex">
           {user ? (
             <>
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/dashboard">Dashboard</Link>
+              </Button>
               {isAdmin && (
                 <Button variant="outline" size="sm" asChild>
                   <Link to="/admin">Admin</Link>
@@ -103,9 +106,12 @@ const Header = () => {
           <div className="mt-4 flex gap-3">
             {user ? (
               <>
+                <Button variant="outline" size="sm" className="flex-1" asChild>
+                  <Link to="/dashboard" onClick={() => setMobileOpen(false)}>Dashboard</Link>
+                </Button>
                 {isAdmin && (
                   <Button variant="outline" size="sm" className="flex-1" asChild>
-                    <Link to="/admin">Admin</Link>
+                    <Link to="/admin" onClick={() => setMobileOpen(false)}>Admin</Link>
                   </Button>
                 )}
                 <Button variant="ghost" size="sm" className="flex-1" onClick={handleSignOut}>Sign Out</Button>
