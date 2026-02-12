@@ -1,0 +1,292 @@
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { useToast } from "@/hooks/use-toast";
+import { Plus, Pencil, Trash2, Smartphone, QrCode, Save, X } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+
+interface PaymentMethod {
+  id: string;
+  provider: string;
+  display_name: string;
+  phone_number: string;
+  qr_code_url: string | null;
+  mfs_type: string;
+  payment_instruction: string;
+  process_message: string;
+  is_active: boolean;
+  sort_order: number;
+}
+
+const providerOptions = [
+  { value: "bkash", label: "বিকাশ (bKash)" },
+  { value: "nagad", label: "নগদ (Nagad)" },
+  { value: "rocket", label: "রকেট (Rocket)" },
+  { value: "upay", label: "উপায় (Upay)" },
+];
+
+const mfsTypeOptions = [
+  { value: "personal", label: "পার্সোনাল" },
+  { value: "agent", label: "এজেন্ট" },
+  { value: "merchant", label: "মার্চেন্ট" },
+];
+
+const emptyForm: Omit<PaymentMethod, "id"> = {
+  provider: "bkash",
+  display_name: "",
+  phone_number: "",
+  qr_code_url: null,
+  mfs_type: "personal",
+  payment_instruction: "",
+  process_message: "",
+  is_active: true,
+  sort_order: 0,
+};
+
+const AdminPayments = () => {
+  const { toast } = useToast();
+  const [methods, setMethods] = useState<PaymentMethod[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState(emptyForm);
+  const [saving, setSaving] = useState(false);
+
+  const fetchMethods = async () => {
+    const { data } = await supabase
+      .from("payment_methods")
+      .select("*")
+      .order("sort_order");
+    setMethods((data as PaymentMethod[]) || []);
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchMethods(); }, []);
+
+  const openNew = () => {
+    setEditingId(null);
+    setForm({ ...emptyForm, sort_order: methods.length });
+    setDialogOpen(true);
+  };
+
+  const openEdit = (m: PaymentMethod) => {
+    setEditingId(m.id);
+    setForm({
+      provider: m.provider,
+      display_name: m.display_name,
+      phone_number: m.phone_number,
+      qr_code_url: m.qr_code_url,
+      mfs_type: m.mfs_type,
+      payment_instruction: m.payment_instruction,
+      process_message: m.process_message,
+      is_active: m.is_active,
+      sort_order: m.sort_order,
+    });
+    setDialogOpen(true);
+  };
+
+  const handleSave = async () => {
+    if (!form.phone_number.trim()) {
+      toast({ title: "ফোন নাম্বার দিন", variant: "destructive" });
+      return;
+    }
+    setSaving(true);
+
+    const payload = {
+      provider: form.provider,
+      display_name: form.display_name || providerOptions.find(p => p.value === form.provider)?.label || form.provider,
+      phone_number: form.phone_number,
+      qr_code_url: form.qr_code_url || null,
+      mfs_type: form.mfs_type,
+      payment_instruction: form.payment_instruction,
+      process_message: form.process_message,
+      is_active: form.is_active,
+      sort_order: form.sort_order,
+    };
+
+    let error;
+    if (editingId) {
+      ({ error } = await supabase.from("payment_methods").update(payload).eq("id", editingId));
+    } else {
+      ({ error } = await supabase.from("payment_methods").insert(payload));
+    }
+    setSaving(false);
+
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: editingId ? "আপডেট হয়েছে" : "যোগ হয়েছে" });
+      setDialogOpen(false);
+      fetchMethods();
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("এই পেমেন্ট মেথড মুছতে চান?")) return;
+    await supabase.from("payment_methods").delete().eq("id", id);
+    toast({ title: "মুছে ফেলা হয়েছে" });
+    fetchMethods();
+  };
+
+  const toggleActive = async (id: string, current: boolean) => {
+    await supabase.from("payment_methods").update({ is_active: !current }).eq("id", id);
+    fetchMethods();
+  };
+
+  const getProviderColor = (provider: string) => {
+    switch (provider) {
+      case "bkash": return "bg-pink-500/10 text-pink-600";
+      case "nagad": return "bg-orange-500/10 text-orange-600";
+      case "rocket": return "bg-purple-500/10 text-purple-600";
+      case "upay": return "bg-green-500/10 text-green-600";
+      default: return "bg-muted text-muted-foreground";
+    }
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">পেমেন্ট মেথড</h1>
+          <p className="mt-1 text-sm text-muted-foreground">সেলফ MFS পেমেন্ট অপশন ম্যানেজ করুন</p>
+        </div>
+        <Button onClick={openNew}><Plus className="mr-2 h-4 w-4" /> নতুন যোগ করুন</Button>
+      </div>
+
+      {loading ? (
+        <p className="mt-8 text-center text-muted-foreground">Loading...</p>
+      ) : methods.length === 0 ? (
+        <div className="mt-12 text-center">
+          <Smartphone className="mx-auto h-12 w-12 text-muted-foreground/50" />
+          <p className="mt-4 text-muted-foreground">কোনো পেমেন্ট মেথড যোগ করা হয়নি।</p>
+          <Button className="mt-4" onClick={openNew}><Plus className="mr-2 h-4 w-4" /> পেমেন্ট মেথড যোগ করুন</Button>
+        </div>
+      ) : (
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          {methods.map((m) => (
+            <div key={m.id} className={`rounded-xl border border-border bg-card p-5 ${!m.is_active ? "opacity-50" : ""}`}>
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <span className={`rounded-lg px-3 py-1.5 text-xs font-bold uppercase ${getProviderColor(m.provider)}`}>
+                    {m.provider}
+                  </span>
+                  <div>
+                    <h3 className="font-semibold text-foreground">{m.display_name}</h3>
+                    <p className="text-sm text-muted-foreground capitalize">{m.mfs_type}</p>
+                  </div>
+                </div>
+                <Switch checked={m.is_active} onCheckedChange={() => toggleActive(m.id, m.is_active)} />
+              </div>
+
+              <div className="mt-4 space-y-2 text-sm">
+                <div className="flex items-center gap-2 text-foreground">
+                  <Smartphone className="h-4 w-4 text-muted-foreground" /> {m.phone_number}
+                </div>
+                {m.qr_code_url && (
+                  <div className="flex items-center gap-2 text-foreground">
+                    <QrCode className="h-4 w-4 text-muted-foreground" /> QR Code সেট করা আছে
+                  </div>
+                )}
+                {m.payment_instruction && (
+                  <p className="text-muted-foreground line-clamp-2">{m.payment_instruction}</p>
+                )}
+              </div>
+
+              <div className="mt-4 flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => openEdit(m)}>
+                  <Pencil className="mr-1 h-3 w-3" /> Edit
+                </Button>
+                <Button variant="outline" size="sm" className="text-destructive hover:bg-destructive/10" onClick={() => handleDelete(m.id)}>
+                  <Trash2 className="mr-1 h-3 w-3" /> Delete
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{editingId ? "পেমেন্ট মেথড এডিট করুন" : "নতুন পেমেন্ট মেথড"}</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 pt-2">
+            <div>
+              <Label>প্রোভাইডার *</Label>
+              <Select value={form.provider} onValueChange={(v) => setForm({ ...form, provider: v })}>
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {providerOptions.map((p) => (
+                    <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>ডিসপ্লে নাম</Label>
+              <Input className="mt-1" value={form.display_name} onChange={(e) => setForm({ ...form, display_name: e.target.value })} placeholder="যেমন: বিকাশ পার্সোনাল" />
+            </div>
+
+            <div>
+              <Label>ফোন নাম্বার *</Label>
+              <Input className="mt-1" value={form.phone_number} onChange={(e) => setForm({ ...form, phone_number: e.target.value })} placeholder="01XXXXXXXXX" />
+            </div>
+
+            <div>
+              <Label>QR Code URL</Label>
+              <Input className="mt-1" value={form.qr_code_url || ""} onChange={(e) => setForm({ ...form, qr_code_url: e.target.value })} placeholder="QR Code ইমেজ URL" />
+              {form.qr_code_url && (
+                <img src={form.qr_code_url} alt="QR Preview" className="mt-2 h-32 w-32 rounded-lg border border-border object-contain" />
+              )}
+            </div>
+
+            <div>
+              <Label>MFS টাইপ *</Label>
+              <Select value={form.mfs_type} onValueChange={(v) => setForm({ ...form, mfs_type: v })}>
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {mfsTypeOptions.map((t) => (
+                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>পেমেন্ট ইন্সট্রাকশন</Label>
+              <Textarea className="mt-1" rows={3} value={form.payment_instruction} onChange={(e) => setForm({ ...form, payment_instruction: e.target.value })} placeholder="যেমন: Send Money করে এই নাম্বারে টাকা পাঠান..." />
+            </div>
+
+            <div>
+              <Label>প্রসেস মেসেজ / নোট</Label>
+              <Textarea className="mt-1" rows={3} value={form.process_message} onChange={(e) => setForm({ ...form, process_message: e.target.value })} placeholder="যেমন: পেমেন্ট করার পর Transaction ID সহ অর্ডার করুন..." />
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Switch checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} />
+              <Label>সক্রিয়</Label>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <Button onClick={handleSave} disabled={saving} className="flex-1">
+                <Save className="mr-2 h-4 w-4" /> {saving ? "সেভ হচ্ছে..." : "সেভ করুন"}
+              </Button>
+              <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                <X className="mr-2 h-4 w-4" /> বাতিল
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+export default AdminPayments;

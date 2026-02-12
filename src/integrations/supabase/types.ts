@@ -448,6 +448,51 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_methods: {
+        Row: {
+          created_at: string
+          display_name: string
+          id: string
+          is_active: boolean
+          mfs_type: string
+          payment_instruction: string
+          phone_number: string
+          process_message: string
+          provider: string
+          qr_code_url: string | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string
+          id?: string
+          is_active?: boolean
+          mfs_type?: string
+          payment_instruction?: string
+          phone_number?: string
+          process_message?: string
+          provider: string
+          qr_code_url?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          id?: string
+          is_active?: boolean
+          mfs_type?: string
+          payment_instruction?: string
+          phone_number?: string
+          process_message?: string
+          provider?: string
+          qr_code_url?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           address: string
@@ -760,7 +805,7 @@ export type Database = {
         | "shipped"
         | "delivered"
         | "cancelled"
-      payment_method: "cod" | "bkash" | "nagad"
+      payment_method: "cod" | "bkash" | "nagad" | "rocket" | "upay"
       product_type: "book" | "course"
     }
     CompositeTypes: {
@@ -897,7 +942,7 @@ export const Constants = {
         "delivered",
         "cancelled",
       ],
-      payment_method: ["cod", "bkash", "nagad"],
+      payment_method: ["cod", "bkash", "nagad", "rocket", "upay"],
       product_type: ["book", "course"],
     },
   },

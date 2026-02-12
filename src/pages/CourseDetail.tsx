@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, BookOpen, Clock, PlayCircle, Users, Video, FileText, HelpCircle, ChevronDown, Star, Send } from "lucide-react";
+import { ArrowLeft, BookOpen, Clock, PlayCircle, Users, Video, FileText, HelpCircle, ChevronDown, Star, Send, Smartphone } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
@@ -53,6 +53,17 @@ interface DbReview {
   created_at: string;
 }
 
+interface MfsMethod {
+  id: string;
+  provider: string;
+  display_name: string;
+  phone_number: string;
+  qr_code_url: string | null;
+  mfs_type: string;
+  payment_instruction: string;
+  process_message: string;
+}
+
 const CourseDetail = () => {
   const { id } = useParams();
   const { user } = useAuth();
@@ -62,12 +73,13 @@ const CourseDetail = () => {
   const [loading, setLoading] = useState(true);
   const [resources, setResources] = useState<Record<string, DbResource[]>>({});
   const [quizzes, setQuizzes] = useState<DbQuiz[]>([]);
-  const [paymentMethod, setPaymentMethod] = useState<"bkash" | "nagad">("bkash");
+  const [paymentMethod, setPaymentMethod] = useState<string>("bkash");
   const [submitting, setSubmitting] = useState(false);
   const [reviews, setReviews] = useState<DbReview[]>([]);
   const [hasPurchased, setHasPurchased] = useState(false);
   const [reviewForm, setReviewForm] = useState({ rating: 5, comment: "" });
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [mfsMethods, setMfsMethods] = useState<MfsMethod[]>([]);
 
   useEffect(() => {
     if (!id) return;
@@ -75,11 +87,15 @@ const CourseDetail = () => {
       supabase.from("courses").select("*").eq("id", id).maybeSingle(),
       supabase.from("lessons").select("*").eq("course_id", id).order("sort_order"),
       supabase.from("reviews").select("id, reviewer_name, rating, comment, created_at").eq("course_id", id).eq("is_active", true).order("created_at", { ascending: false }),
-    ]).then(async ([courseRes, lessonsRes, reviewsRes]) => {
+      supabase.from("payment_methods").select("*").eq("is_active", true).order("sort_order"),
+    ]).then(async ([courseRes, lessonsRes, reviewsRes, mfsRes]) => {
       setCourse(courseRes.data as DbCourse | null);
       const lessonData = (lessonsRes.data as DbLesson[]) || [];
       setLessons(lessonData);
       setReviews((reviewsRes.data as DbReview[]) || []);
+      const mfsData = (mfsRes.data as MfsMethod[]) || [];
+      setMfsMethods(mfsData);
+      if (mfsData.length > 0) setPaymentMethod(mfsData[0].provider);
 
       const lessonIds = lessonData.map((l) => l.id);
       if (lessonIds.length > 0) {
@@ -357,7 +373,17 @@ const CourseDetail = () => {
               <div className="mt-6">
                 <p className="text-sm font-medium text-foreground">Payment Method</p>
                 <div className="mt-3 grid grid-cols-2 gap-3">
-                  {(["bkash", "nagad"] as const).map((method) => (
+                  {mfsMethods.length > 0 ? mfsMethods.map((m) => (
+                    <button
+                      key={m.id}
+                      onClick={() => setPaymentMethod(m.provider)}
+                      className={`rounded-lg border-2 px-4 py-3 text-center text-sm font-semibold transition-colors ${
+                        paymentMethod === m.provider ? "border-primary bg-primary/5 text-primary" : "border-border text-muted-foreground hover:border-primary/30"
+                      }`}
+                    >
+                      {m.display_name || m.provider}
+                    </button>
+                  )) : (["bkash", "nagad"] as const).map((method) => (
                     <button
                       key={method}
                       onClick={() => setPaymentMethod(method)}
@@ -369,6 +395,30 @@ const CourseDetail = () => {
                     </button>
                   ))}
                 </div>
+
+                {/* Show selected MFS payment details */}
+                {(() => {
+                  const selected = mfsMethods.find(m => m.provider === paymentMethod);
+                  if (!selected) return null;
+                  return (
+                    <div className="mt-4 rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+                      <div className="flex items-center gap-2 text-sm">
+                        <Smartphone className="h-4 w-4 text-primary" />
+                        <span className="font-medium text-foreground">{selected.phone_number}</span>
+                        <span className="rounded bg-primary/10 px-2 py-0.5 text-xs text-primary capitalize">{selected.mfs_type}</span>
+                      </div>
+                      {selected.qr_code_url && (
+                        <img src={selected.qr_code_url} alt="QR Code" className="mx-auto h-32 w-32 rounded-lg border border-border object-contain" />
+                      )}
+                      {selected.payment_instruction && (
+                        <p className="text-sm text-muted-foreground whitespace-pre-line">{selected.payment_instruction}</p>
+                      )}
+                      {selected.process_message && (
+                        <div className="rounded-md bg-primary/5 p-3 text-xs text-foreground whitespace-pre-line">{selected.process_message}</div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
               <Button onClick={handlePurchase} size="lg" className="mt-6 w-full" disabled={submitting}>
                 {submitting ? "Processing..." : "Purchase Course"}
