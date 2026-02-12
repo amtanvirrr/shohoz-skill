@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, User, ArrowRight, Search, Eye, TrendingUp, Clock, Tag, ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar, User, ArrowRight, Search, Eye, TrendingUp, Clock, Tag, ChevronLeft, ChevronRight, Bookmark } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/hooks/useAuth";
 
 interface BlogPost {
   id: string;
@@ -21,12 +22,14 @@ interface BlogPost {
 }
 
 const BlogPage = () => {
+  const { user } = useAuth();
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedTag, setSelectedTag] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [bookmarkedIds, setBookmarkedIds] = useState<string[]>([]);
   const POSTS_PER_PAGE = 6;
 
   useEffect(() => {
@@ -42,9 +45,20 @@ const BlogPage = () => {
     fetchPosts();
   }, []);
 
+  // Fetch user bookmarks
+  useEffect(() => {
+    if (!user) { setBookmarkedIds([]); return; }
+    supabase
+      .from("bookmarks")
+      .select("blog_post_id")
+      .eq("user_id", user.id)
+      .then(({ data }) => setBookmarkedIds((data || []).map((b) => b.blog_post_id)));
+  }, [user]);
+
   const categories = [...new Set(posts.map((p) => p.category).filter(Boolean))];
   const allTags = [...new Set(posts.flatMap((p) => p.tags || []).filter(Boolean))];
   const popularPosts = [...posts].sort((a, b) => (b.view_count || 0) - (a.view_count || 0)).slice(0, 5);
+  const bookmarkedPosts = posts.filter((p) => bookmarkedIds.includes(p.id));
 
   const filtered = posts.filter((p) => {
     const matchSearch = !search || p.title.toLowerCase().includes(search.toLowerCase()) || p.excerpt.toLowerCase().includes(search.toLowerCase());
@@ -244,28 +258,50 @@ const BlogPage = () => {
           )}
         </div>
 
-        {/* Sidebar - Popular Posts */}
-        {!loading && popularPosts.length > 0 && (
+        {/* Sidebar */}
+        {!loading && (popularPosts.length > 0 || bookmarkedPosts.length > 0) && (
           <aside className="w-full shrink-0 lg:w-72 xl:w-80">
-            <div className="sticky top-24 rounded-xl border border-border bg-card p-5">
-              <h3 className="mb-4 flex items-center gap-2 font-display text-lg font-bold text-foreground">
-                <TrendingUp className="h-5 w-5 text-primary" /> জনপ্রিয় আর্টিকেল
-              </h3>
-              <div className="space-y-4">
-                {popularPosts.map((p, i) => (
-                  <Link key={p.id} to={`/blog/${p.slug}`} className="group flex gap-3">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
-                      {i + 1}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-foreground line-clamp-2 group-hover:text-primary transition-colors">{p.title}</p>
-                      <span className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                        <Eye className="h-3 w-3" /> {p.view_count || 0} বার পড়া হয়েছে
-                      </span>
-                    </div>
-                  </Link>
-                ))}
-              </div>
+            <div className="sticky top-24 space-y-6">
+              {/* Bookmarked Posts */}
+              {bookmarkedPosts.length > 0 && (
+                <div className="rounded-xl border border-border bg-card p-5">
+                  <h3 className="mb-4 flex items-center gap-2 font-display text-lg font-bold text-foreground">
+                    <Bookmark className="h-5 w-5 text-primary" /> বুকমার্ক করা আর্টিকেল
+                  </h3>
+                  <div className="space-y-3">
+                    {bookmarkedPosts.map((p) => (
+                      <Link key={p.id} to={`/blog/${p.slug}`} className="group block">
+                        <p className="text-sm font-medium text-foreground line-clamp-2 group-hover:text-primary transition-colors">{p.title}</p>
+                        <span className="text-xs text-muted-foreground">{p.category}</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Popular Posts */}
+              {popularPosts.length > 0 && (
+                <div className="rounded-xl border border-border bg-card p-5">
+                  <h3 className="mb-4 flex items-center gap-2 font-display text-lg font-bold text-foreground">
+                    <TrendingUp className="h-5 w-5 text-primary" /> জনপ্রিয় আর্টিকেল
+                  </h3>
+                  <div className="space-y-4">
+                    {popularPosts.map((p, i) => (
+                      <Link key={p.id} to={`/blog/${p.slug}`} className="group flex gap-3">
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+                          {i + 1}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-foreground line-clamp-2 group-hover:text-primary transition-colors">{p.title}</p>
+                          <span className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                            <Eye className="h-3 w-3" /> {p.view_count || 0} বার পড়া হয়েছে
+                          </span>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </aside>
         )}
