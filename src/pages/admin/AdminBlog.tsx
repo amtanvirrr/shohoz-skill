@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Upload, X, Eye, EyeOff } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
+import RichTextEditor from "@/components/RichTextEditor";
 import { Badge } from "@/components/ui/badge";
 
 interface BlogPost {
@@ -231,8 +232,10 @@ const AdminBlog = () => {
               </div>
 
               <div>
-                <Label>Content (HTML)</Label>
-                <Textarea rows={12} value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} placeholder="<h2>Heading</h2><p>Paragraph...</p>" className="mt-1 font-mono text-sm" />
+                <Label>Content</Label>
+                <div className="mt-1">
+                  <RichTextEditor content={form.content} onChange={(html) => setForm((f) => ({ ...f, content: html }))} />
+                </div>
               </div>
 
               {/* SEO */}
