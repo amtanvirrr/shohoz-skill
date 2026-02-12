@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, User, ArrowLeft, ArrowRight, Tag, MessageCircle, Trash2, Send, Facebook, Share2, Link2, Copy, Eye, ChevronLeft, ChevronRight, Clock, List } from "lucide-react";
+import { Calendar, User, ArrowLeft, ArrowRight, Tag, MessageCircle, Trash2, Send, Facebook, Share2, Link2, Copy, Eye, ChevronLeft, ChevronRight, Clock, List, ArrowUp, Minus, Plus, Type } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -44,6 +44,21 @@ const BlogDetailPage = () => {
   const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>([]);
   const [prevPost, setPrevPost] = useState<{ slug: string; title: string } | null>(null);
   const [nextPost, setNextPost] = useState<{ slug: string; title: string } | null>(null);
+  const [fontSize, setFontSize] = useState(18);
+  const [readProgress, setReadProgress] = useState(0);
+  const [showBackToTop, setShowBackToTop] = useState(false);
+
+  // Reading progress & back-to-top
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      setReadProgress(docHeight > 0 ? Math.min((scrollTop / docHeight) * 100, 100) : 0);
+      setShowBackToTop(scrollTop > 400);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -183,8 +198,17 @@ const BlogDetailPage = () => {
   }
 
   return (
-    <article className="container mx-auto px-4 py-12">
-      <div className="mx-auto max-w-3xl">
+    <>
+      {/* Reading Progress Bar */}
+      <div className="fixed left-0 top-0 z-50 h-1 w-full bg-muted">
+        <div
+          className="h-full bg-primary transition-all duration-150"
+          style={{ width: `${readProgress}%` }}
+        />
+      </div>
+
+      <article className="container mx-auto px-4 py-12">
+        <div className="mx-auto max-w-3xl">
         {/* Back */}
         <Link to="/blog" className="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" /> ব্লগে ফিরে যান
@@ -274,6 +298,7 @@ const BlogDetailPage = () => {
           return (
             <div
               className="prose prose-lg max-w-none dark:prose-invert prose-headings:font-display prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground prose-img:rounded-xl"
+              style={{ fontSize: `${fontSize}px`, lineHeight: 1.8 }}
               dangerouslySetInnerHTML={{ __html: contentWithIds }}
             />
           );
@@ -423,6 +448,41 @@ const BlogDetailPage = () => {
         )}
       </div>
     </article>
+
+    {/* Font Size Control */}
+    <div className="fixed bottom-24 right-4 z-40 flex flex-col gap-2">
+      <div className="flex items-center gap-1 rounded-full border border-border bg-card p-1 shadow-lg">
+        <button
+          onClick={() => setFontSize((s) => Math.max(14, s - 2))}
+          className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          title="ছোট ফন্ট"
+        >
+          <Minus className="h-3.5 w-3.5" />
+        </button>
+        <span className="flex h-8 w-8 items-center justify-center text-xs font-medium text-foreground">
+          <Type className="h-3.5 w-3.5" />
+        </span>
+        <button
+          onClick={() => setFontSize((s) => Math.min(28, s + 2))}
+          className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          title="বড় ফন্ট"
+        >
+          <Plus className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    </div>
+
+    {/* Back to Top */}
+    {showBackToTop && (
+      <button
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        className="fixed bottom-6 right-4 z-40 flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card shadow-lg transition-all hover:bg-primary hover:text-primary-foreground"
+        title="উপরে যান"
+      >
+        <ArrowUp className="h-4 w-4" />
+      </button>
+    )}
+    </>
   );
 };
 
