@@ -18,6 +18,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import QuizPage from "./pages/QuizPage";
 import UserDashboard from "./pages/UserDashboard";
+import EbookReader from "./pages/EbookReader";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminBooks from "./pages/admin/AdminBooks";
 import AdminCourses from "./pages/admin/AdminCourses";
@@ -50,6 +51,7 @@ const App = () => (
             <Route path="/login" element={<Layout><Login /></Layout>} />
             <Route path="/register" element={<Layout><Register /></Layout>} />
             <Route path="/dashboard" element={<ProtectedRoute><Layout><UserDashboard /></Layout></ProtectedRoute>} />
+            <Route path="/read/:bookId" element={<ProtectedRoute><EbookReader /></ProtectedRoute>} />
 
             {/* Admin routes */}
             <Route path="/admin" element={<ProtectedRoute adminOnly><AdminLayout><AdminDashboard /></AdminLayout></ProtectedRoute>} />

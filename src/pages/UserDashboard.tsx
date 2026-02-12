@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { BookOpen, PlayCircle, Download, ExternalLink, ShoppingBag, Clock, CheckCircle, Truck, XCircle, Package } from "lucide-react";
+import { BookOpen, PlayCircle, ExternalLink, ShoppingBag, Clock, CheckCircle, Truck, XCircle, Package, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -168,9 +168,9 @@ const UserDashboard = () => {
                         <div className="mt-3 flex items-center gap-2">
                           {book.ebook_file_url ? (
                             <Button size="sm" className="w-full gap-2" asChild>
-                              <a href={book.ebook_file_url} target="_blank" rel="noopener noreferrer">
-                                <Download className="h-4 w-4" /> ডাউনলোড করুন
-                              </a>
+                              <Link to={`/read/${book.id}`}>
+                                <Eye className="h-4 w-4" /> পড়ুন
+                              </Link>
                             </Button>
                           ) : (
                             <Button size="sm" variant="secondary" className="w-full" disabled>
