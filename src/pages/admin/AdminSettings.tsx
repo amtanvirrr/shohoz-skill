@@ -18,6 +18,13 @@ interface BrandingFields {
   facebook_pixel_id: string;
   facebook_capi_token: string;
   facebook_test_event_code: string;
+  smtp_host: string;
+  smtp_port: string;
+  smtp_user: string;
+  smtp_pass: string;
+  smtp_from_email: string;
+  smtp_from_name: string;
+  admin_notification_email: string;
 }
 
 const defaultBranding: BrandingFields = {
@@ -31,6 +38,13 @@ const defaultBranding: BrandingFields = {
   facebook_pixel_id: "",
   facebook_capi_token: "",
   facebook_test_event_code: "",
+  smtp_host: "",
+  smtp_port: "587",
+  smtp_user: "",
+  smtp_pass: "",
+  smtp_from_email: "",
+  smtp_from_name: "",
+  admin_notification_email: "",
 };
 
 const ALL_KEYS = Object.keys(defaultBranding) as (keyof BrandingFields)[];
@@ -182,12 +196,53 @@ const AdminSettings = () => {
           </div>
         </div>
 
-        {/* SMTP Placeholder */}
-        <div className="rounded-xl border border-border bg-card p-6">
+        {/* SMTP Email Notifications */}
+        <div className="rounded-xl border border-border bg-card p-6 space-y-4">
           <h3 className="font-display text-lg font-semibold text-foreground">Email Notifications (SMTP)</h3>
-          <p className="mt-1 text-sm text-muted-foreground">Configure SMTP for order notification emails.</p>
-          <div className="mt-4 rounded-lg bg-muted p-4 text-sm text-muted-foreground">
-            SMTP configuration can be set up via backend secrets. Contact support for setup.
+          <p className="text-sm text-muted-foreground">
+            নতুন অর্ডার আসলে অ্যাডমিনকে ইমেইলে নোটিফিকেশন পাঠাতে SMTP কনফিগার করুন।
+          </p>
+
+          <div>
+            <Label htmlFor="smtp_host">SMTP Host</Label>
+            <Input id="smtp_host" value={fields.smtp_host} onChange={(e) => handleChange("smtp_host", e.target.value)} className="mt-1" placeholder="smtp.gmail.com" />
+          </div>
+          <div>
+            <Label htmlFor="smtp_port">SMTP Port</Label>
+            <Input id="smtp_port" value={fields.smtp_port} onChange={(e) => handleChange("smtp_port", e.target.value)} className="mt-1" placeholder="587" />
+            <p className="mt-1 text-xs text-muted-foreground">সাধারণত TLS: 587, SSL: 465</p>
+          </div>
+          <div>
+            <Label htmlFor="smtp_user">SMTP Username / Email</Label>
+            <Input id="smtp_user" value={fields.smtp_user} onChange={(e) => handleChange("smtp_user", e.target.value)} className="mt-1" placeholder="your@gmail.com" />
+          </div>
+          <div>
+            <Label htmlFor="smtp_pass">SMTP Password / App Password</Label>
+            <Input id="smtp_pass" type="password" value={fields.smtp_pass} onChange={(e) => handleChange("smtp_pass", e.target.value)} className="mt-1" placeholder="••••••••" />
+            <p className="mt-1 text-xs text-muted-foreground">Gmail হলে App Password ব্যবহার করুন (2FA চালু থাকতে হবে)।</p>
+          </div>
+          <div>
+            <Label htmlFor="smtp_from_name">From Name</Label>
+            <Input id="smtp_from_name" value={fields.smtp_from_name} onChange={(e) => handleChange("smtp_from_name", e.target.value)} className="mt-1" placeholder="Shohoz Skill" />
+          </div>
+          <div>
+            <Label htmlFor="smtp_from_email">From Email (ঐচ্ছিক)</Label>
+            <Input id="smtp_from_email" value={fields.smtp_from_email} onChange={(e) => handleChange("smtp_from_email", e.target.value)} className="mt-1" placeholder="noreply@yourdomain.com" />
+            <p className="mt-1 text-xs text-muted-foreground">খালি রাখলে SMTP Username ব্যবহার হবে।</p>
+          </div>
+          <div>
+            <Label htmlFor="admin_notification_email">অ্যাডমিন নোটিফিকেশন ইমেইল *</Label>
+            <Input id="admin_notification_email" value={fields.admin_notification_email} onChange={(e) => handleChange("admin_notification_email", e.target.value)} className="mt-1" placeholder="admin@yourdomain.com" />
+            <p className="mt-1 text-xs text-muted-foreground">নতুন অর্ডারের নোটিফিকেশন এই ইমেইলে যাবে।</p>
+          </div>
+
+          <div className="rounded-lg bg-muted p-4 text-sm text-muted-foreground space-y-1">
+            <p className="font-medium text-foreground">কিভাবে কাজ করে:</p>
+            <ul className="list-disc list-inside space-y-0.5">
+              <li>নতুন অর্ডার আসলে অটোমেটিকভাবে অ্যাডমিনকে ইমেইল পাঠানো হবে</li>
+              <li>ইমেইলে সম্পূর্ণ অর্ডার ডিটেইলস থাকবে — পণ্য, মূল্য, কাস্টমার তথ্য</li>
+              <li>Gmail ব্যবহার করলে: Google Account → Security → App Passwords → Generate</li>
+            </ul>
           </div>
         </div>
       </div>
