@@ -740,6 +740,51 @@ export type Database = {
           },
         ]
       }
+      shipping_zones: {
+        Row: {
+          created_at: string
+          delivery_time_max: number
+          delivery_time_min: number
+          delivery_time_unit: string
+          free_shipping_minimum: number | null
+          id: string
+          is_active: boolean
+          shipping_rate: number
+          sort_order: number
+          updated_at: string
+          zone_label: string
+          zone_name: string
+        }
+        Insert: {
+          created_at?: string
+          delivery_time_max?: number
+          delivery_time_min?: number
+          delivery_time_unit?: string
+          free_shipping_minimum?: number | null
+          id?: string
+          is_active?: boolean
+          shipping_rate?: number
+          sort_order?: number
+          updated_at?: string
+          zone_label?: string
+          zone_name: string
+        }
+        Update: {
+          created_at?: string
+          delivery_time_max?: number
+          delivery_time_min?: number
+          delivery_time_unit?: string
+          free_shipping_minimum?: number | null
+          id?: string
+          is_active?: boolean
+          shipping_rate?: number
+          sort_order?: number
+          updated_at?: string
+          zone_label?: string
+          zone_name?: string
+        }
+        Relationships: []
+      }
       site_settings: {
         Row: {
           id: string
