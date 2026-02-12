@@ -2,10 +2,14 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { BookOpen, PlayCircle, ExternalLink, ShoppingBag, Clock, CheckCircle, Truck, XCircle, Package, Eye } from "lucide-react";
+import { BookOpen, PlayCircle, ExternalLink, ShoppingBag, Clock, CheckCircle, Truck, XCircle, Package, Eye, UserCircle, Save, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 
 interface Order {
   id: string;
@@ -58,25 +62,39 @@ const UserDashboard = () => {
   const [courses, setCourses] = useState<Map<string, CourseInfo>>(new Map());
   const [loading, setLoading] = useState(true);
 
+  // Profile state
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [email, setEmail] = useState("");
+
   useEffect(() => {
     if (!user) return;
 
     const fetchData = async () => {
-      // Fetch ALL user orders
-      const { data: allOrderData } = await supabase
-        .from("orders")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
+      // Fetch orders and profile in parallel
+      const [ordersRes, profileRes] = await Promise.all([
+        supabase.from("orders").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+        supabase.from("profiles").select("full_name, phone, address, email").eq("user_id", user.id).maybeSingle(),
+      ]);
 
-      const allUserOrders = (allOrderData || []) as Order[];
+      // Profile
+      if (profileRes.data) {
+        setFullName(profileRes.data.full_name || "");
+        setPhone(profileRes.data.phone || "");
+        setAddress(profileRes.data.address || "");
+        setEmail(profileRes.data.email || "");
+      }
+      setProfileLoading(false);
+
+      const allUserOrders = (ordersRes.data || []) as Order[];
       setAllOrders(allUserOrders);
 
-      // Filter confirmed/delivered for content access
       const accessOrders = allUserOrders.filter(o => ["confirmed", "delivered"].includes(o.status));
       setOrders(accessOrders);
 
-      // Fetch book details for ALL book orders
       const bookIds = [...new Set(allUserOrders.filter(o => o.product_type === "book").map(o => o.product_id))];
       if (bookIds.length > 0) {
         const { data: bookData } = await supabase
@@ -88,7 +106,6 @@ const UserDashboard = () => {
         setBooks(bookMap);
       }
 
-      // Fetch course details for ALL course orders
       const courseIds = [...new Set(allUserOrders.filter(o => o.product_type === "course").map(o => o.product_id))];
       if (courseIds.length > 0) {
         const { data: courseData } = await supabase
@@ -105,6 +122,35 @@ const UserDashboard = () => {
 
     fetchData();
   }, [user]);
+
+  const handleProfileSave = async () => {
+    if (!user) return;
+    const trimmedName = fullName.trim();
+    const trimmedPhone = phone.trim();
+    const trimmedAddress = address.trim();
+
+    if (!trimmedName) {
+      toast.error("নাম লিখুন");
+      return;
+    }
+
+    setProfileSaving(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        full_name: trimmedName,
+        phone: trimmedPhone,
+        address: trimmedAddress,
+      })
+      .eq("user_id", user.id);
+    setProfileSaving(false);
+
+    if (error) {
+      toast.error("প্রোফাইল আপডেট করা যায়নি");
+    } else {
+      toast.success("প্রোফাইল আপডেট হয়েছে");
+    }
+  };
 
   const ebookOrders = orders.filter(o => {
     if (o.product_type !== "book") return false;
@@ -129,7 +175,7 @@ const UserDashboard = () => {
         <p className="mt-2 text-muted-foreground">আপনার কেনা ইবুক, কোর্স ও অর্ডার হিস্ট্রি এখান থেকে দেখুন</p>
 
         <Tabs defaultValue="ebooks" className="mt-8">
-          <TabsList className="grid w-full max-w-lg grid-cols-3">
+          <TabsList className="grid w-full max-w-2xl grid-cols-4">
             <TabsTrigger value="ebooks" className="gap-1.5 text-xs sm:text-sm">
               <BookOpen className="h-4 w-4" /> ইবুক ({ebookOrders.length})
             </TabsTrigger>
@@ -138,6 +184,9 @@ const UserDashboard = () => {
             </TabsTrigger>
             <TabsTrigger value="orders" className="gap-1.5 text-xs sm:text-sm">
               <ShoppingBag className="h-4 w-4" /> অর্ডার ({allOrders.length})
+            </TabsTrigger>
+            <TabsTrigger value="profile" className="gap-1.5 text-xs sm:text-sm">
+              <UserCircle className="h-4 w-4" /> প্রোফাইল
             </TabsTrigger>
           </TabsList>
 
@@ -269,6 +318,63 @@ const UserDashboard = () => {
                 })}
               </div>
             )}
+          </TabsContent>
+          {/* Profile Tab */}
+          <TabsContent value="profile" className="mt-6">
+            <div className="mx-auto max-w-lg rounded-xl border border-border bg-card p-6">
+              <h3 className="text-lg font-semibold text-foreground mb-4">প্রোফাইল তথ্য</h3>
+              {profileLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="email">ইমেইল</Label>
+                    <Input id="email" value={email} disabled className="mt-1 bg-muted" />
+                    <p className="text-xs text-muted-foreground mt-1">ইমেইল পরিবর্তন করা যায় না</p>
+                  </div>
+                  <div>
+                    <Label htmlFor="fullName">পুরো নাম *</Label>
+                    <Input
+                      id="fullName"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      maxLength={100}
+                      placeholder="আপনার নাম"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="phone">মোবাইল নম্বর</Label>
+                    <Input
+                      id="phone"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      maxLength={20}
+                      placeholder="01XXXXXXXXX"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="address">ঠিকানা</Label>
+                    <Textarea
+                      id="address"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      maxLength={500}
+                      placeholder="আপনার ঠিকানা লিখুন"
+                      className="mt-1"
+                      rows={3}
+                    />
+                  </div>
+                  <Button onClick={handleProfileSave} disabled={profileSaving} className="w-full gap-2">
+                    {profileSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    {profileSaving ? "সেভ হচ্ছে..." : "প্রোফাইল আপডেট করুন"}
+                  </Button>
+                </div>
+              )}
+            </div>
           </TabsContent>
         </Tabs>
       </div>
