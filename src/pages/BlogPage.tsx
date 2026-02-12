@@ -82,7 +82,7 @@ const BlogPage = () => {
         <span className="mb-3 inline-block rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary">
           আমাদের ব্লগ
         </span>
-        <h1 className="font-display text-4xl font-bold text-foreground md:text-5xl lg:text-6xl">
+        <h1 className="font-display text-3xl font-bold text-foreground sm:text-4xl md:text-5xl lg:text-6xl">
           জ্ঞান ও অনুপ্রেরণা
         </h1>
         <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-muted-foreground">

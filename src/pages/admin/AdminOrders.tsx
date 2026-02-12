@@ -140,9 +140,9 @@ const AdminOrders = () => {
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Orders</h1>
-        <Button variant="outline" onClick={exportCSV}><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-xl font-bold text-foreground sm:text-2xl">Orders</h1>
+        <Button variant="outline" size="sm" onClick={exportCSV}><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
       </div>
 
       {loading ? (
@@ -150,115 +150,142 @@ const AdminOrders = () => {
       ) : orders.length === 0 ? (
         <p className="mt-8 text-center text-muted-foreground">No orders yet.</p>
       ) : (
-        <div className="mt-6 overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-border text-muted-foreground">
-              <tr>
-                <th className="pb-3 pr-3">Order ID</th>
-                <th className="pb-3 pr-3">Customer</th>
-                <th className="pb-3 pr-3">Product</th>
-                <th className="pb-3 pr-3">Price</th>
-                <th className="pb-3 pr-3">Payment</th>
-                <th className="pb-3 pr-3">TXN ID</th>
-                <th className="pb-3 pr-3">Courier</th>
-                <th className="pb-3 pr-3">Status</th>
-                <th className="pb-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orders.map((order) => (
-                <tr key={order.id} className={`border-b border-border ${order.is_fraud_flagged ? "bg-destructive/5" : ""}`}>
-                  <td className="py-3 pr-3 font-mono text-xs">{order.order_id}</td>
-                  <td className="py-3 pr-3">
-                    <div className="font-medium text-foreground">{order.customer_name}</div>
-                    <div className="text-xs text-muted-foreground">{order.customer_phone}</div>
-                  </td>
-                  <td className="py-3 pr-3 text-foreground">{order.product_title}</td>
-                  <td className="py-3 pr-3">৳{order.price}</td>
-                  <td className="py-3 pr-3 uppercase text-xs">{order.payment_method}</td>
-                  <td className="py-3 pr-3">
-                    {order.transaction_id ? (
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-mono text-xs text-foreground">{order.transaction_id}</span>
-                        <button
-                          onClick={() => togglePaymentVerified(order.id, order.payment_verified)}
-                          title={order.payment_verified ? "ভেরিফাইড — ক্লিক করে সরান" : "ক্লিক করে ভেরিফাই করুন"}
-                        >
-                          {order.payment_verified ? (
-                            <CheckCircle className="h-4 w-4 text-green-500" />
-                          ) : (
-                            <XCircle className="h-4 w-4 text-muted-foreground hover:text-green-500" />
-                          )}
-                        </button>
-                      </div>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">—</span>
-                    )}
-                  </td>
-                  <td className="py-3 pr-3">
-                    {order.courier_provider ? (
-                      <div className="space-y-1">
-                        <span className="inline-block rounded bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary capitalize">
-                          {order.courier_provider}
-                        </span>
-                        {order.courier_status && (
-                          <span className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${courierStatusStyle(order.courier_status)}`}>
-                            {courierStatusLabel(order.courier_status)}
-                          </span>
-                        )}
-                        {order.courier_tracking_id && (
-                          <a
-                            href={courierTrackingUrl[order.courier_provider]?.(order.courier_tracking_id) || "#"}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1 text-xs text-primary hover:underline"
-                          >
-                            {order.courier_tracking_id}
-                            <ExternalLink className="h-3 w-3" />
-                          </a>
-                        )}
-                      </div>
-                    ) : order.product_type === "book" ? (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 gap-1 text-xs"
-                        onClick={() => { setCourierDialog(order.id); setSelectedCourier(""); }}
-                      >
-                        <Truck className="h-3.5 w-3.5" />
-                        কুরিয়ারে পাঠান
-                      </Button>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">—</span>
-                    )}
-                  </td>
-                  <td className="py-3 pr-3">
-                    <Select value={order.status} onValueChange={(val) => updateStatus(order.id, val)}>
-                      <SelectTrigger className="h-8 w-32">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {["pending", "confirmed", "shipped", "delivered", "cancelled"].map((s) => (
-                          <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </td>
-                  <td className="py-3">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => toggleFraud(order.id, order.is_fraud_flagged)}
-                      title={order.is_fraud_flagged ? "Remove fraud flag" : "Flag as suspicious"}
-                    >
-                      <AlertTriangle className={`h-4 w-4 ${order.is_fraud_flagged ? "text-destructive" : "text-muted-foreground"}`} />
-                    </Button>
-                  </td>
+        <>
+          {/* Desktop table */}
+          <div className="mt-6 hidden overflow-x-auto lg:block">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b border-border text-muted-foreground">
+                <tr>
+                  <th className="pb-3 pr-3">Order ID</th>
+                  <th className="pb-3 pr-3">Customer</th>
+                  <th className="pb-3 pr-3">Product</th>
+                  <th className="pb-3 pr-3">Price</th>
+                  <th className="pb-3 pr-3">Payment</th>
+                  <th className="pb-3 pr-3">TXN ID</th>
+                  <th className="pb-3 pr-3">Courier</th>
+                  <th className="pb-3 pr-3">Status</th>
+                  <th className="pb-3">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {orders.map((order) => (
+                  <tr key={order.id} className={`border-b border-border ${order.is_fraud_flagged ? "bg-destructive/5" : ""}`}>
+                    <td className="py-3 pr-3 font-mono text-xs">{order.order_id}</td>
+                    <td className="py-3 pr-3">
+                      <div className="font-medium text-foreground">{order.customer_name}</div>
+                      <div className="text-xs text-muted-foreground">{order.customer_phone}</div>
+                    </td>
+                    <td className="py-3 pr-3 text-foreground">{order.product_title}</td>
+                    <td className="py-3 pr-3">৳{order.price}</td>
+                    <td className="py-3 pr-3 uppercase text-xs">{order.payment_method}</td>
+                    <td className="py-3 pr-3">
+                      {order.transaction_id ? (
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-mono text-xs text-foreground">{order.transaction_id}</span>
+                          <button onClick={() => togglePaymentVerified(order.id, order.payment_verified)} title={order.payment_verified ? "ভেরিফাইড" : "ভেরিফাই করুন"}>
+                            {order.payment_verified ? <CheckCircle className="h-4 w-4 text-green-500" /> : <XCircle className="h-4 w-4 text-muted-foreground hover:text-green-500" />}
+                          </button>
+                        </div>
+                      ) : <span className="text-xs text-muted-foreground">—</span>}
+                    </td>
+                    <td className="py-3 pr-3">
+                      {order.courier_provider ? (
+                        <div className="space-y-1">
+                          <span className="inline-block rounded bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary capitalize">{order.courier_provider}</span>
+                          {order.courier_status && <span className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${courierStatusStyle(order.courier_status)}`}>{courierStatusLabel(order.courier_status)}</span>}
+                          {order.courier_tracking_id && (
+                            <a href={courierTrackingUrl[order.courier_provider]?.(order.courier_tracking_id) || "#"} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-primary hover:underline">
+                              {order.courier_tracking_id} <ExternalLink className="h-3 w-3" />
+                            </a>
+                          )}
+                        </div>
+                      ) : order.product_type === "book" ? (
+                        <Button variant="outline" size="sm" className="h-7 gap-1 text-xs" onClick={() => { setCourierDialog(order.id); setSelectedCourier(""); }}>
+                          <Truck className="h-3.5 w-3.5" /> কুরিয়ারে পাঠান
+                        </Button>
+                      ) : <span className="text-xs text-muted-foreground">—</span>}
+                    </td>
+                    <td className="py-3 pr-3">
+                      <Select value={order.status} onValueChange={(val) => updateStatus(order.id, val)}>
+                        <SelectTrigger className="h-8 w-32"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {["pending", "confirmed", "shipped", "delivered", "cancelled"].map((s) => (
+                            <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </td>
+                    <td className="py-3">
+                      <Button variant="ghost" size="icon" onClick={() => toggleFraud(order.id, order.is_fraud_flagged)} title={order.is_fraud_flagged ? "Remove fraud flag" : "Flag as suspicious"}>
+                        <AlertTriangle className={`h-4 w-4 ${order.is_fraud_flagged ? "text-destructive" : "text-muted-foreground"}`} />
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile cards */}
+          <div className="mt-4 space-y-3 lg:hidden">
+            {orders.map((order) => (
+              <div key={order.id} className={`rounded-xl border border-border bg-card p-4 space-y-3 ${order.is_fraud_flagged ? "border-destructive/30 bg-destructive/5" : ""}`}>
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <span className="font-mono text-xs text-muted-foreground">{order.order_id}</span>
+                    <h4 className="mt-0.5 font-medium text-foreground text-sm">{order.customer_name}</h4>
+                    <p className="text-xs text-muted-foreground">{order.customer_phone}</p>
+                  </div>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => toggleFraud(order.id, order.is_fraud_flagged)}>
+                    <AlertTriangle className={`h-4 w-4 ${order.is_fraud_flagged ? "text-destructive" : "text-muted-foreground"}`} />
+                  </Button>
+                </div>
+                
+                <div className="text-sm text-foreground">{order.product_title}</div>
+                
+                <div className="flex flex-wrap items-center gap-2 text-xs">
+                  <span className="font-semibold text-foreground">৳{order.price}</span>
+                  <span className="uppercase text-muted-foreground">{order.payment_method}</span>
+                  {order.transaction_id && (
+                    <div className="flex items-center gap-1">
+                      <span className="font-mono text-muted-foreground">{order.transaction_id}</span>
+                      <button onClick={() => togglePaymentVerified(order.id, order.payment_verified)}>
+                        {order.payment_verified ? <CheckCircle className="h-3.5 w-3.5 text-green-500" /> : <XCircle className="h-3.5 w-3.5 text-muted-foreground" />}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Courier */}
+                {order.courier_provider ? (
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="rounded bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary capitalize">{order.courier_provider}</span>
+                    {order.courier_status && <span className={`rounded px-2 py-0.5 text-xs font-medium ${courierStatusStyle(order.courier_status)}`}>{courierStatusLabel(order.courier_status)}</span>}
+                    {order.courier_tracking_id && (
+                      <a href={courierTrackingUrl[order.courier_provider]?.(order.courier_tracking_id) || "#"} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-primary hover:underline">
+                        {order.courier_tracking_id} <ExternalLink className="h-3 w-3" />
+                      </a>
+                    )}
+                  </div>
+                ) : order.product_type === "book" ? (
+                  <Button variant="outline" size="sm" className="h-7 gap-1 text-xs w-full" onClick={() => { setCourierDialog(order.id); setSelectedCourier(""); }}>
+                    <Truck className="h-3.5 w-3.5" /> কুরিয়ারে পাঠান
+                  </Button>
+                ) : null}
+
+                {/* Status */}
+                <Select value={order.status} onValueChange={(val) => updateStatus(order.id, val)}>
+                  <SelectTrigger className="h-9 w-full"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {["pending", "confirmed", "shipped", "delivered", "cancelled"].map((s) => (
+                      <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ))}
+          </div>
+        </>
       )}
 
       {/* Courier Selection Dialog */}

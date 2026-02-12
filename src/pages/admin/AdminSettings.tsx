@@ -118,15 +118,15 @@ const AdminSettings = () => {
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Settings</h1>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-xl font-bold text-foreground sm:text-2xl">Settings</h1>
         <Button onClick={saveAll} disabled={saving} className="gap-2">
           <Save className="h-4 w-4" />
           {saving ? "সেভ হচ্ছে..." : "সব সেভ করুন"}
         </Button>
       </div>
 
-      <div className="mt-8 max-w-lg space-y-8">
+      <div className="mt-8 max-w-2xl space-y-8">
         {/* Site Branding */}
         <div className="rounded-xl border border-border bg-card p-6 space-y-4">
           <h3 className="font-display text-lg font-semibold text-foreground">সাইট ব্র্যান্ডিং</h3>
