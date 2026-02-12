@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Save, Plus, Trash2, Image, Video, ArrowUp, ArrowDown } from "lucide-react";
+import { Save, Plus, Trash2, Image, Video, ArrowUp, ArrowDown, Upload, Loader2 } from "lucide-react";
 
 interface HeroFields {
   hero_title: string;
@@ -43,6 +43,7 @@ const HERO_KEYS = Object.keys(defaultFields) as (keyof HeroFields)[];
 
 const AdminHero = () => {
   const { toast } = useToast();
+  const [uploadingSlide, setUploadingSlide] = useState<string | null>(null);
   const [fields, setFields] = useState<HeroFields>(defaultFields);
   const [slides, setSlides] = useState<HeroSlide[]>([]);
   const [loading, setLoading] = useState(true);
@@ -92,8 +93,25 @@ const AdminHero = () => {
 
   const addSlide = async () => {
     const maxOrder = slides.length > 0 ? Math.max(...slides.map((s) => s.sort_order)) + 1 : 0;
-    await supabase.from("hero_slides").insert({ media_url: "", media_type: "image", sort_order: maxOrder });
-    fetchData();
+    const { data } = await supabase.from("hero_slides").insert({ media_url: "", media_type: "image", sort_order: maxOrder }).select().single();
+    if (data) setSlides((prev) => [...prev, data]);
+  };
+
+  const handleFileUpload = async (slideId: string, file: File) => {
+    setUploadingSlide(slideId);
+    const ext = file.name.split(".").pop();
+    const path = `slides/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from("hero-media").upload(path, file);
+    if (error) {
+      toast({ title: "আপলোড ব্যর্থ", description: error.message, variant: "destructive" });
+      setUploadingSlide(null);
+      return;
+    }
+    const { data: urlData } = supabase.storage.from("hero-media").getPublicUrl(path);
+    const mediaType = file.type.startsWith("video/") ? "video" : "image";
+    await updateSlide(slideId, { media_url: urlData.publicUrl, media_type: mediaType });
+    setUploadingSlide(null);
+    toast({ title: "আপলোড সফল" });
   };
 
   const updateSlide = async (id: string, updates: Partial<HeroSlide>) => {
@@ -191,7 +209,7 @@ const AdminHero = () => {
               <Plus className="h-4 w-4" /> স্লাইড যোগ করুন
             </Button>
           </div>
-          <p className="text-sm text-muted-foreground">ছবি বা ভিডিও URL দিন। একাধিক স্লাইড থাকলে অটো-স্লাইডিং হবে।</p>
+          <p className="text-sm text-muted-foreground">সরাসরি ছবি বা ভিডিও আপলোড করুন। একাধিক স্লাইড থাকলে অটো-স্লাইডিং হবে।</p>
 
           {slides.length === 0 && (
             <div className="rounded-xl border-2 border-dashed border-border p-10 text-center text-muted-foreground">
@@ -216,31 +234,28 @@ const AdminHero = () => {
                 </div>
               </div>
               <div>
-                <Label>মিডিয়া URL</Label>
-                <Input
-                  value={slide.media_url}
-                  onChange={(e) => updateSlide(slide.id, { media_url: e.target.value })}
-                  className="mt-1"
-                  placeholder="https://..."
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant={slide.media_type === "image" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => updateSlide(slide.id, { media_type: "image" })}
-                  className="gap-1.5"
-                >
-                  <Image className="h-3.5 w-3.5" /> ছবি
-                </Button>
-                <Button
-                  variant={slide.media_type === "video" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => updateSlide(slide.id, { media_type: "video" })}
-                  className="gap-1.5"
-                >
-                  <Video className="h-3.5 w-3.5" /> ভিডিও
-                </Button>
+                <Label>মিডিয়া আপলোড</Label>
+                <label className="mt-1 flex cursor-pointer items-center gap-2 rounded-md border border-dashed border-border p-3 hover:bg-muted/50 transition-colors">
+                  {uploadingSlide === slide.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  ) : (
+                    <Upload className="h-4 w-4 text-muted-foreground" />
+                  )}
+                  <span className="text-sm text-muted-foreground">
+                    {uploadingSlide === slide.id ? "আপলোড হচ্ছে..." : "ছবি বা ভিডিও নির্বাচন করুন"}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*,video/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleFileUpload(slide.id, file);
+                      e.target.value = "";
+                    }}
+                    disabled={uploadingSlide === slide.id}
+                  />
+                </label>
               </div>
               {slide.media_url && (
                 <div className="aspect-video overflow-hidden rounded-lg border border-border">
