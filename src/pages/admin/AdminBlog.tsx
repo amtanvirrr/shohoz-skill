@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Upload, X, Eye, EyeOff, Mail, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Upload, X, Eye, EyeOff, Mail, MailCheck, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import RichTextEditor from "@/components/RichTextEditor";
@@ -25,6 +25,7 @@ interface BlogPost {
   published_at: string | null;
   meta_title: string | null;
   meta_description: string | null;
+  newsletter_sent_at: string | null;
   created_at: string;
 }
 
@@ -160,6 +161,8 @@ const AdminBlog = () => {
         });
         if (res.error) throw res.error;
         const result = res.data;
+        // Update newsletter_sent_at
+        await supabase.from("blog_posts").update({ newsletter_sent_at: new Date().toISOString() } as any).eq("id", savedPostId);
         toast({
           title: "নিউজলেটার পাঠানো হয়েছে!",
           description: `${result.sent}টি সাবস্ক্রাইবারকে ইমেইল পাঠানো হয়েছে${result.failed > 0 ? `, ${result.failed}টি ব্যর্থ` : ""}`,
@@ -192,20 +195,24 @@ const AdminBlog = () => {
   };
 
   const sendNewsletter = async (post: BlogPost) => {
-    if (!confirm(`"${post.title}" আর্টিকেলটি সকল সাবস্ক্রাইবারকে ইমেইল করতে চান?`)) return;
+    const alreadySent = post.newsletter_sent_at;
+    const msg = alreadySent
+      ? `"${post.title}" এর নিউজলেটার আগেই পাঠানো হয়েছে (${new Date(alreadySent).toLocaleDateString("bn-BD")})\nআবার পাঠাতে চান?`
+      : `"${post.title}" আর্টিকেলটি সকল সাবস্ক্রাইবারকে ইমেইল করতে চান?`;
+    if (!confirm(msg)) return;
     setSendingNewsletter(post.id);
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
       const res = await supabase.functions.invoke("send-newsletter", {
         body: { postId: post.id },
       });
       if (res.error) throw res.error;
       const result = res.data;
+      await supabase.from("blog_posts").update({ newsletter_sent_at: new Date().toISOString() } as any).eq("id", post.id);
       toast({
         title: "নিউজলেটার পাঠানো হয়েছে!",
         description: `${result.sent}টি সাবস্ক্রাইবারকে ইমেইল পাঠানো হয়েছে${result.failed > 0 ? `, ${result.failed}টি ব্যর্থ` : ""}`,
       });
+      fetchPosts();
     } catch (err: any) {
       toast({ title: "ইমেইল পাঠাতে সমস্যা", description: err.message, variant: "destructive" });
     }
@@ -303,11 +310,15 @@ const AdminBlog = () => {
               </div>
 
               {form.is_published && (
-                <div className="flex items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 p-3">
+                <div className={`flex items-center gap-3 rounded-lg border p-3 ${editing?.newsletter_sent_at ? "border-warning/30 bg-warning/5" : "border-primary/20 bg-primary/5"}`}>
                   <Switch checked={form.send_newsletter} onCheckedChange={(checked) => setForm({ ...form, send_newsletter: checked })} />
                   <div>
                     <Label className="cursor-pointer">পাবলিশের সাথে নিউজলেটার পাঠান</Label>
-                    <p className="text-xs text-muted-foreground">সকল সাবস্ক্রাইবারকে ইমেইল নোটিফিকেশন পাঠানো হবে</p>
+                    {editing?.newsletter_sent_at ? (
+                      <p className="text-xs text-amber-600">⚠️ এই পোস্টের নিউজলেটার আগেই পাঠানো হয়েছে ({new Date(editing.newsletter_sent_at).toLocaleDateString("bn-BD")})</p>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">সকল সাবস্ক্রাইবারকে ইমেইল নোটিফিকেশন পাঠানো হবে</p>
+                    )}
                   </div>
                 </div>
               )}
@@ -368,9 +379,9 @@ const AdminBlog = () => {
                             size="icon"
                             onClick={() => sendNewsletter(post)}
                             disabled={sendingNewsletter === post.id}
-                            title="সাবস্ক্রাইবারদের ইমেইল পাঠান"
+                            title={post.newsletter_sent_at ? `নিউজলেটার পাঠানো হয়েছে (${new Date(post.newsletter_sent_at).toLocaleDateString("bn-BD")})` : "সাবস্ক্রাইবারদের ইমেইল পাঠান"}
                           >
-                            {sendingNewsletter === post.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4 text-primary" />}
+                            {sendingNewsletter === post.id ? <Loader2 className="h-4 w-4 animate-spin" /> : post.newsletter_sent_at ? <MailCheck className="h-4 w-4 text-success" /> : <Mail className="h-4 w-4 text-primary" />}
                           </Button>
                         </>
                       )}
