@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
+import { MetaPixelProvider } from "@/components/MetaPixelProvider";
 import Layout from "@/components/layout/Layout";
 import AdminLayout from "@/components/admin/AdminLayout";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -48,6 +49,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <MetaPixelProvider>
           <Routes>
             {/* Public routes with Layout */}
             <Route path="/" element={<Layout><Index /></Layout>} />
@@ -85,6 +87,7 @@ const App = () => (
 
             <Route path="*" element={<Layout><NotFound /></Layout>} />
           </Routes>
+          </MetaPixelProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

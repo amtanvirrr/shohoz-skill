@@ -9,6 +9,8 @@ export interface SiteSettings {
   footer_logo_url: string;
   admin_logo_url: string;
   favicon_url: string;
+  facebook_pixel_id: string;
+  facebook_test_event_code: string;
 }
 
 const defaults: SiteSettings = {
@@ -19,6 +21,8 @@ const defaults: SiteSettings = {
   footer_logo_url: "/favicon.webp",
   admin_logo_url: "/favicon.webp",
   favicon_url: "/favicon.webp",
+  facebook_pixel_id: "",
+  facebook_test_event_code: "",
 };
 
 const SETTING_KEYS = Object.keys(defaults) as (keyof SiteSettings)[];

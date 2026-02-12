@@ -16,6 +16,8 @@ interface BrandingFields {
   admin_logo_url: string;
   favicon_url: string;
   facebook_pixel_id: string;
+  facebook_capi_token: string;
+  facebook_test_event_code: string;
 }
 
 const defaultBranding: BrandingFields = {
@@ -27,6 +29,8 @@ const defaultBranding: BrandingFields = {
   admin_logo_url: "",
   favicon_url: "",
   facebook_pixel_id: "",
+  facebook_capi_token: "",
+  facebook_test_event_code: "",
 };
 
 const ALL_KEYS = Object.keys(defaultBranding) as (keyof BrandingFields)[];
@@ -137,13 +141,35 @@ const AdminSettings = () => {
           </div>
         </div>
 
-        {/* Facebook Pixel */}
+        {/* Meta Pixel & Conversions API */}
         <div className="rounded-xl border border-border bg-card p-6 space-y-4">
-          <h3 className="font-display text-lg font-semibold text-foreground">Facebook Pixel</h3>
-          <p className="text-sm text-muted-foreground">ট্র্যাকিংয়ের জন্য Facebook Pixel ID যোগ করুন।</p>
+          <h3 className="font-display text-lg font-semibold text-foreground">Meta Pixel & Conversions API</h3>
+          <p className="text-sm text-muted-foreground">
+            ক্লায়েন্ট-সাইড Pixel এবং সার্ভার-সাইড Conversions API এর মাধ্যমে ইভেন্ট ট্র্যাকিং করুন। PageView, Purchase ইত্যাদি ইভেন্ট অটোমেটিকভাবে ট্র্যাক হবে।
+          </p>
           <div>
             <Label htmlFor="pixel">Pixel ID</Label>
-            <Input id="pixel" value={fields.facebook_pixel_id} onChange={(e) => handleChange("facebook_pixel_id", e.target.value)} className="mt-1" placeholder="Enter Pixel ID" />
+            <Input id="pixel" value={fields.facebook_pixel_id} onChange={(e) => handleChange("facebook_pixel_id", e.target.value)} className="mt-1" placeholder="e.g. 123456789012345" />
+            <p className="mt-1 text-xs text-muted-foreground">Meta Events Manager থেকে Pixel ID কপি করুন।</p>
+          </div>
+          <div>
+            <Label htmlFor="capi_token">Conversions API Access Token</Label>
+            <Input id="capi_token" type="password" value={fields.facebook_capi_token} onChange={(e) => handleChange("facebook_capi_token", e.target.value)} className="mt-1" placeholder="EAAxxxxxxx..." />
+            <p className="mt-1 text-xs text-muted-foreground">Events Manager → Settings → Conversions API → Generate Access Token।</p>
+          </div>
+          <div>
+            <Label htmlFor="test_event">Test Event Code (ঐচ্ছিক)</Label>
+            <Input id="test_event" value={fields.facebook_test_event_code} onChange={(e) => handleChange("facebook_test_event_code", e.target.value)} className="mt-1" placeholder="e.g. TEST12345" />
+            <p className="mt-1 text-xs text-muted-foreground">Events Manager → Test Events → Test Event Code কপি করুন। টেস্ট শেষে এটি মুছে ফেলুন।</p>
+          </div>
+          <div className="rounded-lg bg-muted p-4 text-sm text-muted-foreground space-y-1">
+            <p className="font-medium text-foreground">অটোমেটিক ট্র্যাকিং ইভেন্ট:</p>
+            <ul className="list-disc list-inside space-y-0.5">
+              <li><strong>PageView</strong> — প্রতিটি পেজ ভিজিটে</li>
+              <li><strong>Purchase</strong> — অর্ডার সাবমিটের সময়</li>
+              <li><strong>ViewContent</strong> — কোর্স/বই ডিটেইল পেজে</li>
+            </ul>
+            <p className="mt-2">ইভেন্টগুলো Client + Server উভয় দিক থেকে পাঠানো হয় (Deduplication Event ID সহ)।</p>
           </div>
         </div>
 
