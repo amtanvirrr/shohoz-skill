@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, User, ArrowLeft, Tag } from "lucide-react";
+import { Calendar, User, ArrowLeft, Tag, MessageCircle, Trash2, Send } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 interface BlogPost {
   id: string;
@@ -20,10 +23,23 @@ interface BlogPost {
   meta_description: string | null;
 }
 
+interface BlogComment {
+  id: string;
+  blog_post_id: string;
+  user_id: string;
+  commenter_name: string;
+  comment: string;
+  created_at: string;
+}
+
 const BlogDetailPage = () => {
   const { slug } = useParams();
+  const { user } = useAuth();
   const [post, setPost] = useState<BlogPost | null>(null);
   const [loading, setLoading] = useState(true);
+  const [comments, setComments] = useState<BlogComment[]>([]);
+  const [newComment, setNewComment] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -38,6 +54,51 @@ const BlogDetailPage = () => {
     };
     fetchPost();
   }, [slug]);
+
+  const fetchComments = async (postId: string) => {
+    const { data } = await supabase
+      .from("blog_comments")
+      .select("*")
+      .eq("blog_post_id", postId)
+      .order("created_at", { ascending: true });
+    setComments((data as BlogComment[]) || []);
+  };
+
+  useEffect(() => {
+    if (post?.id) fetchComments(post.id);
+  }, [post?.id]);
+
+  const handleSubmitComment = async () => {
+    if (!user || !post || !newComment.trim()) return;
+    setSubmitting(true);
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    const { error } = await supabase.from("blog_comments").insert({
+      blog_post_id: post.id,
+      user_id: user.id,
+      commenter_name: profile?.full_name || user.email || "Unknown",
+      comment: newComment.trim(),
+    });
+    if (error) {
+      toast.error("মন্তব্য পোস্ট করতে সমস্যা হয়েছে");
+    } else {
+      toast.success("মন্তব্য সফলভাবে পোস্ট হয়েছে");
+      setNewComment("");
+      fetchComments(post.id);
+    }
+    setSubmitting(false);
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    const { error } = await supabase.from("blog_comments").delete().eq("id", commentId);
+    if (!error && post) {
+      toast.success("মন্তব্য মুছে ফেলা হয়েছে");
+      fetchComments(post.id);
+    }
+  };
 
   useEffect(() => {
     if (post) {
@@ -128,6 +189,58 @@ const BlogDetailPage = () => {
             ))}
           </div>
         )}
+
+        {/* Comments Section */}
+        <div className="mt-12 border-t border-border pt-8">
+          <h2 className="mb-6 flex items-center gap-2 text-xl font-bold text-foreground">
+            <MessageCircle className="h-5 w-5" /> মন্তব্য ({comments.length})
+          </h2>
+
+          {/* Comment Form */}
+          {user ? (
+            <div className="mb-8 space-y-3">
+              <Textarea
+                placeholder="আপনার মন্তব্য লিখুন..."
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                rows={3}
+              />
+              <Button onClick={handleSubmitComment} disabled={submitting || !newComment.trim()} size="sm">
+                <Send className="mr-2 h-4 w-4" /> {submitting ? "পোস্ট হচ্ছে..." : "মন্তব্য করুন"}
+              </Button>
+            </div>
+          ) : (
+            <p className="mb-8 text-sm text-muted-foreground">
+              মন্তব্য করতে <Link to="/login" className="text-primary underline">লগইন করুন</Link>।
+            </p>
+          )}
+
+          {/* Comments List */}
+          {comments.length === 0 ? (
+            <p className="text-sm text-muted-foreground">এখনো কোনো মন্তব্য নেই। প্রথম মন্তব্য করুন!</p>
+          ) : (
+            <div className="space-y-4">
+              {comments.map((c) => (
+                <div key={c.id} className="rounded-lg border border-border bg-card p-4">
+                  <div className="mb-2 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-foreground">{c.commenter_name}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(c.created_at).toLocaleDateString("bn-BD", { year: "numeric", month: "long", day: "numeric" })}
+                      </span>
+                    </div>
+                    {user?.id === c.user_id && (
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDeleteComment(c.id)}>
+                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                      </Button>
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground">{c.comment}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </article>
   );
