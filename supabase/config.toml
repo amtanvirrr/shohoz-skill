@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.send-to-courier]
 verify_jwt = false
+
+[functions.check-courier-status]
+verify_jwt = false
