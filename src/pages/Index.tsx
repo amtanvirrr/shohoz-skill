@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { reviews } from "@/data/mock-data";
+
 import heroBg from "@/assets/hero-bg.jpg";
 
 interface DbBook {
@@ -29,6 +29,14 @@ interface DbCourse {
   duration: string;
 }
 
+interface DbReview {
+  id: string;
+  reviewer_name: string;
+  rating: number;
+  comment: string;
+  course_id: string;
+}
+
 const Index = () => {
   const { toast } = useToast();
   const [trackOrderId, setTrackOrderId] = useState("");
@@ -36,10 +44,22 @@ const Index = () => {
   const [trackResult, setTrackResult] = useState<any>(null);
   const [dbBooks, setDbBooks] = useState<DbBook[]>([]);
   const [dbCourses, setDbCourses] = useState<DbCourse[]>([]);
-
+  const [dbReviews, setDbReviews] = useState<(DbReview & { course_title?: string })[]>([]);
   useEffect(() => {
     supabase.from("books").select("id, title, author, price, original_price, image_url, category").eq("is_published", true).limit(3).then(({ data }) => setDbBooks(data || []));
     supabase.from("courses").select("id, title, instructor, price, original_price, image_url, category, duration").eq("is_published", true).limit(3).then(({ data }) => setDbCourses(data || []));
+    // Fetch active reviews with course title
+    supabase.from("reviews").select("id, reviewer_name, rating, comment, course_id, courses(title)").eq("is_active", true).order("created_at", { ascending: false }).limit(8).then(({ data }) => {
+      const mapped = (data || []).map((r: any) => ({
+        id: r.id,
+        reviewer_name: r.reviewer_name,
+        rating: r.rating,
+        comment: r.comment,
+        course_id: r.course_id,
+        course_title: r.courses?.title || "",
+      }));
+      setDbReviews(mapped);
+    });
   }, []);
 
   const handleTrack = async () => {
@@ -170,28 +190,30 @@ const Index = () => {
       </section>
 
       {/* Reviews */}
-      <section className="py-16 lg:py-20">
-        <div className="container mx-auto px-4">
-          <h2 className="text-center text-3xl font-bold text-foreground">What Our Students Say</h2>
-          <p className="mx-auto mt-2 text-center text-muted-foreground">আমাদের শিক্ষার্থীদের মতামত</p>
-          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {reviews.map((review) => (
-              <div key={review.id} className="rounded-xl border border-border bg-card p-5 shadow-sm">
-                <div className="flex gap-0.5">
-                  {Array.from({ length: review.rating }).map((_, i) => (
-                    <Star key={i} className="h-4 w-4 fill-accent text-accent" />
-                  ))}
+      {dbReviews.length > 0 && (
+        <section className="py-16 lg:py-20">
+          <div className="container mx-auto px-4">
+            <h2 className="text-center text-3xl font-bold text-foreground">What Our Students Say</h2>
+            <p className="mx-auto mt-2 text-center text-muted-foreground">আমাদের শিক্ষার্থীদের মতামত</p>
+            <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {dbReviews.map((review) => (
+                <div key={review.id} className="rounded-xl border border-border bg-card p-5 shadow-sm">
+                  <div className="flex gap-0.5">
+                    {Array.from({ length: review.rating }).map((_, i) => (
+                      <Star key={i} className="h-4 w-4 fill-accent text-accent" />
+                    ))}
+                  </div>
+                  <p className="mt-3 text-sm text-card-foreground leading-relaxed">"{review.comment}"</p>
+                  <div className="mt-4 border-t border-border pt-3">
+                    <p className="text-sm font-semibold text-foreground">{review.reviewer_name}</p>
+                    {review.course_title && <p className="text-xs text-muted-foreground">{review.course_title}</p>}
+                  </div>
                 </div>
-                <p className="mt-3 text-sm text-card-foreground leading-relaxed">"{review.comment}"</p>
-                <div className="mt-4 border-t border-border pt-3">
-                  <p className="text-sm font-semibold text-foreground">{review.name}</p>
-                  <p className="text-xs text-muted-foreground">{review.product}</p>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Track Order */}
       <section className="bg-secondary/50 py-16">
