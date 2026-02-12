@@ -103,7 +103,6 @@ const EbookReader = () => {
             src={pdfUrl}
             className="w-full h-full border-0"
             title={bookTitle}
-            sandbox="allow-same-origin allow-scripts"
             style={{ pointerEvents: "auto" }}
           />
         )}
