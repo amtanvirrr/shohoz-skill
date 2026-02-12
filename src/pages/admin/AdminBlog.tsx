@@ -40,6 +40,7 @@ const initialForm = {
   is_published: false,
   meta_title: "",
   meta_description: "",
+  send_newsletter: false,
 };
 
 const AdminBlog = () => {
@@ -89,6 +90,7 @@ const AdminBlog = () => {
       is_published: post.is_published,
       meta_title: post.meta_title || "",
       meta_description: post.meta_description || "",
+      send_newsletter: false,
     });
     setDialogOpen(true);
   };
@@ -136,15 +138,37 @@ const AdminBlog = () => {
       meta_description: form.meta_description || null,
     };
 
+    let savedPostId: string | null = null;
+
     if (editing) {
       const { error } = await supabase.from("blog_posts").update(payload).eq("id", editing.id);
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+      savedPostId = editing.id;
       toast({ title: "Blog post updated" });
     } else {
-      const { error } = await supabase.from("blog_posts").insert(payload);
+      const { data: inserted, error } = await supabase.from("blog_posts").insert(payload).select("id").single();
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+      savedPostId = inserted.id;
       toast({ title: "Blog post created" });
     }
+
+    // Auto send newsletter if option is checked
+    if (form.send_newsletter && form.is_published && savedPostId) {
+      try {
+        const res = await supabase.functions.invoke("send-newsletter", {
+          body: { postId: savedPostId },
+        });
+        if (res.error) throw res.error;
+        const result = res.data;
+        toast({
+          title: "নিউজলেটার পাঠানো হয়েছে!",
+          description: `${result.sent}টি সাবস্ক্রাইবারকে ইমেইল পাঠানো হয়েছে${result.failed > 0 ? `, ${result.failed}টি ব্যর্থ` : ""}`,
+        });
+      } catch (err: any) {
+        toast({ title: "নিউজলেটার পাঠাতে সমস্যা", description: err.message, variant: "destructive" });
+      }
+    }
+
     setDialogOpen(false);
     resetForm();
     fetchPosts();
@@ -274,9 +298,19 @@ const AdminBlog = () => {
               </div>
 
               <div className="flex items-center gap-3">
-                <Switch checked={form.is_published} onCheckedChange={(checked) => setForm({ ...form, is_published: checked })} />
+                <Switch checked={form.is_published} onCheckedChange={(checked) => setForm({ ...form, is_published: checked, send_newsletter: checked ? form.send_newsletter : false })} />
                 <Label>Publish Now</Label>
               </div>
+
+              {form.is_published && (
+                <div className="flex items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 p-3">
+                  <Switch checked={form.send_newsletter} onCheckedChange={(checked) => setForm({ ...form, send_newsletter: checked })} />
+                  <div>
+                    <Label className="cursor-pointer">পাবলিশের সাথে নিউজলেটার পাঠান</Label>
+                    <p className="text-xs text-muted-foreground">সকল সাবস্ক্রাইবারকে ইমেইল নোটিফিকেশন পাঠানো হবে</p>
+                  </div>
+                </div>
+              )}
 
               <Button onClick={handleSave} className="w-full">{editing ? "Update" : "Create"} Post</Button>
             </div>
