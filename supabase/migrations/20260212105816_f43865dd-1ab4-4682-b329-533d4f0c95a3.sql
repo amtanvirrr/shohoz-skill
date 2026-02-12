@@ -1,0 +1,1 @@
+ALTER TABLE public.blog_posts ADD COLUMN newsletter_sent_at timestamp with time zone DEFAULT NULL;
