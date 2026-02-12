@@ -76,11 +76,16 @@ const BlogPage = () => {
   }, [search, selectedCategory, selectedTag]);
 
   return (
-    <div className="container mx-auto px-4 py-12">
+    <div className="container mx-auto px-4 py-16">
       {/* Hero */}
-      <div className="mb-12 text-center">
-        <h1 className="font-display text-4xl font-bold text-foreground md:text-5xl">ব্লগ</h1>
-        <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
+      <div className="mb-14 text-center">
+        <span className="mb-3 inline-block rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary">
+          আমাদের ব্লগ
+        </span>
+        <h1 className="font-display text-4xl font-bold text-foreground md:text-5xl lg:text-6xl">
+          জ্ঞান ও অনুপ্রেরণা
+        </h1>
+        <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-muted-foreground">
           স্কিল ডেভেলপমেন্ট, ক্যারিয়ার গাইড এবং টিপস নিয়ে আমাদের লেটেস্ট আর্টিকেল পড়ুন।
         </p>
       </div>
@@ -165,36 +170,52 @@ const BlogPage = () => {
           ) : (
             <>
               <div className="grid gap-8 md:grid-cols-2">
-                {paginatedPosts.map((post) => (
+                {paginatedPosts.map((post, index) => (
                   <Link
                     key={post.id}
                     to={`/blog/${post.slug}`}
-                    className="group overflow-hidden rounded-xl border border-border bg-card transition-all hover:border-primary/30 hover:shadow-lg"
+                    className={`group relative overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1 ${
+                      index === 0 && currentPage === 1 ? "md:col-span-2" : ""
+                    }`}
                   >
                     {post.cover_image_url && (
-                      <div className="aspect-video overflow-hidden">
+                      <div className={`overflow-hidden ${index === 0 && currentPage === 1 ? "aspect-[21/9]" : "aspect-video"}`}>
                         <img
                           src={post.cover_image_url}
                           alt={post.title}
-                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                          loading="lazy"
                         />
+                        <div className="absolute inset-0 bg-gradient-to-t from-card/80 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                       </div>
                     )}
-                    <div className="p-5">
-                      {post.category && (
-                        <Badge variant="secondary" className="mb-3">
-                          {post.category}
-                        </Badge>
-                      )}
-                      <h2 className="mb-2 font-display text-lg font-bold text-foreground line-clamp-2 group-hover:text-primary">
+                    <div className="p-6">
+                      <div className="mb-3 flex items-center gap-2">
+                        {post.category && (
+                          <Badge variant="secondary" className="rounded-full font-medium">
+                            {post.category}
+                          </Badge>
+                        )}
+                        <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <Clock className="h-3 w-3" /> {Math.max(1, Math.ceil(post.content.replace(/<[^>]*>/g, '').split(/\s+/).length / 200))} মিনিট
+                        </span>
+                      </div>
+                      <h2 className={`mb-3 font-display font-bold text-foreground line-clamp-2 transition-colors duration-200 group-hover:text-primary ${
+                        index === 0 && currentPage === 1 ? "text-2xl md:text-3xl" : "text-lg"
+                      }`}>
                         {post.title}
                       </h2>
-                      <p className="mb-4 text-sm text-muted-foreground line-clamp-3">{post.excerpt}</p>
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <div className="flex items-center gap-3">
+                      <p className={`mb-5 text-muted-foreground line-clamp-3 leading-relaxed ${
+                        index === 0 && currentPage === 1 ? "text-base" : "text-sm"
+                      }`}>{post.excerpt}</p>
+                      <div className="flex items-center justify-between border-t border-border pt-4">
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
                           {post.author_name && (
-                            <span className="flex items-center gap-1">
-                              <User className="h-3 w-3" /> {post.author_name}
+                            <span className="flex items-center gap-1.5 font-medium">
+                              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
+                                {post.author_name.charAt(0)}
+                              </div>
+                              {post.author_name}
                             </span>
                           )}
                           {post.published_at && (
@@ -204,15 +225,14 @@ const BlogPage = () => {
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center gap-3">
-                          <span className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" /> {Math.max(1, Math.ceil(post.content.replace(/<[^>]*>/g, '').split(/\s+/).length / 200))} মিনিট
-                          </span>
-                          <span className="flex items-center gap-1">
+                        <div className="flex items-center gap-2">
+                          <span className="flex items-center gap-1 text-xs text-muted-foreground">
                             <Eye className="h-3 w-3" /> {post.view_count || 0}
                           </span>
+                          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary transition-all duration-200 group-hover:bg-primary group-hover:text-primary-foreground">
+                            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                          </span>
                         </div>
-                        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                       </div>
                     </div>
                   </Link>
@@ -260,19 +280,27 @@ const BlogPage = () => {
 
         {/* Sidebar */}
         {!loading && (popularPosts.length > 0 || bookmarkedPosts.length > 0) && (
-          <aside className="w-full shrink-0 lg:w-72 xl:w-80">
+          <aside className="w-full shrink-0 lg:w-80 xl:w-96">
             <div className="sticky top-24 space-y-6">
               {/* Bookmarked Posts */}
               {bookmarkedPosts.length > 0 && (
-                <div className="rounded-xl border border-border bg-card p-5">
-                  <h3 className="mb-4 flex items-center gap-2 font-display text-lg font-bold text-foreground">
-                    <Bookmark className="h-5 w-5 text-primary" /> বুকমার্ক করা আর্টিকেল
+                <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+                  <h3 className="mb-5 flex items-center gap-2 font-display text-lg font-bold text-foreground">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                      <Bookmark className="h-4 w-4 text-primary" />
+                    </span>
+                    বুকমার্ক করা আর্টিকেল
                   </h3>
                   <div className="space-y-3">
                     {bookmarkedPosts.map((p) => (
-                      <Link key={p.id} to={`/blog/${p.slug}`} className="group block">
-                        <p className="text-sm font-medium text-foreground line-clamp-2 group-hover:text-primary transition-colors">{p.title}</p>
-                        <span className="text-xs text-muted-foreground">{p.category}</span>
+                      <Link key={p.id} to={`/blog/${p.slug}`} className="group flex items-start gap-3 rounded-lg p-2 transition-colors hover:bg-muted/50">
+                        {p.cover_image_url && (
+                          <img src={p.cover_image_url} alt="" className="h-12 w-16 shrink-0 rounded-lg object-cover" />
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-foreground line-clamp-2 transition-colors group-hover:text-primary">{p.title}</p>
+                          <span className="text-xs text-muted-foreground">{p.category}</span>
+                        </div>
                       </Link>
                     ))}
                   </div>
@@ -281,19 +309,22 @@ const BlogPage = () => {
 
               {/* Popular Posts */}
               {popularPosts.length > 0 && (
-                <div className="rounded-xl border border-border bg-card p-5">
-                  <h3 className="mb-4 flex items-center gap-2 font-display text-lg font-bold text-foreground">
-                    <TrendingUp className="h-5 w-5 text-primary" /> জনপ্রিয় আর্টিকেল
+                <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+                  <h3 className="mb-5 flex items-center gap-2 font-display text-lg font-bold text-foreground">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10">
+                      <TrendingUp className="h-4 w-4 text-accent" />
+                    </span>
+                    জনপ্রিয় আর্টিকেল
                   </h3>
-                  <div className="space-y-4">
+                  <div className="space-y-1">
                     {popularPosts.map((p, i) => (
-                      <Link key={p.id} to={`/blog/${p.slug}`} className="group flex gap-3">
-                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+                      <Link key={p.id} to={`/blog/${p.slug}`} className="group flex items-center gap-3 rounded-lg p-2.5 transition-colors hover:bg-muted/50">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-sm font-bold text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
                           {i + 1}
                         </span>
                         <div className="min-w-0">
-                          <p className="text-sm font-medium text-foreground line-clamp-2 group-hover:text-primary transition-colors">{p.title}</p>
-                          <span className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                          <p className="text-sm font-medium text-foreground line-clamp-2 transition-colors group-hover:text-primary">{p.title}</p>
+                          <span className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
                             <Eye className="h-3 w-3" /> {p.view_count || 0} বার পড়া হয়েছে
                           </span>
                         </div>
