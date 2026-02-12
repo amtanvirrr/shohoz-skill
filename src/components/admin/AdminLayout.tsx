@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import {
   BookOpen, GraduationCap, Users, ShoppingCart, Settings,
   LayoutDashboard, HelpCircle, LogOut, Menu, X, ChevronRight, Star, FileText, MessageCircle, Mail
@@ -26,6 +27,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { settings } = useSiteSettings();
 
   const handleSignOut = async () => {
     await signOut();
@@ -38,7 +40,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 border-r border-border bg-card transition-transform lg:relative lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="flex h-16 items-center justify-between border-b border-border px-4">
           <Link to="/admin" className="flex items-center gap-2 font-display text-lg font-bold text-foreground">
-            <img src="/favicon.webp" alt="Shohoz Skill" className="h-8 w-8 rounded-lg" />
+            <img src={settings.admin_logo_url || "/favicon.webp"} alt={settings.site_name} className="h-8 w-8 rounded-lg" />
             Admin Panel
           </Link>
           <button onClick={() => setSidebarOpen(false)} className="lg:hidden">

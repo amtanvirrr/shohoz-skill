@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 const navLinks = [
   { to: "/", label: "Home" },
@@ -19,6 +20,7 @@ const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isAdmin, signOut } = useAuth();
+  const { settings } = useSiteSettings();
 
   const handleSignOut = async () => {
     await signOut();
@@ -29,8 +31,8 @@ const Header = () => {
     <header className="sticky top-0 z-50 border-b border-border bg-card/80 backdrop-blur-lg">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link to="/" className="flex items-center gap-2 font-display text-xl font-bold text-foreground">
-          <img src="/favicon.webp" alt="Shohoz Skill" className="h-9 w-9 rounded-lg" />
-          Shohoz Skill
+          <img src={settings.logo_url || "/favicon.webp"} alt={settings.site_name} className="h-9 w-9 rounded-lg" />
+          {settings.site_name}
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex">
