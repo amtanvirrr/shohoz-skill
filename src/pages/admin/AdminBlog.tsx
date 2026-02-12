@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Upload, X, Eye, EyeOff } from "lucide-react";
+import { Plus, Pencil, Trash2, Upload, X, Eye, EyeOff, Mail, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import RichTextEditor from "@/components/RichTextEditor";
@@ -50,6 +50,7 @@ const AdminBlog = () => {
   const [editing, setEditing] = useState<BlogPost | null>(null);
   const [form, setForm] = useState(initialForm);
   const [uploading, setUploading] = useState(false);
+  const [sendingNewsletter, setSendingNewsletter] = useState<string | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   const fetchPosts = async () => {
@@ -164,6 +165,27 @@ const AdminBlog = () => {
     }).eq("id", post.id);
     toast({ title: newState ? "Published" : "Unpublished" });
     fetchPosts();
+  };
+
+  const sendNewsletter = async (post: BlogPost) => {
+    if (!confirm(`"${post.title}" আর্টিকেলটি সকল সাবস্ক্রাইবারকে ইমেইল করতে চান?`)) return;
+    setSendingNewsletter(post.id);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      const res = await supabase.functions.invoke("send-newsletter", {
+        body: { postId: post.id },
+      });
+      if (res.error) throw res.error;
+      const result = res.data;
+      toast({
+        title: "নিউজলেটার পাঠানো হয়েছে!",
+        description: `${result.sent}টি সাবস্ক্রাইবারকে ইমেইল পাঠানো হয়েছে${result.failed > 0 ? `, ${result.failed}টি ব্যর্থ` : ""}`,
+      });
+    } catch (err: any) {
+      toast({ title: "ইমেইল পাঠাতে সমস্যা", description: err.message, variant: "destructive" });
+    }
+    setSendingNewsletter(null);
   };
 
   return (
@@ -303,9 +325,20 @@ const AdminBlog = () => {
                   <td className="py-3">
                     <div className="flex gap-1">
                       {post.is_published && (
-                        <Button variant="ghost" size="icon" asChild>
-                          <a href={`/blog/${post.slug}`} target="_blank"><Eye className="h-4 w-4" /></a>
-                        </Button>
+                        <>
+                          <Button variant="ghost" size="icon" asChild>
+                            <a href={`/blog/${post.slug}`} target="_blank"><Eye className="h-4 w-4" /></a>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => sendNewsletter(post)}
+                            disabled={sendingNewsletter === post.id}
+                            title="সাবস্ক্রাইবারদের ইমেইল পাঠান"
+                          >
+                            {sendingNewsletter === post.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4 text-primary" />}
+                          </Button>
+                        </>
                       )}
                       <Button variant="ghost" size="icon" onClick={() => openEdit(post)}><Pencil className="h-4 w-4" /></Button>
                       <Button variant="ghost" size="icon" onClick={() => handleDelete(post.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
