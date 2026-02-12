@@ -99,15 +99,14 @@ Deno.serve(async (req) => {
 
     const siteUrl = "https://shohozskill.lovable.app";
     const postUrl = `${siteUrl}/blog/${post.slug}`;
+    const SUPABASE_PROJECT_URL = SUPABASE_URL;
 
-    // Send emails in batches of 50
-    const batchSize = 50;
+    // Send emails individually for unique unsubscribe links
     let totalSent = 0;
     let totalFailed = 0;
 
-    for (let i = 0; i < subscribers.length; i += batchSize) {
-      const batch = subscribers.slice(i, i + batchSize);
-      const emails = batch.map((s) => s.email);
+    for (const subscriber of subscribers) {
+      const unsubscribeUrl = `${SUPABASE_PROJECT_URL}/functions/v1/unsubscribe?email=${encodeURIComponent(subscriber.email)}`;
 
       const res = await fetch("https://api.resend.com/emails", {
         method: "POST",
@@ -117,7 +116,7 @@ Deno.serve(async (req) => {
         },
         body: JSON.stringify({
           from: "Shohoz Skill <onboarding@resend.dev>",
-          to: emails,
+          to: [subscriber.email],
           subject: `📖 নতুন আর্টিকেল: ${post.title}`,
           html: `
             <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
@@ -134,6 +133,7 @@ Deno.serve(async (req) => {
               </div>
               <div style="border-top: 1px solid #eee; padding: 20px 24px; text-align: center;">
                 <p style="color: #999; font-size: 12px; margin: 0;">এই ইমেইল পেয়েছেন কারণ আপনি সহজ স্কিলের নিউজলেটারে সাবস্ক্রাইব করেছেন।</p>
+                <a href="${unsubscribeUrl}" style="color: #999; font-size: 12px; text-decoration: underline; display: inline-block; margin-top: 8px;">আনসাবস্ক্রাইব করুন</a>
               </div>
             </div>
           `,
@@ -141,11 +141,11 @@ Deno.serve(async (req) => {
       });
 
       if (res.ok) {
-        totalSent += emails.length;
+        totalSent += 1;
       } else {
-        totalFailed += emails.length;
+        totalFailed += 1;
         const errorBody = await res.text();
-        console.error(`Resend batch failed [${res.status}]: ${errorBody}`);
+        console.error(`Resend failed for ${subscriber.email} [${res.status}]: ${errorBody}`);
       }
     }
 
