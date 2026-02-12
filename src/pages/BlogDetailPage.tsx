@@ -236,52 +236,60 @@ const BlogDetailPage = () => {
         />
       </div>
 
-      <article className="container mx-auto px-4 py-12">
+      <article className="container mx-auto px-4 py-16">
         <div className="mx-auto max-w-3xl">
         {/* Back */}
-        <Link to="/blog" className="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+        <Link to="/blog" className="mb-8 inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-muted-foreground shadow-sm transition-all hover:border-primary/30 hover:text-foreground hover:shadow-md">
           <ArrowLeft className="h-4 w-4" /> ব্লগে ফিরে যান
         </Link>
 
-        {/* Meta */}
-        <div className="mb-4 flex flex-wrap items-center gap-3">
-          {post.category && <Badge variant="secondary">{post.category}</Badge>}
-          <span className="flex items-center gap-1 text-sm text-muted-foreground">
-            <User className="h-3.5 w-3.5" /> {post.author_name}
-          </span>
-          {post.published_at && (
-            <span className="flex items-center gap-1 text-sm text-muted-foreground">
-              <Calendar className="h-3.5 w-3.5" />
-              {new Date(post.published_at).toLocaleDateString("bn-BD", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-            </span>
-          )}
-          <span className="flex items-center gap-1 text-sm text-muted-foreground">
-            <Eye className="h-3.5 w-3.5" /> {post.view_count} বার পড়া হয়েছে
-          </span>
-          <span className="flex items-center gap-1 text-sm text-muted-foreground">
+        {/* Category + Meta */}
+        <div className="mb-5 flex flex-wrap items-center gap-3">
+          {post.category && <Badge variant="secondary" className="rounded-full px-3 py-1 font-medium">{post.category}</Badge>}
+          <span className="h-1 w-1 rounded-full bg-muted-foreground/40" />
+          <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <Clock className="h-3.5 w-3.5" /> {Math.max(1, Math.ceil(post.content.replace(/<[^>]*>/g, '').split(/\s+/).length / 200))} মিনিট পড়তে লাগবে
+          </span>
+          <span className="h-1 w-1 rounded-full bg-muted-foreground/40" />
+          <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <Eye className="h-3.5 w-3.5" /> {post.view_count} বার পড়া হয়েছে
           </span>
         </div>
 
         {/* Title + Bookmark */}
         <div className="mb-6 flex items-start justify-between gap-4">
-          <h1 className="font-display text-3xl font-bold text-foreground md:text-4xl">{post.title}</h1>
+          <h1 className="font-display text-3xl font-bold leading-tight text-foreground md:text-4xl lg:text-5xl">{post.title}</h1>
           <button
             onClick={toggleBookmark}
-            className={`mt-1 shrink-0 rounded-full p-2 transition-colors ${isBookmarked ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
+            className={`mt-2 shrink-0 rounded-full p-2.5 transition-all duration-200 ${isBookmarked ? 'bg-primary/10 text-primary shadow-sm' : 'text-muted-foreground hover:bg-muted hover:text-foreground hover:shadow-sm'}`}
             title={isBookmarked ? "বুকমার্ক সরান" : "বুকমার্কে সেভ করুন"}
           >
             {isBookmarked ? <BookmarkCheck className="h-5 w-5" /> : <Bookmark className="h-5 w-5" />}
           </button>
         </div>
 
+        {/* Author info */}
+        <div className="mb-8 flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+            {post.author_name.charAt(0)}
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-foreground">{post.author_name}</p>
+            {post.published_at && (
+              <p className="text-xs text-muted-foreground">
+                {new Date(post.published_at).toLocaleDateString("bn-BD", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </p>
+            )}
+          </div>
+        </div>
+
         {/* Cover */}
         {post.cover_image_url && (
-          <div className="mb-8 overflow-hidden rounded-xl">
+          <div className="mb-10 overflow-hidden rounded-2xl shadow-lg">
             <img src={post.cover_image_url} alt={post.title} className="w-full object-cover" />
           </div>
         )}
@@ -466,18 +474,20 @@ const BlogDetailPage = () => {
 
         {/* Related Posts */}
         {relatedPosts.length > 0 && (
-          <div className="mt-12 border-t border-border pt-8">
-            <h2 className="mb-6 text-xl font-bold text-foreground">একই ক্যাটাগরির আরও আর্টিকেল</h2>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-14 border-t border-border pt-10">
+            <h2 className="mb-8 font-display text-2xl font-bold text-foreground">একই ক্যাটাগরির আরও আর্টিকেল</h2>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {relatedPosts.map((rp) => (
-                <Link key={rp.id} to={`/blog/${rp.slug}`} className="group rounded-lg border border-border bg-card overflow-hidden hover:shadow-md transition-shadow">
+                <Link key={rp.id} to={`/blog/${rp.slug}`} className="group overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1">
                   {rp.cover_image_url && (
-                    <img src={rp.cover_image_url} alt={rp.title} className="aspect-video w-full object-cover" />
+                    <div className="overflow-hidden">
+                      <img src={rp.cover_image_url} alt={rp.title} className="aspect-video w-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                    </div>
                   )}
-                  <div className="p-4">
-                    <Badge variant="secondary" className="mb-2 text-xs">{rp.category}</Badge>
-                    <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2">{rp.title}</h3>
-                    <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{rp.excerpt}</p>
+                  <div className="p-5">
+                    <Badge variant="secondary" className="mb-3 rounded-full text-xs">{rp.category}</Badge>
+                    <h3 className="font-display font-semibold text-foreground transition-colors group-hover:text-primary line-clamp-2">{rp.title}</h3>
+                    <p className="mt-2 text-xs leading-relaxed text-muted-foreground line-clamp-2">{rp.excerpt}</p>
                   </div>
                 </Link>
               ))}
