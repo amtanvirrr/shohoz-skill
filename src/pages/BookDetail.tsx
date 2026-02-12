@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, ShoppingBag } from "lucide-react";
+import { ArrowLeft, ShoppingBag, Smartphone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface DbBook {
@@ -21,20 +21,38 @@ interface DbBook {
   book_type: string;
 }
 
+interface MfsMethod {
+  id: string;
+  provider: string;
+  display_name: string;
+  phone_number: string;
+  qr_code_url: string | null;
+  mfs_type: string;
+  payment_instruction: string;
+  process_message: string;
+}
+
 const BookDetail = () => {
   const { id } = useParams();
   const { user } = useAuth();
   const { toast } = useToast();
   const [book, setBook] = useState<DbBook | null>(null);
   const [loading, setLoading] = useState(true);
-  const [order, setOrder] = useState({ name: "", phone: "", email: "", address: "", paymentMethod: "cod" as "cod" | "bkash" | "nagad" });
+  const [order, setOrder] = useState({ name: "", phone: "", email: "", address: "", paymentMethod: "bkash" });
   const [submitting, setSubmitting] = useState(false);
+  const [mfsMethods, setMfsMethods] = useState<MfsMethod[]>([]);
   const isPhysical = book?.book_type === "physical";
 
   useEffect(() => {
     if (!id) return;
-    supabase.from("books").select("*").eq("id", id).maybeSingle().then(({ data }) => {
-      setBook(data as DbBook | null);
+    Promise.all([
+      supabase.from("books").select("*").eq("id", id).maybeSingle(),
+      supabase.from("payment_methods").select("*").eq("is_active", true).order("sort_order"),
+    ]).then(([bookRes, mfsRes]) => {
+      setBook(bookRes.data as DbBook | null);
+      const mfsData = (mfsRes.data as MfsMethod[]) || [];
+      setMfsMethods(mfsData);
+      if (mfsData.length > 0) setOrder(o => ({ ...o, paymentMethod: mfsData[0].provider }));
       setLoading(false);
     });
   }, [id]);
@@ -130,10 +148,42 @@ const BookDetail = () => {
                 ) : (
                   <div className="space-y-2">
                     <Label>Payment Method *</Label>
-                    <div className="flex gap-3">
-                      <Button type="button" variant={order.paymentMethod === "bkash" ? "default" : "outline"} className="flex-1" onClick={() => setOrder({ ...order, paymentMethod: "bkash" })}>বিকাশ</Button>
-                      <Button type="button" variant={order.paymentMethod === "nagad" ? "default" : "outline"} className="flex-1" onClick={() => setOrder({ ...order, paymentMethod: "nagad" })}>নগদ</Button>
+                    <div className="flex flex-wrap gap-3">
+                      {mfsMethods.length > 0 ? mfsMethods.map((m) => (
+                        <Button key={m.id} type="button" variant={order.paymentMethod === m.provider ? "default" : "outline"} className="flex-1" onClick={() => setOrder({ ...order, paymentMethod: m.provider })}>
+                          {m.display_name || m.provider}
+                        </Button>
+                      )) : (
+                        <>
+                          <Button type="button" variant={order.paymentMethod === "bkash" ? "default" : "outline"} className="flex-1" onClick={() => setOrder({ ...order, paymentMethod: "bkash" })}>বিকাশ</Button>
+                          <Button type="button" variant={order.paymentMethod === "nagad" ? "default" : "outline"} className="flex-1" onClick={() => setOrder({ ...order, paymentMethod: "nagad" })}>নগদ</Button>
+                        </>
+                      )}
                     </div>
+
+                    {/* Show selected MFS payment details */}
+                    {(() => {
+                      const selected = mfsMethods.find(m => m.provider === order.paymentMethod);
+                      if (!selected) return null;
+                      return (
+                        <div className="mt-3 rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+                          <div className="flex items-center gap-2 text-sm">
+                            <Smartphone className="h-4 w-4 text-primary" />
+                            <span className="font-medium text-foreground">{selected.phone_number}</span>
+                            <span className="rounded bg-primary/10 px-2 py-0.5 text-xs text-primary capitalize">{selected.mfs_type}</span>
+                          </div>
+                          {selected.qr_code_url && (
+                            <img src={selected.qr_code_url} alt="QR Code" className="mx-auto h-32 w-32 rounded-lg border border-border object-contain" />
+                          )}
+                          {selected.payment_instruction && (
+                            <p className="text-sm text-muted-foreground whitespace-pre-line">{selected.payment_instruction}</p>
+                          )}
+                          {selected.process_message && (
+                            <div className="rounded-md bg-primary/5 p-3 text-xs text-foreground whitespace-pre-line">{selected.process_message}</div>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
                 <Button type="submit" size="lg" className="w-full" disabled={submitting}>{submitting ? "Placing Order..." : isPhysical ? "Place Order" : "Buy Now"}</Button>
