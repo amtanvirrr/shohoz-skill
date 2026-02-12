@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertTriangle, Download } from "lucide-react";
+import { AlertTriangle, Download, CheckCircle, XCircle } from "lucide-react";
 
 interface Order {
   id: string;
@@ -17,6 +17,8 @@ interface Order {
   payment_method: string;
   status: string;
   is_fraud_flagged: boolean;
+  transaction_id: string | null;
+  payment_verified: boolean;
   created_at: string;
 }
 
@@ -54,11 +56,17 @@ const AdminOrders = () => {
     fetchOrders();
   };
 
+  const togglePaymentVerified = async (id: string, current: boolean) => {
+    await supabase.from("orders").update({ payment_verified: !current }).eq("id", id);
+    toast({ title: !current ? "পেমেন্ট ভেরিফাইড ✅" : "ভেরিফিকেশন সরানো হয়েছে" });
+    fetchOrders();
+  };
+
   const exportCSV = () => {
-    const headers = ["Order ID", "Customer", "Phone", "Email", "Product", "Type", "Price", "Payment", "Status", "Date"];
+    const headers = ["Order ID", "Customer", "Phone", "Email", "Product", "Type", "Price", "Payment", "TXN ID", "Verified", "Status", "Date"];
     const rows = orders.map((o) => [
       o.order_id, o.customer_name, o.customer_phone, o.customer_email || "", o.product_title,
-      o.product_type, String(o.price), o.payment_method, o.status, new Date(o.created_at).toLocaleDateString()
+      o.product_type, String(o.price), o.payment_method, o.transaction_id || "", o.payment_verified ? "Yes" : "No", o.status, new Date(o.created_at).toLocaleDateString()
     ]);
     const csv = [headers, ...rows].map((r) => r.map((c) => `"${c}"`).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
@@ -89,6 +97,7 @@ const AdminOrders = () => {
                 <th className="pb-3 pr-3">Product</th>
                 <th className="pb-3 pr-3">Price</th>
                 <th className="pb-3 pr-3">Payment</th>
+                <th className="pb-3 pr-3">TXN ID</th>
                 <th className="pb-3 pr-3">Status</th>
                 <th className="pb-3">Actions</th>
               </tr>
@@ -104,6 +113,25 @@ const AdminOrders = () => {
                   <td className="py-3 pr-3 text-foreground">{order.product_title}</td>
                   <td className="py-3 pr-3">৳{order.price}</td>
                   <td className="py-3 pr-3 uppercase text-xs">{order.payment_method}</td>
+                  <td className="py-3 pr-3">
+                    {order.transaction_id ? (
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-mono text-xs text-foreground">{order.transaction_id}</span>
+                        <button
+                          onClick={() => togglePaymentVerified(order.id, order.payment_verified)}
+                          title={order.payment_verified ? "ভেরিফাইড — ক্লিক করে সরান" : "ক্লিক করে ভেরিফাই করুন"}
+                        >
+                          {order.payment_verified ? (
+                            <CheckCircle className="h-4 w-4 text-green-500" />
+                          ) : (
+                            <XCircle className="h-4 w-4 text-muted-foreground hover:text-green-500" />
+                          )}
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </td>
                   <td className="py-3 pr-3">
                     <Select value={order.status} onValueChange={(val) => updateStatus(order.id, val)}>
                       <SelectTrigger className="h-8 w-32">

@@ -38,7 +38,7 @@ const BookDetail = () => {
   const { toast } = useToast();
   const [book, setBook] = useState<DbBook | null>(null);
   const [loading, setLoading] = useState(true);
-  const [order, setOrder] = useState({ name: "", phone: "", email: "", address: "", paymentMethod: "bkash" });
+  const [order, setOrder] = useState({ name: "", phone: "", email: "", address: "", paymentMethod: "bkash", transactionId: "" });
   const [submitting, setSubmitting] = useState(false);
   const [mfsMethods, setMfsMethods] = useState<MfsMethod[]>([]);
   const isPhysical = book?.book_type === "physical";
@@ -80,6 +80,10 @@ const BookDetail = () => {
       toast({ title: "Please enter your delivery address", variant: "destructive" });
       return;
     }
+    if (!isPhysical && !order.transactionId.trim()) {
+      toast({ title: "Transaction ID দিন", description: "পেমেন্ট করার পর Transaction ID লিখুন", variant: "destructive" });
+      return;
+    }
     setSubmitting(true);
     const paymentMethod = isPhysical ? "cod" : order.paymentMethod;
     const { data, error } = await supabase.from("orders").insert({
@@ -93,6 +97,7 @@ const BookDetail = () => {
       price: book.price,
       payment_method: paymentMethod as any,
       user_id: user?.id || null,
+      transaction_id: !isPhysical ? order.transactionId.trim() : null,
     }).select("order_id").single();
     setSubmitting(false);
 
@@ -100,7 +105,7 @@ const BookDetail = () => {
       toast({ title: "Order failed", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Order Placed! 🎉", description: `Your Order ID: ${data.order_id}` });
-      setOrder({ name: "", phone: "", email: "", address: "", paymentMethod: "cod" });
+      setOrder({ name: "", phone: "", email: "", address: "", paymentMethod: "bkash", transactionId: "" });
     }
   };
 
@@ -186,6 +191,15 @@ const BookDetail = () => {
                     })()}
                   </div>
                 )}
+
+                {/* Transaction ID field for digital payments */}
+                {!isPhysical && (
+                  <div>
+                    <Label htmlFor="txnId">Transaction ID *</Label>
+                    <Input id="txnId" value={order.transactionId} onChange={(e) => setOrder({ ...order, transactionId: e.target.value })} className="mt-1" placeholder="যেমন: TXN1234ABCD" />
+                  </div>
+                )}
+
                 <Button type="submit" size="lg" className="w-full" disabled={submitting}>{submitting ? "Placing Order..." : isPhysical ? "Place Order" : "Buy Now"}</Button>
               </form>
             </div>

@@ -400,11 +400,13 @@ export type Database = {
           notes: string | null
           order_id: string
           payment_method: Database["public"]["Enums"]["payment_method"]
+          payment_verified: boolean
           price: number
           product_id: string
           product_title: string
           product_type: Database["public"]["Enums"]["product_type"]
           status: Database["public"]["Enums"]["order_status"]
+          transaction_id: string | null
           updated_at: string
           user_id: string | null
         }
@@ -419,11 +421,13 @@ export type Database = {
           notes?: string | null
           order_id?: string
           payment_method: Database["public"]["Enums"]["payment_method"]
+          payment_verified?: boolean
           price: number
           product_id: string
           product_title: string
           product_type: Database["public"]["Enums"]["product_type"]
           status?: Database["public"]["Enums"]["order_status"]
+          transaction_id?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -438,11 +442,13 @@ export type Database = {
           notes?: string | null
           order_id?: string
           payment_method?: Database["public"]["Enums"]["payment_method"]
+          payment_verified?: boolean
           price?: number
           product_id?: string
           product_title?: string
           product_type?: Database["public"]["Enums"]["product_type"]
           status?: Database["public"]["Enums"]["order_status"]
+          transaction_id?: string | null
           updated_at?: string
           user_id?: string | null
         }
