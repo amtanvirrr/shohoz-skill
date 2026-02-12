@@ -40,6 +40,7 @@ const BlogDetailPage = () => {
   const [comments, setComments] = useState<BlogComment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>([]);
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -67,6 +68,22 @@ const BlogDetailPage = () => {
   useEffect(() => {
     if (post?.id) fetchComments(post.id);
   }, [post?.id]);
+
+  useEffect(() => {
+    const fetchRelated = async () => {
+      if (!post?.category || !post?.id) return;
+      const { data } = await supabase
+        .from("blog_posts")
+        .select("id, title, slug, excerpt, cover_image_url, category, tags, author_name, published_at, content, meta_title, meta_description")
+        .eq("is_published", true)
+        .eq("category", post.category)
+        .neq("id", post.id)
+        .order("published_at", { ascending: false })
+        .limit(3);
+      setRelatedPosts((data as BlogPost[]) || []);
+    };
+    fetchRelated();
+  }, [post?.id, post?.category]);
 
   const handleSubmitComment = async () => {
     if (!user || !post || !newComment.trim()) return;
@@ -275,6 +292,27 @@ const BlogDetailPage = () => {
             </div>
           )}
         </div>
+
+        {/* Related Posts */}
+        {relatedPosts.length > 0 && (
+          <div className="mt-12 border-t border-border pt-8">
+            <h2 className="mb-6 text-xl font-bold text-foreground">একই ক্যাটাগরির আরও আর্টিকেল</h2>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {relatedPosts.map((rp) => (
+                <Link key={rp.id} to={`/blog/${rp.slug}`} className="group rounded-lg border border-border bg-card overflow-hidden hover:shadow-md transition-shadow">
+                  {rp.cover_image_url && (
+                    <img src={rp.cover_image_url} alt={rp.title} className="aspect-video w-full object-cover" />
+                  )}
+                  <div className="p-4">
+                    <Badge variant="secondary" className="mb-2 text-xs">{rp.category}</Badge>
+                    <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2">{rp.title}</h3>
+                    <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{rp.excerpt}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </article>
   );
