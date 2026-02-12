@@ -4,12 +4,13 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import {
   BookOpen, GraduationCap, Users, ShoppingCart, Settings,
-  LayoutDashboard, HelpCircle, LogOut, Menu, X, ChevronRight, Star, FileText, MessageCircle, Mail, CreditCard, Truck
+  LayoutDashboard, HelpCircle, LogOut, Menu, X, ChevronRight, Star, FileText, MessageCircle, Mail, CreditCard, Truck, Image
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const sidebarLinks = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/admin/hero", label: "Hero Banner", icon: Image },
   { to: "/admin/books", label: "Books", icon: BookOpen },
   { to: "/admin/courses", label: "Courses", icon: GraduationCap },
   { to: "/admin/orders", label: "Orders", icon: ShoppingCart },

@@ -243,6 +243,33 @@ export type Database = {
         }
         Relationships: []
       }
+      hero_slides: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          media_type: string
+          media_url: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          media_type?: string
+          media_url?: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          media_type?: string
+          media_url?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
       lesson_progress: {
         Row: {
           completed_at: string
