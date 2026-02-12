@@ -2,10 +2,11 @@ import { useParams, Link, Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { ArrowLeft, BookOpen, Clock, PlayCircle, Video, FileText, HelpCircle, CheckCircle, Lock } from "lucide-react";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { ArrowLeft, BookOpen, Clock, Video, FileText, HelpCircle, CheckCircle, Lock, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { toast } from "sonner";
 
 interface DbCourse {
   id: string;
@@ -48,6 +49,7 @@ const EnrolledCourse = () => {
   const [lessons, setLessons] = useState<DbLesson[]>([]);
   const [resources, setResources] = useState<Record<string, DbResource[]>>({});
   const [quizzes, setQuizzes] = useState<DbQuiz[]>([]);
+  const [completedLessons, setCompletedLessons] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
   const [activeLesson, setActiveLesson] = useState<string | null>(null);
@@ -56,7 +58,6 @@ const EnrolledCourse = () => {
     if (!id || !user) return;
 
     const fetchData = async () => {
-      // Check if user has purchased this course (confirmed/delivered)
       const { data: orderData } = await supabase
         .from("orders")
         .select("id")
@@ -73,14 +74,16 @@ const EnrolledCourse = () => {
       }
       setHasAccess(true);
 
-      const [courseRes, lessonsRes] = await Promise.all([
+      const [courseRes, lessonsRes, progressRes] = await Promise.all([
         supabase.from("courses").select("*").eq("id", id).maybeSingle(),
         supabase.from("lessons").select("*").eq("course_id", id).order("sort_order"),
+        supabase.from("lesson_progress").select("lesson_id").eq("user_id", user.id).eq("course_id", id),
       ]);
 
       setCourse(courseRes.data as DbCourse | null);
       const lessonData = (lessonsRes.data as DbLesson[]) || [];
       setLessons(lessonData);
+      setCompletedLessons(new Set((progressRes.data || []).map((p: any) => p.lesson_id)));
 
       if (lessonData.length > 0) {
         setActiveLesson(lessonData[0].id);
@@ -135,19 +138,45 @@ const EnrolledCourse = () => {
 
   if (!course) return null;
 
-const currentLesson = lessons.find((l) => l.id === activeLesson);
+  const currentLesson = lessons.find((l) => l.id === activeLesson);
 
-  // Convert YouTube URLs to embeddable format
   const getEmbedUrl = (url: string): string => {
-    // Handle youtu.be/VIDEO_ID
     const shortMatch = url.match(/youtu\.be\/([a-zA-Z0-9_-]+)/);
     if (shortMatch) return `https://www.youtube.com/embed/${shortMatch[1]}`;
-    // Handle youtube.com/watch?v=VIDEO_ID
     const longMatch = url.match(/youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/);
     if (longMatch) return `https://www.youtube.com/embed/${longMatch[1]}`;
-    // Already embed or other URL
     return url;
   };
+
+  const toggleLessonComplete = async (lessonId: string) => {
+    if (!user || !id) return;
+    const isCompleted = completedLessons.has(lessonId);
+    if (isCompleted) {
+      const { error } = await supabase
+        .from("lesson_progress")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("lesson_id", lessonId);
+      if (!error) {
+        setCompletedLessons((prev) => {
+          const n = new Set(prev);
+          n.delete(lessonId);
+          return n;
+        });
+        toast.info("লেসন অসম্পূর্ণ হিসেবে মার্ক করা হয়েছে");
+      }
+    } else {
+      const { error } = await supabase
+        .from("lesson_progress")
+        .insert({ user_id: user.id, lesson_id: lessonId, course_id: id });
+      if (!error) {
+        setCompletedLessons((prev) => new Set(prev).add(lessonId));
+        toast.success("লেসন সম্পূর্ণ হিসেবে মার্ক করা হয়েছে ✅");
+      }
+    }
+  };
+
+  const progressPercent = lessons.length > 0 ? Math.round((completedLessons.size / lessons.length) * 100) : 0;
 
   return (
     <div className="py-6 lg:py-10">
@@ -163,6 +192,14 @@ const currentLesson = lessons.find((l) => l.id === activeLesson);
 
         <h1 className="text-2xl font-bold text-foreground lg:text-3xl">{course.title}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{course.instructor} • {course.duration}</p>
+
+        {/* Progress bar */}
+        <div className="mt-4 flex items-center gap-3">
+          <Progress value={progressPercent} className="h-2 flex-1" />
+          <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">
+            {completedLessons.size}/{lessons.length} সম্পূর্ণ ({progressPercent}%)
+          </span>
+        </div>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-3">
           {/* Main content area */}
@@ -190,13 +227,24 @@ const currentLesson = lessons.find((l) => l.id === activeLesson);
 
                 {/* Lesson info */}
                 <div className="mt-6">
-                  <div className="flex items-center gap-2">
-                    {currentLesson.lesson_type === "video" ? (
-                      <Video className="h-5 w-5 text-primary" />
-                    ) : (
-                      <BookOpen className="h-5 w-5 text-primary" />
-                    )}
-                    <h2 className="text-xl font-bold text-foreground">{currentLesson.title}</h2>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      {currentLesson.lesson_type === "video" ? (
+                        <Video className="h-5 w-5 text-primary" />
+                      ) : (
+                        <BookOpen className="h-5 w-5 text-primary" />
+                      )}
+                      <h2 className="text-xl font-bold text-foreground">{currentLesson.title}</h2>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant={completedLessons.has(currentLesson.id) ? "default" : "outline"}
+                      onClick={() => toggleLessonComplete(currentLesson.id)}
+                      className="shrink-0 gap-1.5"
+                    >
+                      <Check className="h-4 w-4" />
+                      {completedLessons.has(currentLesson.id) ? "সম্পূর্ণ" : "সম্পূর্ণ করুন"}
+                    </Button>
                   </div>
                   {currentLesson.duration && (
                     <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
@@ -265,11 +313,12 @@ const currentLesson = lessons.find((l) => l.id === activeLesson);
             <div className="sticky top-20 rounded-xl border border-border bg-card">
               <div className="border-b border-border p-4">
                 <h3 className="font-semibold text-foreground">কারিকুলাম</h3>
-                <p className="mt-0.5 text-xs text-muted-foreground">{lessons.length} টি লেসন</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">{lessons.length} টি লেসন • {completedLessons.size} সম্পূর্ণ</p>
               </div>
               <div className="max-h-[60vh] overflow-y-auto">
                 {lessons.map((lesson, i) => {
                   const isActive = activeLesson === lesson.id;
+                  const isCompleted = completedLessons.has(lesson.id);
                   const lessonResCount = (resources[lesson.id] || []).length;
                   const lessonQuizCount = quizzes.filter((q) => q.lesson_id === lesson.id).length;
 
@@ -281,13 +330,19 @@ const currentLesson = lessons.find((l) => l.id === activeLesson);
                         isActive ? "bg-primary/5" : "hover:bg-muted/50"
                       }`}
                     >
-                      <span className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
-                        isActive ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                      }`}>
-                        {i + 1}
+                      <span
+                        className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                          isCompleted
+                            ? "bg-green-500 text-white"
+                            : isActive
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {isCompleted ? <Check className="h-3.5 w-3.5" /> : i + 1}
                       </span>
                       <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-medium line-clamp-2 ${isActive ? "text-primary" : "text-foreground"}`}>
+                        <p className={`text-sm font-medium line-clamp-2 ${isCompleted ? "text-green-600 dark:text-green-400" : isActive ? "text-primary" : "text-foreground"}`}>
                           {lesson.title}
                         </p>
                         <div className="mt-0.5 flex flex-wrap gap-2 text-xs text-muted-foreground">
