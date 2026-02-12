@@ -2,3 +2,6 @@ project_id = "xoorrglcphuanqatbshg"
 
 [functions.send-newsletter]
 verify_jwt = false
+
+[functions.unsubscribe]
+verify_jwt = false
