@@ -18,6 +18,7 @@ interface DbBook {
   image_url: string;
   description: string;
   category: string;
+  book_type: string;
 }
 
 const BookDetail = () => {
@@ -26,8 +27,9 @@ const BookDetail = () => {
   const { toast } = useToast();
   const [book, setBook] = useState<DbBook | null>(null);
   const [loading, setLoading] = useState(true);
-  const [order, setOrder] = useState({ name: "", phone: "", email: "", address: "" });
+  const [order, setOrder] = useState({ name: "", phone: "", email: "", address: "", paymentMethod: "cod" as "cod" | "bkash" | "nagad" });
   const [submitting, setSubmitting] = useState(false);
+  const isPhysical = book?.book_type === "physical";
 
   useEffect(() => {
     if (!id) return;
@@ -52,21 +54,26 @@ const BookDetail = () => {
 
   const handleOrder = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!order.name || !order.phone || !order.address) {
+    if (!order.name || !order.phone) {
       toast({ title: "Please fill all required fields", variant: "destructive" });
       return;
     }
+    if (isPhysical && !order.address) {
+      toast({ title: "Please enter your delivery address", variant: "destructive" });
+      return;
+    }
     setSubmitting(true);
+    const paymentMethod = isPhysical ? "cod" : order.paymentMethod;
     const { data, error } = await supabase.from("orders").insert({
       customer_name: order.name,
       customer_phone: order.phone,
       customer_email: order.email || null,
-      customer_address: order.address,
+      customer_address: isPhysical ? order.address : null,
       product_type: "book" as any,
       product_id: book.id,
       product_title: book.title,
       price: book.price,
-      payment_method: "cod" as any,
+      payment_method: paymentMethod as any,
       user_id: user?.id || null,
     }).select("order_id").single();
     setSubmitting(false);
@@ -75,7 +82,7 @@ const BookDetail = () => {
       toast({ title: "Order failed", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Order Placed! 🎉", description: `Your Order ID: ${data.order_id}` });
-      setOrder({ name: "", phone: "", email: "", address: "" });
+      setOrder({ name: "", phone: "", email: "", address: "", paymentMethod: "cod" });
     }
   };
 
@@ -105,17 +112,31 @@ const BookDetail = () => {
 
             <div className="mt-8 rounded-xl border border-border bg-card p-6">
               <h3 className="flex items-center gap-2 font-display text-lg font-semibold text-foreground">
-                <ShoppingBag className="h-5 w-5 text-primary" /> Order Now
+                <ShoppingBag className="h-5 w-5 text-primary" /> {isPhysical ? "Order Now" : "Buy Now"}
               </h3>
-              <p className="mt-1 text-xs text-muted-foreground">Cash on Delivery — সারা বাংলাদেশে ডেলিভারি</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {isPhysical ? "Cash on Delivery — সারা বাংলাদেশে ডেলিভারি" : "বিকাশ / নগদ পেমেন্টে ইবুক পান"}
+              </p>
 
               <form onSubmit={handleOrder} className="mt-5 space-y-4">
                 <div><Label htmlFor="fullname">Full Name *</Label><Input id="fullname" value={order.name} onChange={(e) => setOrder({ ...order, name: e.target.value })} className="mt-1" /></div>
                 <div><Label htmlFor="phone">Phone Number *</Label><Input id="phone" value={order.phone} onChange={(e) => setOrder({ ...order, phone: e.target.value })} className="mt-1" /></div>
                 <div><Label htmlFor="email">Email (optional)</Label><Input id="email" type="email" value={order.email} onChange={(e) => setOrder({ ...order, email: e.target.value })} className="mt-1" /></div>
-                <div><Label htmlFor="address">Full Address *</Label><Textarea id="address" rows={3} value={order.address} onChange={(e) => setOrder({ ...order, address: e.target.value })} className="mt-1" /></div>
-                <div className="rounded-lg bg-secondary p-3 text-sm text-muted-foreground">💵 Payment: <span className="font-medium text-foreground">Cash on Delivery</span></div>
-                <Button type="submit" size="lg" className="w-full" disabled={submitting}>{submitting ? "Placing Order..." : "Place Order"}</Button>
+                {isPhysical && (
+                  <div><Label htmlFor="address">Full Address *</Label><Textarea id="address" rows={3} value={order.address} onChange={(e) => setOrder({ ...order, address: e.target.value })} className="mt-1" /></div>
+                )}
+                {isPhysical ? (
+                  <div className="rounded-lg bg-secondary p-3 text-sm text-muted-foreground">💵 Payment: <span className="font-medium text-foreground">Cash on Delivery</span></div>
+                ) : (
+                  <div className="space-y-2">
+                    <Label>Payment Method *</Label>
+                    <div className="flex gap-3">
+                      <Button type="button" variant={order.paymentMethod === "bkash" ? "default" : "outline"} className="flex-1" onClick={() => setOrder({ ...order, paymentMethod: "bkash" })}>বিকাশ</Button>
+                      <Button type="button" variant={order.paymentMethod === "nagad" ? "default" : "outline"} className="flex-1" onClick={() => setOrder({ ...order, paymentMethod: "nagad" })}>নগদ</Button>
+                    </div>
+                  </div>
+                )}
+                <Button type="submit" size="lg" className="w-full" disabled={submitting}>{submitting ? "Placing Order..." : isPhysical ? "Place Order" : "Buy Now"}</Button>
               </form>
             </div>
           </div>
