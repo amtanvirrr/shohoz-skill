@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, User, ArrowRight, Search, Eye, TrendingUp, Clock, Tag } from "lucide-react";
+import { Calendar, User, ArrowRight, Search, Eye, TrendingUp, Clock, Tag, ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 
@@ -25,6 +26,8 @@ const BlogPage = () => {
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedTag, setSelectedTag] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const POSTS_PER_PAGE = 6;
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -49,6 +52,14 @@ const BlogPage = () => {
     const matchTag = !selectedTag || (p.tags && p.tags.includes(selectedTag));
     return matchSearch && matchCat && matchTag;
   });
+
+  const totalPages = Math.ceil(filtered.length / POSTS_PER_PAGE);
+  const paginatedPosts = filtered.slice((currentPage - 1) * POSTS_PER_PAGE, currentPage * POSTS_PER_PAGE);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, selectedCategory, selectedTag]);
 
   return (
     <div className="container mx-auto px-4 py-12">
@@ -138,60 +149,98 @@ const BlogPage = () => {
           ) : filtered.length === 0 ? (
             <p className="py-16 text-center text-muted-foreground">কোনো আর্টিকেল পাওয়া যায়নি।</p>
           ) : (
-            <div className="grid gap-8 md:grid-cols-2">
-              {filtered.map((post) => (
-                <Link
-                  key={post.id}
-                  to={`/blog/${post.slug}`}
-                  className="group overflow-hidden rounded-xl border border-border bg-card transition-all hover:border-primary/30 hover:shadow-lg"
-                >
-                  {post.cover_image_url && (
-                    <div className="aspect-video overflow-hidden">
-                      <img
-                        src={post.cover_image_url}
-                        alt={post.title}
-                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      />
-                    </div>
-                  )}
-                  <div className="p-5">
-                    {post.category && (
-                      <Badge variant="secondary" className="mb-3">
-                        {post.category}
-                      </Badge>
+            <>
+              <div className="grid gap-8 md:grid-cols-2">
+                {paginatedPosts.map((post) => (
+                  <Link
+                    key={post.id}
+                    to={`/blog/${post.slug}`}
+                    className="group overflow-hidden rounded-xl border border-border bg-card transition-all hover:border-primary/30 hover:shadow-lg"
+                  >
+                    {post.cover_image_url && (
+                      <div className="aspect-video overflow-hidden">
+                        <img
+                          src={post.cover_image_url}
+                          alt={post.title}
+                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                      </div>
                     )}
-                    <h2 className="mb-2 font-display text-lg font-bold text-foreground line-clamp-2 group-hover:text-primary">
-                      {post.title}
-                    </h2>
-                    <p className="mb-4 text-sm text-muted-foreground line-clamp-3">{post.excerpt}</p>
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <div className="flex items-center gap-3">
-                        {post.author_name && (
+                    <div className="p-5">
+                      {post.category && (
+                        <Badge variant="secondary" className="mb-3">
+                          {post.category}
+                        </Badge>
+                      )}
+                      <h2 className="mb-2 font-display text-lg font-bold text-foreground line-clamp-2 group-hover:text-primary">
+                        {post.title}
+                      </h2>
+                      <p className="mb-4 text-sm text-muted-foreground line-clamp-3">{post.excerpt}</p>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <div className="flex items-center gap-3">
+                          {post.author_name && (
+                            <span className="flex items-center gap-1">
+                              <User className="h-3 w-3" /> {post.author_name}
+                            </span>
+                          )}
+                          {post.published_at && (
+                            <span className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {new Date(post.published_at).toLocaleDateString("bn-BD")}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3">
                           <span className="flex items-center gap-1">
-                            <User className="h-3 w-3" /> {post.author_name}
+                            <Clock className="h-3 w-3" /> {Math.max(1, Math.ceil(post.content.replace(/<[^>]*>/g, '').split(/\s+/).length / 200))} মিনিট
                           </span>
-                        )}
-                        {post.published_at && (
                           <span className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {new Date(post.published_at).toLocaleDateString("bn-BD")}
+                            <Eye className="h-3 w-3" /> {post.view_count || 0}
                           </span>
-                        )}
+                        </div>
+                        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" /> {Math.max(1, Math.ceil(post.content.replace(/<[^>]*>/g, '').split(/\s+/).length / 200))} মিনিট
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Eye className="h-3 w-3" /> {post.view_count || 0}
-                        </span>
-                      </div>
-                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                     </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
+                  </Link>
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="mt-8 flex items-center justify-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={currentPage === 1}
+                    onClick={() => { setCurrentPage((p) => p - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <Button
+                      key={page}
+                      variant={page === currentPage ? "default" : "outline"}
+                      size="sm"
+                      className="min-w-[36px]"
+                      onClick={() => { setCurrentPage(page); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                    >
+                      {page}
+                    </Button>
+                  ))}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={currentPage === totalPages}
+                    onClick={() => { setCurrentPage((p) => p + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  <span className="ml-2 text-sm text-muted-foreground">
+                    {filtered.length}টি আর্টিকেলের মধ্যে {(currentPage - 1) * POSTS_PER_PAGE + 1}-{Math.min(currentPage * POSTS_PER_PAGE, filtered.length)}
+                  </span>
+                </div>
+              )}
+            </>
           )}
         </div>
 
