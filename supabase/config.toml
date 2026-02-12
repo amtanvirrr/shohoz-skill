@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.notify-order]
 verify_jwt = false
+
+[functions.send-to-courier]
+verify_jwt = false

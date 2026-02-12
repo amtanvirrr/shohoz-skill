@@ -25,6 +25,15 @@ interface BrandingFields {
   smtp_from_email: string;
   smtp_from_name: string;
   admin_notification_email: string;
+  steadfast_api_key: string;
+  steadfast_secret_key: string;
+  pathao_client_id: string;
+  pathao_client_secret: string;
+  pathao_username: string;
+  pathao_password: string;
+  pathao_store_id: string;
+  redx_api_token: string;
+  redx_pickup_store_id: string;
 }
 
 const defaultBranding: BrandingFields = {
@@ -45,6 +54,15 @@ const defaultBranding: BrandingFields = {
   smtp_from_email: "",
   smtp_from_name: "",
   admin_notification_email: "",
+  steadfast_api_key: "",
+  steadfast_secret_key: "",
+  pathao_client_id: "",
+  pathao_client_secret: "",
+  pathao_username: "",
+  pathao_password: "",
+  pathao_store_id: "",
+  redx_api_token: "",
+  redx_pickup_store_id: "",
 };
 
 const ALL_KEYS = Object.keys(defaultBranding) as (keyof BrandingFields)[];
@@ -187,12 +205,57 @@ const AdminSettings = () => {
           </div>
         </div>
 
-        {/* Courier Placeholder */}
-        <div className="rounded-xl border border-border bg-card p-6">
-          <h3 className="font-display text-lg font-semibold text-foreground">Courier Integration</h3>
-          <p className="mt-1 text-sm text-muted-foreground">Courier API integration placeholder.</p>
-          <div className="mt-4 rounded-lg bg-muted p-4 text-sm text-muted-foreground">
-            Coming soon — Steadfast, Pathao, RedX integration support.
+        {/* Courier Integration - Steadfast */}
+        <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+          <h3 className="font-display text-lg font-semibold text-foreground">Steadfast Courier</h3>
+          <p className="text-sm text-muted-foreground">Steadfast Portal থেকে API Key এবং Secret Key সংগ্রহ করুন।</p>
+          <div>
+            <Label htmlFor="steadfast_api_key">API Key</Label>
+            <Input id="steadfast_api_key" value={fields.steadfast_api_key} onChange={(e) => handleChange("steadfast_api_key", e.target.value)} className="mt-1" placeholder="Steadfast API Key" />
+          </div>
+          <div>
+            <Label htmlFor="steadfast_secret_key">Secret Key</Label>
+            <Input id="steadfast_secret_key" type="password" value={fields.steadfast_secret_key} onChange={(e) => handleChange("steadfast_secret_key", e.target.value)} className="mt-1" placeholder="Steadfast Secret Key" />
+          </div>
+        </div>
+
+        {/* Courier Integration - Pathao */}
+        <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+          <h3 className="font-display text-lg font-semibold text-foreground">Pathao Courier</h3>
+          <p className="text-sm text-muted-foreground">Pathao Merchant Panel থেকে API credentials সংগ্রহ করুন।</p>
+          <div>
+            <Label htmlFor="pathao_client_id">Client ID</Label>
+            <Input id="pathao_client_id" value={fields.pathao_client_id} onChange={(e) => handleChange("pathao_client_id", e.target.value)} className="mt-1" placeholder="Pathao Client ID" />
+          </div>
+          <div>
+            <Label htmlFor="pathao_client_secret">Client Secret</Label>
+            <Input id="pathao_client_secret" type="password" value={fields.pathao_client_secret} onChange={(e) => handleChange("pathao_client_secret", e.target.value)} className="mt-1" placeholder="Pathao Client Secret" />
+          </div>
+          <div>
+            <Label htmlFor="pathao_username">Username (Email)</Label>
+            <Input id="pathao_username" value={fields.pathao_username} onChange={(e) => handleChange("pathao_username", e.target.value)} className="mt-1" placeholder="merchant@email.com" />
+          </div>
+          <div>
+            <Label htmlFor="pathao_password">Password</Label>
+            <Input id="pathao_password" type="password" value={fields.pathao_password} onChange={(e) => handleChange("pathao_password", e.target.value)} className="mt-1" placeholder="••••••••" />
+          </div>
+          <div>
+            <Label htmlFor="pathao_store_id">Default Store ID</Label>
+            <Input id="pathao_store_id" value={fields.pathao_store_id} onChange={(e) => handleChange("pathao_store_id", e.target.value)} className="mt-1" placeholder="e.g. 12345" />
+          </div>
+        </div>
+
+        {/* Courier Integration - RedX */}
+        <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+          <h3 className="font-display text-lg font-semibold text-foreground">RedX Courier</h3>
+          <p className="text-sm text-muted-foreground">RedX Developer Panel থেকে API Access Token সংগ্রহ করুন।</p>
+          <div>
+            <Label htmlFor="redx_api_token">API Access Token</Label>
+            <Input id="redx_api_token" type="password" value={fields.redx_api_token} onChange={(e) => handleChange("redx_api_token", e.target.value)} className="mt-1" placeholder="RedX API Token" />
+          </div>
+          <div>
+            <Label htmlFor="redx_pickup_store_id">Default Pickup Store ID</Label>
+            <Input id="redx_pickup_store_id" value={fields.redx_pickup_store_id} onChange={(e) => handleChange("redx_pickup_store_id", e.target.value)} className="mt-1" placeholder="e.g. 12345" />
           </div>
         </div>
 

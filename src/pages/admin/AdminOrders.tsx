@@ -3,7 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertTriangle, Download, CheckCircle, XCircle } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertTriangle, Download, CheckCircle, XCircle, Truck, ExternalLink } from "lucide-react";
 
 interface Order {
   id: string;
@@ -11,6 +12,7 @@ interface Order {
   customer_name: string;
   customer_phone: string;
   customer_email: string | null;
+  customer_address: string | null;
   product_title: string;
   product_type: string;
   price: number;
@@ -20,6 +22,11 @@ interface Order {
   transaction_id: string | null;
   payment_verified: boolean;
   created_at: string;
+  courier_provider: string | null;
+  courier_tracking_id: string | null;
+  courier_consignment_id: string | null;
+  courier_status: string | null;
+  courier_sent_at: string | null;
 }
 
 const statusColors: Record<string, string> = {
@@ -30,14 +37,23 @@ const statusColors: Record<string, string> = {
   cancelled: "bg-destructive/10 text-destructive",
 };
 
+const courierTrackingUrl: Record<string, (id: string) => string> = {
+  steadfast: (id) => `https://portal.steadfast.com.bd/t/${id}`,
+  pathao: (id) => `https://merchant.pathao.com/tracking?consignment_id=${id}`,
+  redx: (id) => `https://redx.com.bd/track-parcel/?trackingId=${id}`,
+};
+
 const AdminOrders = () => {
   const { toast } = useToast();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [courierDialog, setCourierDialog] = useState<string | null>(null);
+  const [selectedCourier, setSelectedCourier] = useState<string>("");
+  const [sending, setSending] = useState(false);
 
   const fetchOrders = async () => {
     const { data } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
-    setOrders((data as Order[]) || []);
+    setOrders((data as unknown as Order[]) || []);
     setLoading(false);
   };
 
@@ -62,11 +78,35 @@ const AdminOrders = () => {
     fetchOrders();
   };
 
+  const sendToCourier = async () => {
+    if (!courierDialog || !selectedCourier) return;
+    setSending(true);
+    try {
+      const res = await supabase.functions.invoke("send-to-courier", {
+        body: { orderId: courierDialog, courier: selectedCourier },
+      });
+      if (res.error) {
+        toast({ title: "কুরিয়ার এরর", description: res.error.message, variant: "destructive" });
+      } else if (res.data?.error) {
+        toast({ title: "কুরিয়ার এরর", description: res.data.error, variant: "destructive" });
+      } else {
+        toast({ title: `${selectedCourier} কুরিয়ারে পাঠানো হয়েছে ✅`, description: `Tracking: ${res.data?.tracking_id}` });
+        fetchOrders();
+      }
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+    setSending(false);
+    setCourierDialog(null);
+    setSelectedCourier("");
+  };
+
   const exportCSV = () => {
-    const headers = ["Order ID", "Customer", "Phone", "Email", "Product", "Type", "Price", "Payment", "TXN ID", "Verified", "Status", "Date"];
+    const headers = ["Order ID", "Customer", "Phone", "Email", "Product", "Type", "Price", "Payment", "TXN ID", "Verified", "Status", "Courier", "Tracking ID", "Date"];
     const rows = orders.map((o) => [
       o.order_id, o.customer_name, o.customer_phone, o.customer_email || "", o.product_title,
-      o.product_type, String(o.price), o.payment_method, o.transaction_id || "", o.payment_verified ? "Yes" : "No", o.status, new Date(o.created_at).toLocaleDateString()
+      o.product_type, String(o.price), o.payment_method, o.transaction_id || "", o.payment_verified ? "Yes" : "No", o.status,
+      o.courier_provider || "", o.courier_tracking_id || "", new Date(o.created_at).toLocaleDateString()
     ]);
     const csv = [headers, ...rows].map((r) => r.map((c) => `"${c}"`).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
@@ -98,6 +138,7 @@ const AdminOrders = () => {
                 <th className="pb-3 pr-3">Price</th>
                 <th className="pb-3 pr-3">Payment</th>
                 <th className="pb-3 pr-3">TXN ID</th>
+                <th className="pb-3 pr-3">Courier</th>
                 <th className="pb-3 pr-3">Status</th>
                 <th className="pb-3">Actions</th>
               </tr>
@@ -133,6 +174,38 @@ const AdminOrders = () => {
                     )}
                   </td>
                   <td className="py-3 pr-3">
+                    {order.courier_provider ? (
+                      <div className="space-y-0.5">
+                        <span className="inline-block rounded bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary capitalize">
+                          {order.courier_provider}
+                        </span>
+                        {order.courier_tracking_id && (
+                          <a
+                            href={courierTrackingUrl[order.courier_provider]?.(order.courier_tracking_id) || "#"}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 text-xs text-primary hover:underline"
+                          >
+                            {order.courier_tracking_id}
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        )}
+                      </div>
+                    ) : order.product_type === "book" ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 gap-1 text-xs"
+                        onClick={() => { setCourierDialog(order.id); setSelectedCourier(""); }}
+                      >
+                        <Truck className="h-3.5 w-3.5" />
+                        কুরিয়ারে পাঠান
+                      </Button>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </td>
+                  <td className="py-3 pr-3">
                     <Select value={order.status} onValueChange={(val) => updateStatus(order.id, val)}>
                       <SelectTrigger className="h-8 w-32">
                         <SelectValue />
@@ -160,6 +233,41 @@ const AdminOrders = () => {
           </table>
         </div>
       )}
+
+      {/* Courier Selection Dialog */}
+      <Dialog open={!!courierDialog} onOpenChange={(open) => { if (!open) setCourierDialog(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>কুরিয়ার সিলেক্ট করুন</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-4">
+            {[
+              { value: "steadfast", label: "Steadfast Courier" },
+              { value: "pathao", label: "Pathao Courier" },
+              { value: "redx", label: "RedX Courier" },
+            ].map((c) => (
+              <button
+                key={c.value}
+                onClick={() => setSelectedCourier(c.value)}
+                className={`w-full rounded-lg border p-3 text-left text-sm font-medium transition-colors ${
+                  selectedCourier === c.value
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border bg-card text-foreground hover:border-primary/50"
+                }`}
+              >
+                {c.label}
+              </button>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCourierDialog(null)}>বাতিল</Button>
+            <Button onClick={sendToCourier} disabled={!selectedCourier || sending} className="gap-2">
+              <Truck className="h-4 w-4" />
+              {sending ? "পাঠানো হচ্ছে..." : "কুরিয়ারে পাঠান"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
