@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 
@@ -11,7 +10,7 @@ const Register = () => {
   const { signUp } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ fullName: "", phone: "", email: "", address: "", password: "", confirmPassword: "" });
+  const [form, setForm] = useState({ fullName: "", phone: "", email: "", password: "", confirmPassword: "" });
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -61,10 +60,6 @@ const Register = () => {
             <div>
               <Label htmlFor="email">Email *</Label>
               <Input id="email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="mt-1" />
-            </div>
-            <div>
-              <Label htmlFor="address">Address</Label>
-              <Textarea id="address" rows={2} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="mt-1" />
             </div>
             <div>
               <Label htmlFor="password">Password *</Label>
