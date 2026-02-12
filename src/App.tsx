@@ -16,6 +16,8 @@ import CourseDetail from "./pages/CourseDetail";
 import BookDetail from "./pages/BookDetail";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import QuizPage from "./pages/QuizPage";
 import UserDashboard from "./pages/UserDashboard";
 import EbookReader from "./pages/EbookReader";
@@ -51,6 +53,8 @@ const App = () => (
             <Route path="/contact" element={<Layout><Contact /></Layout>} />
             <Route path="/login" element={<Layout><Login /></Layout>} />
             <Route path="/register" element={<Layout><Register /></Layout>} />
+            <Route path="/forgot-password" element={<Layout><ForgotPassword /></Layout>} />
+            <Route path="/reset-password" element={<Layout><ResetPassword /></Layout>} />
             <Route path="/dashboard" element={<ProtectedRoute><Layout><UserDashboard /></Layout></ProtectedRoute>} />
             <Route path="/read/:bookId" element={<ProtectedRoute><EbookReader /></ProtectedRoute>} />
             <Route path="/enrolled/:id" element={<ProtectedRoute><Layout><EnrolledCourse /></Layout></ProtectedRoute>} />
