@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, User, ArrowLeft, Tag, MessageCircle, Trash2, Send, Facebook, Share2, Link2, Copy } from "lucide-react";
+import { Calendar, User, ArrowLeft, Tag, MessageCircle, Trash2, Send, Facebook, Share2, Link2, Copy, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,6 +21,7 @@ interface BlogPost {
   published_at: string;
   meta_title: string | null;
   meta_description: string | null;
+  view_count: number;
 }
 
 interface BlogComment {
@@ -52,6 +53,10 @@ const BlogDetailPage = () => {
         .single();
       setPost(data as BlogPost | null);
       setLoading(false);
+      // Increment view count
+      if (data?.id) {
+        supabase.rpc("increment_blog_view", { post_id: data.id });
+      }
     };
     fetchPost();
   }, [slug]);
@@ -177,6 +182,9 @@ const BlogDetailPage = () => {
               })}
             </span>
           )}
+          <span className="flex items-center gap-1 text-sm text-muted-foreground">
+            <Eye className="h-3.5 w-3.5" /> {post.view_count} বার পড়া হয়েছে
+          </span>
         </div>
 
         {/* Title */}
