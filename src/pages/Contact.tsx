@@ -5,9 +5,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Mail, Phone, MapPin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 const Contact = () => {
   const { toast } = useToast();
+  const { settings } = useSiteSettings();
   const [form, setForm] = useState({ name: "", phone: "", email: "", message: "" });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -54,15 +56,15 @@ const Contact = () => {
                 <div className="mt-4 space-y-4">
                   <div className="flex items-start gap-3 text-sm text-muted-foreground">
                     <Mail className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                    info@shikhonhub.com
+                    {settings.contact_email || "info@shikhonhub.com"}
                   </div>
                   <div className="flex items-start gap-3 text-sm text-muted-foreground">
                     <Phone className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                    +880 1XXX-XXXXXX
+                    {settings.contact_phone || "+880 1XXX-XXXXXX"}
                   </div>
                   <div className="flex items-start gap-3 text-sm text-muted-foreground">
                     <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                    Dhaka, Bangladesh
+                    {settings.contact_address || "Dhaka, Bangladesh"}
                   </div>
                 </div>
               </div>
