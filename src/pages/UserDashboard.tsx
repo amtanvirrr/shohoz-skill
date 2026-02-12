@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { BookOpen, PlayCircle, ExternalLink, ShoppingBag, Clock, CheckCircle, Truck, XCircle, Package, Eye, UserCircle, Save, Loader2 } from "lucide-react";
+import { BookOpen, PlayCircle, ExternalLink, ShoppingBag, Clock, CheckCircle, Truck, XCircle, Package, Eye, UserCircle, Save, Loader2, Bookmark, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -61,6 +61,7 @@ const UserDashboard = () => {
   const [books, setBooks] = useState<Map<string, BookInfo>>(new Map());
   const [courses, setCourses] = useState<Map<string, CourseInfo>>(new Map());
   const [loading, setLoading] = useState(true);
+  const [bookmarkedPosts, setBookmarkedPosts] = useState<{ id: string; blog_post_id: string; title: string; slug: string; category: string; cover_image_url: string; created_at: string }[]>([]);
 
   // Profile state
   const [profileLoading, setProfileLoading] = useState(true);
@@ -74,11 +75,25 @@ const UserDashboard = () => {
     if (!user) return;
 
     const fetchData = async () => {
-      // Fetch orders and profile in parallel
-      const [ordersRes, profileRes] = await Promise.all([
+      // Fetch orders, profile, and bookmarks in parallel
+      const [ordersRes, profileRes, bookmarksRes] = await Promise.all([
         supabase.from("orders").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
         supabase.from("profiles").select("full_name, phone, address, email").eq("user_id", user.id).maybeSingle(),
+        supabase.from("bookmarks").select("id, blog_post_id, created_at, blog_posts(title, slug, category, cover_image_url)").eq("user_id", user.id).order("created_at", { ascending: false }),
       ]);
+
+      // Bookmarks
+      setBookmarkedPosts(
+        (bookmarksRes.data || []).map((b: any) => ({
+          id: b.id,
+          blog_post_id: b.blog_post_id,
+          title: b.blog_posts?.title || "",
+          slug: b.blog_posts?.slug || "",
+          category: b.blog_posts?.category || "",
+          cover_image_url: b.blog_posts?.cover_image_url || "",
+          created_at: b.created_at,
+        }))
+      );
 
       // Profile
       if (profileRes.data) {
@@ -175,12 +190,15 @@ const UserDashboard = () => {
         <p className="mt-2 text-muted-foreground">আপনার কেনা ইবুক, কোর্স ও অর্ডার হিস্ট্রি এখান থেকে দেখুন</p>
 
         <Tabs defaultValue="ebooks" className="mt-8">
-          <TabsList className="grid w-full max-w-2xl grid-cols-4">
+          <TabsList className="grid w-full max-w-3xl grid-cols-5">
             <TabsTrigger value="ebooks" className="gap-1.5 text-xs sm:text-sm">
               <BookOpen className="h-4 w-4" /> ইবুক ({ebookOrders.length})
             </TabsTrigger>
             <TabsTrigger value="courses" className="gap-1.5 text-xs sm:text-sm">
               <PlayCircle className="h-4 w-4" /> কোর্স ({courseOrders.length})
+            </TabsTrigger>
+            <TabsTrigger value="bookmarks" className="gap-1.5 text-xs sm:text-sm">
+              <Bookmark className="h-4 w-4" /> বুকমার্ক ({bookmarkedPosts.length})
             </TabsTrigger>
             <TabsTrigger value="orders" className="gap-1.5 text-xs sm:text-sm">
               <ShoppingBag className="h-4 w-4" /> অর্ডার ({allOrders.length})
@@ -268,6 +286,56 @@ const UserDashboard = () => {
                     </div>
                   );
                 })}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Bookmarks Tab */}
+          <TabsContent value="bookmarks" className="mt-6">
+            {bookmarkedPosts.length === 0 ? (
+              <div className="rounded-xl border border-border bg-card p-10 text-center">
+                <Bookmark className="mx-auto h-12 w-12 text-muted-foreground/40" />
+                <h3 className="mt-4 text-lg font-semibold text-foreground">কোনো বুকমার্ক নেই</h3>
+                <p className="mt-1 text-sm text-muted-foreground">আপনি এখনো কোনো ব্লগ পোস্ট বুকমার্ক করেননি।</p>
+                <Button className="mt-4" asChild>
+                  <Link to="/blog">ব্লগ দেখুন</Link>
+                </Button>
+              </div>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {bookmarkedPosts.map((bp) => (
+                  <div key={bp.id} className="group overflow-hidden rounded-xl border border-border bg-card">
+                    {bp.cover_image_url && (
+                      <Link to={`/blog/${bp.slug}`}>
+                        <div className="aspect-video overflow-hidden">
+                          <img src={bp.cover_image_url} alt={bp.title} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                        </div>
+                      </Link>
+                    )}
+                    <div className="p-4">
+                      {bp.category && <Badge variant="secondary" className="mb-2 text-xs">{bp.category}</Badge>}
+                      <Link to={`/blog/${bp.slug}`}>
+                        <h3 className="font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors">{bp.title}</h3>
+                      </Link>
+                      <div className="mt-3 flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(bp.created_at).toLocaleDateString("bn-BD")}
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 gap-1 text-xs text-destructive hover:text-destructive"
+                          onClick={async () => {
+                            await supabase.from("bookmarks").delete().eq("id", bp.id);
+                            setBookmarkedPosts((prev) => prev.filter((p) => p.id !== bp.id));
+                          }}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" /> সরান
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </TabsContent>
