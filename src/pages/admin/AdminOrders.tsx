@@ -37,6 +37,28 @@ const statusColors: Record<string, string> = {
   cancelled: "bg-destructive/10 text-destructive",
 };
 
+const courierStatusStyle = (status: string): string => {
+  switch (status) {
+    case "delivered": return "bg-green-500/15 text-green-600";
+    case "in_transit": return "bg-blue-500/15 text-blue-600";
+    case "cancelled": return "bg-destructive/15 text-destructive";
+    case "pending_pickup": return "bg-warning/15 text-warning";
+    case "dispatched": return "bg-accent/15 text-accent-foreground";
+    default: return "bg-muted text-muted-foreground";
+  }
+};
+
+const courierStatusLabel = (status: string): string => {
+  switch (status) {
+    case "delivered": return "✅ ডেলিভারড";
+    case "in_transit": return "🚚 ট্রানজিটে";
+    case "cancelled": return "❌ ক্যান্সেল/রিটার্ন";
+    case "pending_pickup": return "⏳ পিকআপ পেন্ডিং";
+    case "dispatched": return "📦 ডিসপ্যাচড";
+    default: return status;
+  }
+};
+
 const courierTrackingUrl: Record<string, (id: string) => string> = {
   steadfast: (id) => `https://portal.steadfast.com.bd/t/${id}`,
   pathao: (id) => `https://merchant.pathao.com/tracking?consignment_id=${id}`,
@@ -175,10 +197,15 @@ const AdminOrders = () => {
                   </td>
                   <td className="py-3 pr-3">
                     {order.courier_provider ? (
-                      <div className="space-y-0.5">
+                      <div className="space-y-1">
                         <span className="inline-block rounded bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary capitalize">
                           {order.courier_provider}
                         </span>
+                        {order.courier_status && (
+                          <span className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${courierStatusStyle(order.courier_status)}`}>
+                            {courierStatusLabel(order.courier_status)}
+                          </span>
+                        )}
                         {order.courier_tracking_id && (
                           <a
                             href={courierTrackingUrl[order.courier_provider]?.(order.courier_tracking_id) || "#"}
