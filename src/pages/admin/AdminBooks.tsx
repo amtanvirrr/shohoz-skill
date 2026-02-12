@@ -204,7 +204,8 @@ const AdminBooks = () => {
 
               {/* Cover Image Upload */}
               <div>
-                <Label>Cover Image</Label>
+              <Label>Cover Image</Label>
+                <p className="text-xs text-muted-foreground">রিকমেন্ডেড সাইজ: 600×800px (3:4 রেশিও)</p>
                 <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
                 {form.image_url ? (
                   <div className="mt-1 flex items-center gap-3">
