@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, ShoppingBag, Smartphone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { usePixel } from "@/components/MetaPixelProvider";
 
 interface DbBook {
   id: string;
@@ -36,6 +37,7 @@ const BookDetail = () => {
   const { id } = useParams();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { trackEvent } = usePixel();
   const [book, setBook] = useState<DbBook | null>(null);
   const [loading, setLoading] = useState(true);
   const [order, setOrder] = useState({ name: "", phone: "", email: "", address: "", paymentMethod: "bkash", transactionId: "" });
@@ -49,7 +51,17 @@ const BookDetail = () => {
       supabase.from("books").select("*").eq("id", id).maybeSingle(),
       supabase.from("payment_methods").select("*").eq("is_active", true).order("sort_order"),
     ]).then(([bookRes, mfsRes]) => {
-      setBook(bookRes.data as DbBook | null);
+      const b = bookRes.data as DbBook | null;
+      setBook(b);
+      if (b) {
+        trackEvent("ViewContent", {
+          content_name: b.title,
+          content_type: "book",
+          content_ids: [b.id],
+          value: b.price,
+          currency: "BDT",
+        });
+      }
       const mfsData = (mfsRes.data as MfsMethod[]) || [];
       setMfsMethods(mfsData);
       if (mfsData.length > 0) setOrder(o => ({ ...o, paymentMethod: mfsData[0].provider }));
@@ -104,6 +116,14 @@ const BookDetail = () => {
     if (error) {
       toast({ title: "Order failed", description: error.message, variant: "destructive" });
     } else {
+      trackEvent("Purchase", {
+        content_name: book.title,
+        content_type: "book",
+        content_ids: [book.id],
+        value: book.price,
+        currency: "BDT",
+        order_id: data.order_id,
+      }, { em: order.email || undefined, ph: order.phone || undefined });
       toast({ title: "Order Placed! 🎉", description: `Your Order ID: ${data.order_id}` });
       setOrder({ name: "", phone: "", email: "", address: "", paymentMethod: "bkash", transactionId: "" });
     }

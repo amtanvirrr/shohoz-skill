@@ -9,6 +9,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { usePixel } from "@/components/MetaPixelProvider";
 
 interface DbCourse {
   id: string;
@@ -69,6 +70,7 @@ const CourseDetail = () => {
   const { id } = useParams();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { trackEvent } = usePixel();
   const [course, setCourse] = useState<DbCourse | null>(null);
   const [lessons, setLessons] = useState<DbLesson[]>([]);
   const [loading, setLoading] = useState(true);
@@ -91,7 +93,17 @@ const CourseDetail = () => {
       supabase.from("reviews").select("id, reviewer_name, rating, comment, created_at").eq("course_id", id).eq("is_active", true).order("created_at", { ascending: false }),
       supabase.from("payment_methods").select("*").eq("is_active", true).order("sort_order"),
     ]).then(async ([courseRes, lessonsRes, reviewsRes, mfsRes]) => {
-      setCourse(courseRes.data as DbCourse | null);
+      const c = courseRes.data as DbCourse | null;
+      setCourse(c);
+      if (c) {
+        trackEvent("ViewContent", {
+          content_name: c.title,
+          content_type: "course",
+          content_ids: [c.id],
+          value: c.price,
+          currency: "BDT",
+        });
+      }
       const lessonData = (lessonsRes.data as DbLesson[]) || [];
       setLessons(lessonData);
       setReviews((reviewsRes.data as DbReview[]) || []);
@@ -170,6 +182,14 @@ const CourseDetail = () => {
     if (error) {
       toast({ title: "Purchase failed", description: error.message, variant: "destructive" });
     } else {
+      trackEvent("Purchase", {
+        content_name: course.title,
+        content_type: "course",
+        content_ids: [course.id],
+        value: course.price,
+        currency: "BDT",
+        order_id: data.order_id,
+      }, { em: user.email || undefined });
       toast({ title: "Purchase Initiated! 🎉", description: `Order ID: ${data.order_id}. পেমেন্ট ভেরিফিকেশনের পর কোর্স অ্যাক্সেস পাবেন।` });
       setTransactionId("");
     }
