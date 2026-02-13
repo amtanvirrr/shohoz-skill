@@ -3,38 +3,33 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 // Map courier-specific statuses to our unified statuses
 function mapStatus(courier: string, rawStatus: string): string {
   const s = rawStatus?.toLowerCase() || "";
 
-  // Delivered
-  if (["delivered", "delivered_approved", "completed", "Success"].some((k) => s.includes(k.toLowerCase()))) {
+  if (["delivered", "delivered_approved", "completed", "success"].some((k) => s.includes(k))) {
     return "delivered";
   }
-  // Cancelled / Returned
-  if (["cancel", "returned", "return", "failed", "expired"].some((k) => s.includes(k.toLowerCase()))) {
+  if (["cancel", "returned", "return", "failed", "expired"].some((k) => s.includes(k))) {
     return "cancelled";
   }
-  // In transit
-  if (["in_transit", "in transit", "picked", "pickup", "on_the_way", "at_hub", "sorting", "assigned", "accepted"].some((k) => s.includes(k.toLowerCase()))) {
+  if (["in_transit", "in transit", "picked", "pickup", "on_the_way", "at_hub", "sorting", "assigned", "accepted"].some((k) => s.includes(k))) {
     return "in_transit";
   }
-  // Pending at courier
-  if (["pending", "unknown", "processing"].some((k) => s.includes(k.toLowerCase()))) {
+  if (["pending", "unknown", "processing"].some((k) => s.includes(k))) {
     return "pending_pickup";
   }
 
   return rawStatus || "unknown";
 }
 
-// Map courier status to our order status
 function mapToOrderStatus(courierStatus: string): string | null {
   if (courierStatus === "delivered") return "delivered";
   if (courierStatus === "cancelled") return "cancelled";
-  return null; // Don't change order status for in-transit etc.
+  return null;
 }
 
 Deno.serve(async (req) => {
@@ -45,7 +40,39 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+    // Authenticate user and require admin role
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabaseAuth = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser();
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const supabase = createClient(supabaseUrl, serviceKey);
+    const { data: isAdmin } = await supabase.rpc("has_role", {
+      _user_id: user.id,
+      _role: "admin",
+    });
+    if (!isAdmin) {
+      return new Response(JSON.stringify({ error: "Admin access required" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // Fetch all orders that have been sent to courier but not yet delivered/cancelled
     const { data: orders, error: fetchErr } = await supabase
@@ -156,7 +183,6 @@ Deno.serve(async (req) => {
             }
           );
           const data = await res.json();
-          // Get last status from tracking array
           const tracking = data?.tracking || [];
           rawStatus = tracking.length > 0 ? tracking[tracking.length - 1]?.status || "" : data?.current_status || "";
         }
@@ -166,7 +192,6 @@ Deno.serve(async (req) => {
         const mappedCourierStatus = mapStatus(courier!, rawStatus);
         const mappedOrderStatus = mapToOrderStatus(mappedCourierStatus);
 
-        // Only update if status changed
         if (mappedCourierStatus !== order.courier_status) {
           const updateData: any = { courier_status: mappedCourierStatus };
           if (mappedOrderStatus) {

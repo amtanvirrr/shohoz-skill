@@ -12,15 +12,36 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+    // Authenticate user
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabaseAuth = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser();
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { orderId, orderData } = await req.json();
     if (!orderId || !orderData) {
       throw new Error("orderId and orderData are required");
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    const supabase = createClient(supabaseUrl, serviceKey);
 
     // Fetch SMTP settings from site_settings
     const { data: settings } = await supabase
@@ -136,12 +157,6 @@ Deno.serve(async (req) => {
       </div>
     `;
 
-    // Build SMTP email via raw TCP (Deno doesn't have nodemailer)
-    // Use Resend API if RESEND_API_KEY exists, otherwise raw SMTP via fetch-based email API
-    // For maximum compatibility, we use the SMTP2GO / generic SMTP REST API approach
-    // Actually, let's use a simple approach: connect via Deno's smtp client
-
-    // Use a lightweight approach: send via SMTP using base64 encoding
     const { SmtpClient } = await import("https://deno.land/x/smtp@v0.7.0/mod.ts");
 
     const client = new SmtpClient();
