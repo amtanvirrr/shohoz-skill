@@ -1,3 +1,4 @@
+import DOMPurify from "dompurify";
 import { useEffect, useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -345,7 +346,7 @@ const BlogDetailPage = () => {
             <div
               className="prose prose-lg max-w-none dark:prose-invert prose-headings:font-display prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground prose-img:rounded-xl"
               style={{ fontSize: `${fontSize}px`, lineHeight: 1.8 }}
-              dangerouslySetInnerHTML={{ __html: contentWithIds }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(contentWithIds, { ALLOWED_TAGS: ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'a', 'strong', 'em', 'u', 'img', 'blockquote', 'code', 'pre', 'br', 'div', 'span', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'hr', 'figure', 'figcaption', 'sup', 'sub'], ALLOWED_ATTR: ['href', 'src', 'alt', 'class', 'id', 'style', 'target', 'rel', 'width', 'height'] }) }}
             />
           );
         })()}

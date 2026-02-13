@@ -13,10 +13,19 @@ Deno.serve(async (req) => {
 
   try {
     const url = new URL(req.url);
-    const email = url.searchParams.get("email");
+    const token = url.searchParams.get("token");
 
-    if (!email) {
-      return new Response(renderHTML("ইমেইল পাওয়া যায়নি।", false), {
+    if (!token) {
+      return new Response(renderHTML("অবৈধ আনসাবস্ক্রাইব লিঙ্ক।", false), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "text/html; charset=utf-8" },
+      });
+    }
+
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(token)) {
+      return new Response(renderHTML("অবৈধ আনসাবস্ক্রাইব লিঙ্ক।", false), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "text/html; charset=utf-8" },
       });
@@ -30,7 +39,7 @@ Deno.serve(async (req) => {
     const { data, error } = await supabase
       .from("newsletter_subscribers")
       .update({ is_active: false })
-      .eq("email", email)
+      .eq("unsubscribe_token", token)
       .eq("is_active", true)
       .select("id")
       .maybeSingle();
@@ -44,7 +53,7 @@ Deno.serve(async (req) => {
     }
 
     if (!data) {
-      return new Response(renderHTML("আপনি ইতোমধ্যে আনসাবস্ক্রাইব করেছেন অথবা এই ইমেইলটি সাবস্ক্রাইবড নয়।", true), {
+      return new Response(renderHTML("আপনি ইতোমধ্যে আনসাবস্ক্রাইব করেছেন অথবা এই লিঙ্কটি অবৈধ।", true), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "text/html; charset=utf-8" },
       });
