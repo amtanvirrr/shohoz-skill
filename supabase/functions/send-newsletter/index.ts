@@ -80,10 +80,10 @@ Deno.serve(async (req) => {
       throw new Error("Blog post not found");
     }
 
-    // Fetch active subscribers
+    // Fetch active subscribers with their unsubscribe tokens
     const { data: subscribers, error: subError } = await serviceClient
       .from("newsletter_subscribers")
-      .select("email")
+      .select("email, unsubscribe_token")
       .eq("is_active", true);
 
     if (subError) {
@@ -106,7 +106,7 @@ Deno.serve(async (req) => {
     let totalFailed = 0;
 
     for (const subscriber of subscribers) {
-      const unsubscribeUrl = `${SUPABASE_PROJECT_URL}/functions/v1/unsubscribe?email=${encodeURIComponent(subscriber.email)}`;
+      const unsubscribeUrl = `${SUPABASE_PROJECT_URL}/functions/v1/unsubscribe?token=${subscriber.unsubscribe_token}`;
 
       const res = await fetch("https://api.resend.com/emails", {
         method: "POST",

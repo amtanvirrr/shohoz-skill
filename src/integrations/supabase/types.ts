@@ -400,18 +400,21 @@ export type Database = {
           email: string
           id: string
           is_active: boolean
+          unsubscribe_token: string
         }
         Insert: {
           created_at?: string
           email: string
           id?: string
           is_active?: boolean
+          unsubscribe_token?: string
         }
         Update: {
           created_at?: string
           email?: string
           id?: string
           is_active?: boolean
+          unsubscribe_token?: string
         }
         Relationships: []
       }
