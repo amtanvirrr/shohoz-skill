@@ -74,8 +74,12 @@ const AdminHero = () => {
 
   const saveSettings = async () => {
     setSaving(true);
-    const { data: existing } = await supabase.from("site_settings").select("key").in("key", HERO_KEYS);
-    const existingKeys = new Set(existing?.map((r) => r.key) || []);
+    const [{ data: existing }, { data: existingPublic }] = await Promise.all([
+      supabase.from("site_settings").select("key").in("key", HERO_KEYS),
+      (supabase as any).from("public_site_settings").select("key").in("key", HERO_KEYS),
+    ]);
+    const existingKeys = new Set(existing?.map((r: any) => r.key) || []);
+    const existingPublicKeys = new Set((existingPublic || []).map((r: any) => r.key));
 
     const ops = HERO_KEYS.map((key) => {
       if (existingKeys.has(key)) {
@@ -86,7 +90,17 @@ const AdminHero = () => {
       return null;
     }).filter(Boolean);
 
-    await Promise.all(ops);
+    // Sync to public_site_settings
+    const publicOps = HERO_KEYS.map((key) => {
+      if (existingPublicKeys.has(key)) {
+        return (supabase as any).from("public_site_settings").update({ value: fields[key] }).eq("key", key);
+      } else if (fields[key]) {
+        return (supabase as any).from("public_site_settings").insert({ key, value: fields[key] });
+      }
+      return null;
+    }).filter(Boolean);
+
+    await Promise.all([...ops, ...publicOps]);
     setSaving(false);
     toast({ title: "হিরো সেটিংস সেভ হয়েছে" });
   };

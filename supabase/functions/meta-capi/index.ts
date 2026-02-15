@@ -6,6 +6,12 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const ALLOWED_EVENTS = [
+  "PageView", "ViewContent", "Purchase", "Lead",
+  "AddToCart", "InitiateCheckout", "CompleteRegistration",
+  "Search", "AddPaymentInfo", "Subscribe",
+];
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -35,7 +41,34 @@ serve(async (req) => {
       });
     }
 
-    const { event_name, event_id, params, user_data } = await req.json();
+    // Parse and validate input
+    let body: any;
+    try {
+      body = await req.json();
+    } catch {
+      return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { event_name, event_id, params, user_data } = body;
+
+    // Validate event_name
+    if (!event_name || typeof event_name !== "string" || !ALLOWED_EVENTS.includes(event_name)) {
+      return new Response(JSON.stringify({ error: "Invalid event_name. Allowed: " + ALLOWED_EVENTS.join(", ") }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Validate event_id
+    if (!event_id || typeof event_id !== "string" || event_id.length > 100) {
+      return new Response(JSON.stringify({ error: "Invalid event_id" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const eventData: any = {
       event_name,
@@ -62,7 +95,7 @@ serve(async (req) => {
     let url = `https://graph.facebook.com/v21.0/${pixelId}/events?access_token=${capiToken}`;
     const testEventCode = cfg.facebook_test_event_code;
     if (testEventCode) {
-      url += `&test_event_code=${testEventCode}`;
+      url += `&test_event_code=${encodeURIComponent(testEventCode)}`;
     }
 
     const fbResponse = await fetch(url, {
@@ -77,7 +110,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
