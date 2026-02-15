@@ -56,14 +56,14 @@ const HeroBanner = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
-    supabase
-      .from("site_settings")
+    (supabase as any)
+      .from("public_site_settings")
       .select("key, value")
       .in("key", HERO_KEYS)
-      .then(({ data }) => {
+      .then(({ data }: any) => {
         if (data && data.length > 0) {
           const merged = { ...defaults };
-          data.forEach((row) => {
+          data.forEach((row: any) => {
             if (row.key in merged && row.value) {
               (merged as any)[row.key] = row.value;
             }

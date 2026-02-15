@@ -71,6 +71,13 @@ const defaultBranding: BrandingFields = {
   contact_address: "",
 };
 
+const PUBLIC_KEYS: (keyof BrandingFields)[] = [
+  "site_name", "site_description", "copyright_text",
+  "logo_url", "footer_logo_url", "admin_logo_url", "favicon_url",
+  "facebook_pixel_id", "facebook_test_event_code",
+  "contact_email", "contact_phone", "contact_address",
+];
+
 const ALL_KEYS = Object.keys(defaultBranding) as (keyof BrandingFields)[];
 
 const AdminSettings = () => {
@@ -102,10 +109,15 @@ const AdminSettings = () => {
 
   const saveAll = async () => {
     setSaving(true);
-    // Get existing keys
-    const { data: existing } = await supabase.from("site_settings").select("key").in("key", ALL_KEYS);
-    const existingKeys = new Set(existing?.map((r) => r.key) || []);
+    // Get existing keys from both tables
+    const [{ data: existing }, { data: existingPublic }] = await Promise.all([
+      supabase.from("site_settings").select("key").in("key", ALL_KEYS),
+      (supabase as any).from("public_site_settings").select("key").in("key", PUBLIC_KEYS),
+    ]);
+    const existingKeys = new Set(existing?.map((r: any) => r.key) || []);
+    const existingPublicKeys = new Set((existingPublic || []).map((r: any) => r.key));
 
+    // Save all to site_settings (admin-only)
     const upserts = ALL_KEYS.map((key) => {
       if (existingKeys.has(key)) {
         return supabase.from("site_settings").update({ value: fields[key] }).eq("key", key);
@@ -115,7 +127,17 @@ const AdminSettings = () => {
       return null;
     }).filter(Boolean);
 
-    await Promise.all(upserts);
+    // Sync public keys to public_site_settings
+    const publicOps = PUBLIC_KEYS.map((key) => {
+      if (existingPublicKeys.has(key)) {
+        return (supabase as any).from("public_site_settings").update({ value: fields[key] }).eq("key", key);
+      } else if (fields[key]) {
+        return (supabase as any).from("public_site_settings").insert({ key, value: fields[key] });
+      }
+      return null;
+    }).filter(Boolean);
+
+    await Promise.all([...upserts, ...publicOps]);
     setSaving(false);
     toast({ title: "সেটিংস সেভ হয়েছে" });
   };

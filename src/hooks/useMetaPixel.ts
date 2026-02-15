@@ -88,12 +88,12 @@ export const useMetaPixel = () => {
       return;
     }
     const load = async () => {
-      const { data } = await supabase
-        .from("site_settings")
+      const { data } = await (supabase as any)
+        .from("public_site_settings")
         .select("key, value")
         .in("key", PIXEL_KEYS);
       const cfg: PixelConfig = { facebook_pixel_id: "", facebook_test_event_code: "" };
-      data?.forEach((r) => {
+      data?.forEach((r: any) => {
         if (r.key === "facebook_pixel_id") cfg.facebook_pixel_id = r.value;
         if (r.key === "facebook_test_event_code") cfg.facebook_test_event_code = r.value;
       });

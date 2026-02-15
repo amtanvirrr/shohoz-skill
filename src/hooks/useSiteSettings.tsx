@@ -39,14 +39,14 @@ export const useSiteSettings = () => {
 
   useEffect(() => {
     const fetchSettings = async () => {
-      const { data } = await supabase
-        .from("site_settings")
+      const { data } = await (supabase as any)
+        .from("public_site_settings")
         .select("key, value")
         .in("key", SETTING_KEYS);
 
       if (data && data.length > 0) {
         const merged = { ...defaults };
-        data.forEach((row) => {
+        data.forEach((row: any) => {
           if (row.key in merged && row.value) {
             (merged as any)[row.key] = row.value;
           }
