@@ -1,5 +1,6 @@
-import { CheckCircle, Copy, Package } from "lucide-react";
+import { CheckCircle, Copy, Package, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -58,6 +59,8 @@ const playSuccessSound = () => {
 
 const OrderSuccessDialog = ({ open, onClose, orderId, productTitle, message, isFree }: OrderSuccessDialogProps) => {
   const { toast } = useToast();
+
+  const navigate = useNavigate();
 
   const copyOrderId = () => {
     navigator.clipboard.writeText(orderId);
@@ -123,7 +126,13 @@ const OrderSuccessDialog = ({ open, onClose, orderId, productTitle, message, isF
             </div>
           )}
 
-          <Button onClick={onClose} className="mt-2 w-full">ঠিক আছে</Button>
+          <div className="mt-2 flex w-full gap-2">
+            <Button variant="outline" className="flex-1" onClick={() => { onClose(); navigate("/dashboard"); }}>
+              <LayoutDashboard className="mr-2 h-4 w-4" />
+              ড্যাশবোর্ড
+            </Button>
+            <Button className="flex-1" onClick={onClose}>ঠিক আছে</Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
