@@ -212,7 +212,16 @@ const BookDetail = () => {
           </div>
 
           <div>
-            <span className="inline-block rounded-full bg-accent/15 px-3 py-1 text-xs font-medium text-accent">{book.category}</span>
+            <div className="flex flex-wrap gap-2">
+              <span className="inline-block rounded-full bg-accent/15 px-3 py-1 text-xs font-medium text-accent">{book.category}</span>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
+                isEbook
+                  ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                  : "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
+              }`}>
+                {isEbook ? "📱 ইবুক" : "📦 ফিজিক্যাল বই"}
+              </span>
+            </div>
             <h1 className="mt-3 text-3xl font-bold text-foreground lg:text-4xl">{book.title}</h1>
             <p className="mt-2 text-muted-foreground">by {book.author}</p>
 
