@@ -262,7 +262,10 @@ const CourseDetail = () => {
                 <img src={course.image_url} alt={course.title} className="aspect-video w-full object-cover" />
               </div>
             )}
-            <span className="mt-6 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">{course.category}</span>
+            <div className="mt-6 flex flex-wrap gap-2">
+              <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">{course.category}</span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2.5 py-1 text-xs font-medium text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">🎓 অনলাইন কোর্স</span>
+            </div>
             <h1 className="mt-3 text-3xl font-bold text-foreground lg:text-4xl">{course.title}</h1>
             <p className="mt-2 text-muted-foreground">Instructor: {course.instructor}</p>
             <div className="mt-4 flex flex-wrap gap-4 text-sm text-muted-foreground">
