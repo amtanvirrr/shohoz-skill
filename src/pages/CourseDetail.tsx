@@ -425,7 +425,11 @@ const CourseDetail = () => {
                 </p>
               )}
 
-              {course.price === 0 ? (
+              {hasPurchased ? (
+                <Button size="lg" className="mt-6 w-full" asChild>
+                  <Link to={`/enrolled/${course.id}`}>কোর্সে যান →</Link>
+                </Button>
+              ) : course.price === 0 ? (
                 <Button
                   size="lg"
                   className="mt-6 w-full"

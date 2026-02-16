@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, ShoppingBag, Smartphone } from "lucide-react";
+import { ArrowLeft, ShoppingBag, Smartphone, BookOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { usePixel } from "@/components/MetaPixelProvider";
 
@@ -56,7 +56,9 @@ const BookDetail = () => {
   const [mfsMethods, setMfsMethods] = useState<MfsMethod[]>([]);
   const [shippingZones, setShippingZones] = useState<ShippingZone[]>([]);
   const [selectedZone, setSelectedZone] = useState<string>("");
+  const [hasPurchased, setHasPurchased] = useState(false);
   const isPhysical = book?.book_type === "physical";
+  const isEbook = book?.book_type === "ebook";
 
   useEffect(() => {
     if (!id) return;
@@ -85,6 +87,19 @@ const BookDetail = () => {
       setLoading(false);
     });
   }, [id]);
+
+  // Check if user has purchased this book (for ebooks)
+  useEffect(() => {
+    if (!user || !id) return;
+    supabase.from("orders")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("product_id", id)
+      .eq("product_type", "book")
+      .in("status", ["confirmed", "delivered"])
+      .limit(1)
+      .then(({ data }) => setHasPurchased((data || []).length > 0));
+  }, [user, id]);
 
   if (loading) return <div className="flex min-h-[50vh] items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>;
 
@@ -208,7 +223,18 @@ const BookDetail = () => {
 
             <p className="mt-6 leading-relaxed text-muted-foreground">{book.description}</p>
 
-            {book.price === 0 ? (
+            {/* Already purchased ebook - show read button */}
+            {isEbook && hasPurchased ? (
+              <div className="mt-8 rounded-xl border border-border bg-card p-6">
+                <h3 className="flex items-center gap-2 font-display text-lg font-semibold text-foreground">
+                  <BookOpen className="h-5 w-5 text-primary" /> আপনি এই বইটি কিনেছেন
+                </h3>
+                <p className="mt-1 text-sm text-muted-foreground">আপনার কেনা ইবুকটি পড়তে নিচের বাটনে ক্লিক করুন।</p>
+                <Button size="lg" className="mt-4 w-full" asChild>
+                  <Link to={`/read/${book.id}`}>পড়ুন →</Link>
+                </Button>
+              </div>
+            ) : book.price === 0 ? (
               <div className="mt-8 rounded-xl border border-border bg-card p-6">
                 <h3 className="flex items-center gap-2 font-display text-lg font-semibold text-foreground">
                   <ShoppingBag className="h-5 w-5 text-primary" /> ফ্রি বই
@@ -383,8 +409,8 @@ const BookDetail = () => {
                         <span className="font-semibold text-foreground">সর্বমোট:</span>
                         <span className="text-lg font-bold text-primary">৳{totalPrice}</span>
                       </div>
-                    </div>
-                  )}
+              </div>
+            )}
 
                   <Button type="submit" size="lg" className="w-full" disabled={submitting}>{submitting ? "Placing Order..." : isPhysical ? `Place Order — ৳${totalPrice}` : "Buy Now"}</Button>
                 </form>
