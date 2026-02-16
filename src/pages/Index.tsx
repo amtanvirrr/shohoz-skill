@@ -50,8 +50,7 @@ interface OrderInfo {
 const Index = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [trackOrderId, setTrackOrderId] = useState("");
-  const [trackPhone, setTrackPhone] = useState("");
+  const [trackQuery, setTrackQuery] = useState("");
   const [trackResult, setTrackResult] = useState<any>(null);
   const [dbBooks, setDbBooks] = useState<DbBook[]>([]);
   const [dbCourses, setDbCourses] = useState<DbCourse[]>([]);
@@ -145,28 +144,22 @@ const Index = () => {
   };
 
   const handleTrack = async () => {
-    if (!trackOrderId && !trackPhone) {
-      toast({ title: "অর্ডার আইডি অথবা ফোন নাম্বার দিন", variant: "destructive" });
+    const q = trackQuery.trim();
+    if (!q) {
+      toast({ title: "তথ্য দিন", description: "অর্ডার আইডি, ফোন, নাম, ইমেইল বা ট্রানজেকশন আইডি দিন।", variant: "destructive" });
       return;
     }
 
-    let query = supabase
+    const { data, error } = await supabase
       .from("orders")
-      .select("order_id, status, product_title, created_at, customer_phone");
-
-    if (trackOrderId && trackPhone) {
-      query = query.eq("order_id", trackOrderId).eq("customer_phone", trackPhone);
-    } else if (trackOrderId) {
-      query = query.eq("order_id", trackOrderId);
-    } else {
-      query = query.eq("customer_phone", trackPhone);
-    }
-
-    const { data, error } = await query.order("created_at", { ascending: false }).limit(5);
+      .select("order_id, status, product_title, created_at, customer_phone")
+      .or(`order_id.ilike.%${q}%,customer_phone.ilike.%${q}%,customer_name.ilike.%${q}%,customer_email.ilike.%${q}%,transaction_id.ilike.%${q}%`)
+      .order("created_at", { ascending: false })
+      .limit(5);
 
     if (error || !data || data.length === 0) {
       setTrackResult(null);
-      toast({ title: "অর্ডার পাওয়া যায়নি", description: "অর্ডার আইডি অথবা ফোন নাম্বার চেক করুন।", variant: "destructive" });
+      toast({ title: "অর্ডার পাওয়া যায়নি", description: "সঠিক তথ্য দিয়ে আবার চেষ্টা করুন।", variant: "destructive" });
     } else {
       setTrackResult(data);
     }
@@ -324,12 +317,11 @@ const Index = () => {
             <Search className="mx-auto h-10 w-10 text-primary" />
             <h2 className="mt-4 text-2xl font-bold text-foreground">Track Your Order</h2>
             <p className="mt-2 text-sm text-muted-foreground">আপনার অর্ডারের বর্তমান অবস্থা জানুন</p>
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              <Input placeholder="অর্ডার আইডি" value={trackOrderId} onChange={(e) => setTrackOrderId(e.target.value)} />
-              <Input placeholder="ফোন নাম্বার" value={trackPhone} onChange={(e) => setTrackPhone(e.target.value)} />
+            <div className="mt-6 flex gap-3">
+              <Input placeholder="অর্ডার আইডি, ফোন, নাম, ইমেইল বা ট্রানজেকশন আইডি" value={trackQuery} onChange={(e) => setTrackQuery(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleTrack()} />
               <Button className="shrink-0" onClick={handleTrack}>Track</Button>
             </div>
-            <p className="mt-2 text-xs text-muted-foreground">যেকোনো একটি দিলেই হবে</p>
+            <p className="mt-2 text-xs text-muted-foreground">যেকোনো তথ্য দিয়ে অর্ডার খুঁজুন</p>
             {trackResult && (
               <div className="mt-4 space-y-3">
                 {trackResult.map((order: any, idx: number) => (
