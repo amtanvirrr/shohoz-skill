@@ -68,7 +68,7 @@ interface MfsMethod {
 }
 
 const CourseDetail = () => {
-  const { id } = useParams();
+  const { slug } = useParams();
   const { user } = useAuth();
   const { toast } = useToast();
   const { trackEvent } = usePixel();
@@ -88,24 +88,23 @@ const CourseDetail = () => {
   const [mfsMethods, setMfsMethods] = useState<MfsMethod[]>([]);
 
   useEffect(() => {
-    if (!id) return;
-    Promise.all([
-      supabase.from("courses").select("*").eq("id", id).maybeSingle(),
-      supabase.from("lessons").select("*").eq("course_id", id).order("sort_order"),
-      supabase.from("reviews").select("id, reviewer_name, rating, comment, created_at").eq("course_id", id).eq("is_active", true).order("created_at", { ascending: false }),
-      supabase.from("payment_methods").select("*").eq("is_active", true).order("sort_order"),
-    ]).then(async ([courseRes, lessonsRes, reviewsRes, mfsRes]) => {
+    if (!slug) return;
+    supabase.from("courses").select("*").eq("slug", slug).maybeSingle().then(async (courseRes) => {
       const c = courseRes.data as DbCourse | null;
       setCourse(c);
-      if (c) {
-        trackEvent("ViewContent", {
-          content_name: c.title,
-          content_type: "course",
-          content_ids: [c.id],
-          value: c.price,
-          currency: "BDT",
-        });
-      }
+      if (!c) { setLoading(false); return; }
+      trackEvent("ViewContent", {
+        content_name: c.title,
+        content_type: "course",
+        content_ids: [c.id],
+        value: c.price,
+        currency: "BDT",
+      });
+      const [lessonsRes, reviewsRes, mfsRes] = await Promise.all([
+        supabase.from("lessons").select("*").eq("course_id", c.id).order("sort_order"),
+        supabase.from("reviews").select("id, reviewer_name, rating, comment, created_at").eq("course_id", c.id).eq("is_active", true).order("created_at", { ascending: false }),
+        supabase.from("payment_methods").select("*").eq("is_active", true).order("sort_order"),
+      ]);
       const lessonData = (lessonsRes.data as DbLesson[]) || [];
       setLessons(lessonData);
       setReviews((reviewsRes.data as DbReview[]) || []);
@@ -129,15 +128,15 @@ const CourseDetail = () => {
       }
       setLoading(false);
     });
-  }, [id]);
+  }, [slug]);
 
   // Check if user has purchased this course
   useEffect(() => {
-    if (!user || !id) return;
+    if (!user || !course) return;
     supabase.from("orders")
       .select("status")
       .eq("user_id", user.id)
-      .eq("product_id", id)
+      .eq("product_id", course.id)
       .eq("product_type", "course")
       .not("status", "eq", "cancelled")
       .order("created_at", { ascending: false })
@@ -147,7 +146,7 @@ const CourseDetail = () => {
           setOrderStatus(data[0].status);
         }
       });
-  }, [user, id]);
+  }, [user, course]);
 
   if (loading) return <div className="flex min-h-[50vh] items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>;
 
@@ -224,7 +223,7 @@ const CourseDetail = () => {
   };
 
   const handleSubmitReview = async () => {
-    if (!user || !id) return;
+    if (!user || !course) return;
     if (!reviewForm.comment.trim()) {
       toast({ title: "Please write a comment", variant: "destructive" });
       return;
@@ -232,7 +231,7 @@ const CourseDetail = () => {
     setSubmittingReview(true);
     const { data: profile } = await supabase.from("profiles").select("full_name").eq("user_id", user.id).maybeSingle();
     const { error } = await supabase.from("reviews").insert({
-      course_id: id,
+      course_id: course.id,
       user_id: user.id,
       reviewer_name: profile?.full_name || user.user_metadata?.full_name || "User",
       rating: reviewForm.rating,
@@ -245,7 +244,7 @@ const CourseDetail = () => {
       toast({ title: "Review submitted! 🎉" });
       setReviewForm({ rating: 5, comment: "" });
       // Refresh reviews
-      const { data } = await supabase.from("reviews").select("id, reviewer_name, rating, comment, created_at").eq("course_id", id).eq("is_active", true).order("created_at", { ascending: false });
+      const { data } = await supabase.from("reviews").select("id, reviewer_name, rating, comment, created_at").eq("course_id", course.id).eq("is_active", true).order("created_at", { ascending: false });
       setReviews((data as DbReview[]) || []);
     }
   };

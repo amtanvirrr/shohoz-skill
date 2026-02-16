@@ -152,7 +152,7 @@ const EnrolledCourse = () => {
           <p className="mt-2 text-muted-foreground">এই কোর্সে আপনার অ্যাক্সেস নেই। দয়া করে কোর্সটি কিনুন।</p>
           <div className="mt-4 flex gap-3 justify-center">
             <Button asChild variant="outline"><Link to="/dashboard">ড্যাশবোর্ড</Link></Button>
-            <Button asChild><Link to={`/course/${id}`}>কোর্স দেখুন</Link></Button>
+            <Button asChild><Link to={`/course/${(course as any)?.slug || id}`}>কোর্স দেখুন</Link></Button>
           </div>
         </div>
       </div>

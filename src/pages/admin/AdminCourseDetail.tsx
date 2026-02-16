@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { generateSlug } from "@/lib/slugify";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -393,12 +394,14 @@ const AdminCourseDetail = () => {
       toast({ title: "Quiz title required", variant: "destructive" });
       return;
     }
+    const slugValue = generateSlug(quizForm.title) + '-' + Date.now().toString(36);
     const { error } = await supabase.from("quizzes").insert({
       title: quizForm.title,
       description: quizForm.description || null,
       lesson_id: quizLessonId,
       is_published: true,
       pass_mark: parseFloat(quizForm.pass_mark) || 0,
+      slug: slugValue,
     });
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     toast({ title: "কুইজ তৈরি ও লেসনে যুক্ত করা হয়েছে" });

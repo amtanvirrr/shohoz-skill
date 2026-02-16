@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { generateSlug } from "@/lib/slugify";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +41,7 @@ const initialForm = {
   stock_quantity: "",
   ebook_file_url: "",
   demo_pdf_url: "",
+  slug: "",
 };
 
 const AdminBooks = () => {
@@ -85,6 +87,7 @@ const AdminBooks = () => {
       stock_quantity: book.stock_quantity ? String(book.stock_quantity) : "",
       ebook_file_url: book.ebook_file_url || "",
       demo_pdf_url: book.demo_pdf_url || "",
+      slug: (book as any).slug || "",
     });
     setDialogOpen(true);
   };
@@ -134,6 +137,7 @@ const AdminBooks = () => {
       toast({ title: "Title and price required", variant: "destructive" });
       return;
     }
+    const slugValue = form.slug || generateSlug(form.title);
     const payload = {
       title: form.title,
       author: form.author,
@@ -148,6 +152,7 @@ const AdminBooks = () => {
       stock_quantity: form.book_type === "physical" && form.stock_quantity ? parseInt(form.stock_quantity) : null,
       ebook_file_url: form.book_type === "ebook" ? form.ebook_file_url : null,
       demo_pdf_url: form.demo_pdf_url || null,
+      slug: slugValue,
     };
 
     if (editing) {
@@ -194,7 +199,12 @@ const AdminBooks = () => {
                 </Select>
               </div>
 
-              <div><Label>Title *</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="mt-1" /></div>
+              <div><Label>Title *</Label><Input value={form.title} onChange={(e) => { const title = e.target.value; if (!editing) { setForm((f) => ({ ...f, title, slug: generateSlug(title) })); } else { setForm((f) => ({ ...f, title })); } }} className="mt-1" /></div>
+              <div>
+                <Label>Slug (URL)</Label>
+                <Input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} className="mt-1" placeholder="seo-friendly-url-slug" />
+                <p className="text-xs text-muted-foreground mt-1">SEO ফ্রেন্ডলি URL। খালি রাখলে টাইটেল থেকে অটো তৈরি হবে।</p>
+              </div>
               <div><Label>Author</Label><Input value={form.author} onChange={(e) => setForm({ ...form, author: e.target.value })} className="mt-1" /></div>
 
               <div className="grid grid-cols-2 gap-3">

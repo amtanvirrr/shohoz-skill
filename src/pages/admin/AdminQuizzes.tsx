@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { generateSlug } from "@/lib/slugify";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,7 +41,7 @@ const AdminQuizzes = () => {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Quiz | null>(null);
-  const [form, setForm] = useState({ title: "", description: "", negative_marking: false, negative_mark_value: "0.25", is_published: true, duration_minutes: "10", price: "0", original_price: "" });
+  const [form, setForm] = useState({ title: "", description: "", negative_marking: false, negative_mark_value: "0.25", is_published: true, duration_minutes: "10", price: "0", original_price: "", slug: "" });
 
   const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -72,18 +73,19 @@ const AdminQuizzes = () => {
   useEffect(() => { fetchQuizzes(); }, []);
 
   const resetForm = () => {
-    setForm({ title: "", description: "", negative_marking: false, negative_mark_value: "0.25", is_published: true, duration_minutes: "10", price: "0", original_price: "" });
+    setForm({ title: "", description: "", negative_marking: false, negative_mark_value: "0.25", is_published: true, duration_minutes: "10", price: "0", original_price: "", slug: "" });
     setEditing(null);
   };
 
   const openEdit = (quiz: Quiz) => {
     setEditing(quiz);
-    setForm({ title: quiz.title, description: quiz.description || "", negative_marking: quiz.negative_marking, negative_mark_value: String(quiz.negative_mark_value), is_published: quiz.is_published, duration_minutes: String(quiz.duration_minutes), price: String(quiz.price), original_price: quiz.original_price ? String(quiz.original_price) : "" });
+    setForm({ title: quiz.title, description: quiz.description || "", negative_marking: quiz.negative_marking, negative_mark_value: String(quiz.negative_mark_value), is_published: quiz.is_published, duration_minutes: String(quiz.duration_minutes), price: String(quiz.price), original_price: quiz.original_price ? String(quiz.original_price) : "", slug: (quiz as any).slug || "" });
     setDialogOpen(true);
   };
 
   const handleSave = async () => {
     if (!form.title) { toast({ title: "Title required", variant: "destructive" }); return; }
+    const slugValue = form.slug || generateSlug(form.title);
     const payload = {
       title: form.title,
       description: form.description || null,
@@ -93,6 +95,7 @@ const AdminQuizzes = () => {
       duration_minutes: parseInt(form.duration_minutes) || 10,
       price: parseInt(form.price) || 0,
       original_price: form.original_price ? parseInt(form.original_price) : null,
+      slug: slugValue,
     };
 
     if (editing) {
@@ -253,7 +256,12 @@ const AdminQuizzes = () => {
           <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader><DialogTitle>{editing ? "Edit" : "Add"} Quiz</DialogTitle></DialogHeader>
             <div className="space-y-4 pt-4">
-              <div><Label>Title *</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="mt-1" placeholder="কুইজের শিরোনাম" /></div>
+              <div><Label>Title *</Label><Input value={form.title} onChange={(e) => { const title = e.target.value; if (!editing && !form.slug) setForm((f) => ({ ...f, title, slug: generateSlug(title) })); else setForm((f) => ({ ...f, title })); }} className="mt-1" placeholder="কুইজের শিরোনাম" /></div>
+              <div>
+                <Label>Slug (URL)</Label>
+                <Input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} className="mt-1" placeholder="seo-friendly-url-slug" />
+                <p className="text-xs text-muted-foreground mt-1">SEO ফ্রেন্ডলি URL। খালি রাখলে টাইটেল থেকে অটো তৈরি হবে।</p>
+              </div>
               <div><Label>Description</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="mt-1" rows={3} placeholder="কুইজের বিবরণ (ঐচ্ছিক)" /></div>
               <div><Label>সময়সীমা (মিনিট)</Label><Input type="number" min="1" value={form.duration_minutes} onChange={(e) => setForm({ ...form, duration_minutes: e.target.value })} className="mt-1" /></div>
               

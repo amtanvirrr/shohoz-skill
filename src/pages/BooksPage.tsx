@@ -131,7 +131,7 @@ const BooksPage = () => {
         ) : (
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {books.map((book) => (
-              <Link key={book.id} to={`/book/${book.id}`} className="group relative overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all hover:shadow-md">
+              <Link key={book.id} to={`/book/${(book as any).slug || book.id}`} className="group relative overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all hover:shadow-md">
                 {renderBadge(book)}
                 {book.image_url && <div className="aspect-[3/4] overflow-hidden"><img src={book.image_url} alt={book.title} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" /></div>}
                 <div className="p-5">

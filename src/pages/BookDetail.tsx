@@ -46,7 +46,7 @@ interface ShippingZone {
 }
 
 const BookDetail = () => {
-  const { id } = useParams();
+  const { slug } = useParams();
   const { user } = useAuth();
   const { toast } = useToast();
   const { trackEvent } = usePixel();
@@ -63,9 +63,9 @@ const BookDetail = () => {
   const isEbook = book?.book_type === "ebook";
 
   useEffect(() => {
-    if (!id) return;
+    if (!slug) return;
     Promise.all([
-      supabase.from("books").select("*").eq("id", id).maybeSingle(),
+      supabase.from("books").select("*").eq("slug", slug).maybeSingle(),
       supabase.from("payment_methods").select("*").eq("is_active", true).order("sort_order"),
       supabase.from("shipping_zones").select("*").eq("is_active", true).order("sort_order"),
     ]).then(([bookRes, mfsRes, shippingRes]) => {
@@ -88,15 +88,15 @@ const BookDetail = () => {
       if (szData.length > 0) setSelectedZone(szData[0].zone_name);
       setLoading(false);
     });
-  }, [id]);
+  }, [slug]);
 
   // Check if user has purchased this book (for ebooks)
   useEffect(() => {
-    if (!user || !id) return;
+    if (!user || !book) return;
     supabase.from("orders")
       .select("status")
       .eq("user_id", user.id)
-      .eq("product_id", id)
+      .eq("product_id", book.id)
       .eq("product_type", "book")
       .not("status", "eq", "cancelled")
       .order("created_at", { ascending: false })
@@ -106,7 +106,7 @@ const BookDetail = () => {
           setOrderStatus(data[0].status);
         }
       });
-  }, [user, id]);
+  }, [user, book]);
 
   if (loading) return <div className="flex min-h-[50vh] items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>;
 
