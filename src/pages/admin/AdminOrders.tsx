@@ -1,11 +1,15 @@
 import { useEffect, useState, useMemo } from "react";
+import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { AlertTriangle, Download, CheckCircle, XCircle, Truck, ExternalLink, Trash2, Search, X } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { AlertTriangle, Download, CheckCircle, XCircle, Truck, ExternalLink, Trash2, Search, X, CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 interface Order {
@@ -79,6 +83,8 @@ const AdminOrders = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterPayment, setFilterPayment] = useState<string>("all");
+  const [dateFrom, setDateFrom] = useState<Date | undefined>();
+  const [dateTo, setDateTo] = useState<Date | undefined>();
 
   const fetchOrders = async () => {
     const { data } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
@@ -97,6 +103,16 @@ const AdminOrders = () => {
     if (filterPayment !== "all") {
       result = result.filter((o) => o.payment_method === filterPayment);
     }
+    if (dateFrom) {
+      const fromStart = new Date(dateFrom);
+      fromStart.setHours(0, 0, 0, 0);
+      result = result.filter((o) => new Date(o.created_at) >= fromStart);
+    }
+    if (dateTo) {
+      const toEnd = new Date(dateTo);
+      toEnd.setHours(23, 59, 59, 999);
+      result = result.filter((o) => new Date(o.created_at) <= toEnd);
+    }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       result = result.filter((o) =>
@@ -110,10 +126,10 @@ const AdminOrders = () => {
       );
     }
     return result;
-  }, [orders, searchQuery, filterStatus, filterPayment]);
+  }, [orders, searchQuery, filterStatus, filterPayment, dateFrom, dateTo]);
 
-  const hasActiveFilters = searchQuery || filterStatus !== "all" || filterPayment !== "all";
-  const clearFilters = () => { setSearchQuery(""); setFilterStatus("all"); setFilterPayment("all"); };
+  const hasActiveFilters = searchQuery || filterStatus !== "all" || filterPayment !== "all" || dateFrom || dateTo;
+  const clearFilters = () => { setSearchQuery(""); setFilterStatus("all"); setFilterPayment("all"); setDateFrom(undefined); setDateTo(undefined); };
 
   const updateStatus = async (id: string, status: string) => {
     const { error } = await supabase.from("orders").update({ status: status as any }).eq("id", id);
@@ -216,6 +232,28 @@ const AdminOrders = () => {
               ))}
             </SelectContent>
           </Select>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className={cn("h-9 w-[140px] justify-start text-left text-xs font-normal", !dateFrom && "text-muted-foreground")}>
+                <CalendarIcon className="mr-1.5 h-3.5 w-3.5" />
+                {dateFrom ? format(dateFrom, "dd/MM/yyyy") : "তারিখ থেকে"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar mode="single" selected={dateFrom} onSelect={setDateFrom} initialFocus className="p-3 pointer-events-auto" />
+            </PopoverContent>
+          </Popover>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className={cn("h-9 w-[140px] justify-start text-left text-xs font-normal", !dateTo && "text-muted-foreground")}>
+                <CalendarIcon className="mr-1.5 h-3.5 w-3.5" />
+                {dateTo ? format(dateTo, "dd/MM/yyyy") : "তারিখ পর্যন্ত"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar mode="single" selected={dateTo} onSelect={setDateTo} initialFocus className="p-3 pointer-events-auto" />
+            </PopoverContent>
+          </Popover>
           {hasActiveFilters && (
             <Button variant="ghost" size="sm" onClick={clearFilters} className="h-9 gap-1 text-xs">
               <X className="h-3.5 w-3.5" /> ফিল্টার মুছুন
