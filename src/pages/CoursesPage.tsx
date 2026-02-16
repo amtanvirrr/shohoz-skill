@@ -7,6 +7,7 @@ import { BookOpen, Clock, CheckCircle } from "lucide-react";
 interface DbCourse {
   id: string;
   title: string;
+  slug: string;
   instructor: string;
   price: number;
   original_price: number | null;
@@ -24,7 +25,7 @@ const CoursesPage = () => {
   useEffect(() => {
     supabase.from("courses").select("*, lessons(id)").eq("is_published", true).order("created_at", { ascending: false }).then(({ data }) => {
       const mapped = (data || []).map((c: any) => ({
-        id: c.id, title: c.title, instructor: c.instructor, price: c.price,
+        id: c.id, title: c.title, slug: c.slug, instructor: c.instructor, price: c.price,
         original_price: c.original_price, image_url: c.image_url, category: c.category,
         duration: c.duration, lesson_count: c.lessons?.length || 0,
       }));
@@ -63,7 +64,7 @@ const CoursesPage = () => {
             {courses.map((course) => {
               const status = orderMap[course.id];
               return (
-                <Link key={course.id} to={`/course/${(course as any).slug || course.id}`} className="group relative overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all hover:shadow-md">
+                <Link key={course.id} to={`/course/${course.slug}`} className="group relative overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all hover:shadow-md">
                   {status && (
                     <div className={`absolute top-3 right-3 z-10 flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
                       ["confirmed", "delivered"].includes(status)
