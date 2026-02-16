@@ -87,7 +87,9 @@ const AdminOrders = () => {
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
 
-  // Bulk selection
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkStatusValue, setBulkStatusValue] = useState<string>("");
@@ -135,7 +137,18 @@ const AdminOrders = () => {
   }, [orders, searchQuery, filterStatus, filterPayment, dateFrom, dateTo]);
 
   const hasActiveFilters = searchQuery || filterStatus !== "all" || filterPayment !== "all" || dateFrom || dateTo;
-  const clearFilters = () => { setSearchQuery(""); setFilterStatus("all"); setFilterPayment("all"); setDateFrom(undefined); setDateTo(undefined); };
+  const clearFilters = () => { setSearchQuery(""); setFilterStatus("all"); setFilterPayment("all"); setDateFrom(undefined); setDateTo(undefined); setCurrentPage(1); };
+
+  // Pagination computed
+  const totalPages = Math.ceil(filteredOrders.length / pageSize);
+  const paginatedOrders = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredOrders.slice(start, start + pageSize);
+  }, [filteredOrders, currentPage, pageSize]);
+
+  // Reset page when filters change
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { setCurrentPage(1); }, [searchQuery, filterStatus, filterPayment, dateFrom, dateTo]);
 
   const updateStatus = async (id: string, status: string) => {
     const { error } = await supabase.from("orders").update({ status: status as any }).eq("id", id);
@@ -372,7 +385,7 @@ const AdminOrders = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredOrders.map((order) => (
+                {paginatedOrders.map((order) => (
                   <tr key={order.id} className={`border-b border-border ${order.is_fraud_flagged ? "bg-destructive/5" : ""} ${selectedIds.has(order.id) ? "bg-primary/5" : ""}`}>
                     <td className="py-3 pr-3">
                       <Checkbox checked={selectedIds.has(order.id)} onCheckedChange={() => toggleSelect(order.id)} />
@@ -454,7 +467,7 @@ const AdminOrders = () => {
 
           {/* Mobile cards */}
           <div className="mt-4 space-y-3 lg:hidden">
-            {filteredOrders.map((order) => (
+            {paginatedOrders.map((order) => (
               <div key={order.id} className={`rounded-xl border border-border bg-card p-4 space-y-3 ${order.is_fraud_flagged ? "border-destructive/30 bg-destructive/5" : ""}`}>
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-start gap-2">
@@ -533,6 +546,27 @@ const AdminOrders = () => {
               </div>
             ))}
           </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+              <Button variant="outline" size="sm" disabled={currentPage === 1} onClick={() => setCurrentPage(1)} className="h-8 text-xs">
+                প্রথম
+              </Button>
+              <Button variant="outline" size="sm" disabled={currentPage === 1} onClick={() => setCurrentPage((p) => p - 1)} className="h-8 text-xs">
+                ← আগের
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                পৃষ্ঠা {currentPage} / {totalPages}
+              </span>
+              <Button variant="outline" size="sm" disabled={currentPage === totalPages} onClick={() => setCurrentPage((p) => p + 1)} className="h-8 text-xs">
+                পরের →
+              </Button>
+              <Button variant="outline" size="sm" disabled={currentPage === totalPages} onClick={() => setCurrentPage(totalPages)} className="h-8 text-xs">
+                শেষ
+              </Button>
+            </div>
+          )}
         </>
       )}
 
