@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { BookOpen, PlayCircle, ExternalLink, ShoppingBag, Clock, CheckCircle, Truck, XCircle, Package, Eye, UserCircle, Save, Loader2, Bookmark, Trash2, Camera } from "lucide-react";
+import { BookOpen, PlayCircle, ExternalLink, ShoppingBag, Clock, CheckCircle, Truck, XCircle, Package, Eye, UserCircle, Save, Loader2, Bookmark, Trash2, Camera, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -257,6 +257,8 @@ const UserDashboard = () => {
   });
 
   const courseOrders = orders.filter(o => o.product_type === "course");
+  const quizOrders = allOrders.filter(o => o.product_type === "quiz");
+  const accessibleQuizOrders = orders.filter(o => o.product_type === "quiz");
 
   if (loading) {
     return (
@@ -274,12 +276,15 @@ const UserDashboard = () => {
 
         <Tabs defaultValue="ebooks" className="mt-6 sm:mt-8">
           <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-            <TabsList className="inline-flex w-auto min-w-full sm:grid sm:w-full sm:max-w-3xl sm:grid-cols-5">
+            <TabsList className="inline-flex w-auto min-w-full sm:grid sm:w-full sm:max-w-4xl sm:grid-cols-6">
               <TabsTrigger value="ebooks" className="gap-1 whitespace-nowrap text-xs sm:text-sm">
                 <BookOpen className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> ইবুক ({ebookOrders.length})
               </TabsTrigger>
               <TabsTrigger value="courses" className="gap-1 whitespace-nowrap text-xs sm:text-sm">
                 <PlayCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> কোর্স ({courseOrders.length})
+              </TabsTrigger>
+              <TabsTrigger value="quizzes" className="gap-1 whitespace-nowrap text-xs sm:text-sm">
+                <HelpCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> কুইজ ({quizOrders.length})
               </TabsTrigger>
               <TabsTrigger value="bookmarks" className="gap-1 whitespace-nowrap text-xs sm:text-sm">
                 <Bookmark className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> বুকমার্ক ({bookmarkedPosts.length})
@@ -375,6 +380,61 @@ const UserDashboard = () => {
             )}
           </TabsContent>
 
+          {/* Quiz Tab */}
+          <TabsContent value="quizzes" className="mt-6">
+            {quizOrders.length === 0 ? (
+              <div className="rounded-xl border border-border bg-card p-10 text-center">
+                <HelpCircle className="mx-auto h-12 w-12 text-muted-foreground/40" />
+                <h3 className="mt-4 text-lg font-semibold text-foreground">কোনো কুইজ অর্ডার নেই</h3>
+                <p className="mt-1 text-sm text-muted-foreground">আপনি এখনো কোনো কুইজ কেনেননি।</p>
+                <Button className="mt-4" asChild>
+                  <Link to="/quizzes">কুইজ দেখুন</Link>
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {quizOrders.map((order) => {
+                  const sc = statusConfig[order.status] || statusConfig.pending;
+                  const StatusIcon = sc.icon;
+                  const hasAccess = ["confirmed", "delivered"].includes(order.status);
+                  return (
+                    <div key={order.id} className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-mono text-xs text-muted-foreground">{order.order_id}</span>
+                          <Badge variant={sc.variant} className="gap-1 text-xs">
+                            <StatusIcon className="h-3 w-3" /> {sc.label}
+                          </Badge>
+                          {order.price === 0 && <Badge variant="secondary" className="text-xs">ফ্রি</Badge>}
+                        </div>
+                        <h4 className="mt-1 font-semibold text-foreground line-clamp-1">{order.product_title}</h4>
+                        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                          {order.price > 0 && <span>৳{order.price}</span>}
+                          {order.price > 0 && <span>{paymentMethodLabels[order.payment_method] || order.payment_method}</span>}
+                          <span>{new Date(order.created_at).toLocaleDateString("bn-BD")}</span>
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 gap-2">
+                        {hasAccess ? (
+                          <Button size="sm" className="gap-1" asChild>
+                            <Link to={`/quizzes?id=${order.product_id}`}>
+                              <HelpCircle className="h-3.5 w-3.5" /> কুইজ দিন
+                            </Link>
+                          </Button>
+                        ) : order.status === "pending" ? (
+                          <Badge variant="outline" className="text-xs">⏳ যাচাই অপেক্ষমাণ</Badge>
+                        ) : null}
+                        <Button size="sm" variant="outline" className="gap-1" onClick={() => setDetailOrder(order)}>
+                          <Eye className="h-3.5 w-3.5" /> বিস্তারিত
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </TabsContent>
+
           {/* Bookmarks Tab */}
           <TabsContent value="bookmarks" className="mt-6">
             {bookmarkedPosts.length === 0 ? (
@@ -449,7 +509,7 @@ const UserDashboard = () => {
                         </div>
                         <h4 className="mt-1 font-semibold text-foreground line-clamp-1">{order.product_title}</h4>
                         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                          <span>{order.product_type === "book" ? "বই" : "কোর্স"}</span>
+                          <span>{order.product_type === "book" ? "বই" : order.product_type === "course" ? "কোর্স" : "কুইজ"}</span>
                           <span>৳{order.price}</span>
                           <span>{paymentMethodLabels[order.payment_method] || order.payment_method}</span>
                           <span>{new Date(order.created_at).toLocaleDateString("bn-BD")}</span>
@@ -587,7 +647,7 @@ const UserDashboard = () => {
                   <h4 className="text-sm font-semibold text-foreground mb-2">প্রোডাক্ট তথ্য</h4>
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div className="col-span-2"><span className="text-muted-foreground">প্রোডাক্ট:</span> <span className="text-foreground font-medium">{detailOrder.product_title}</span></div>
-                    <div><span className="text-muted-foreground">ধরন:</span> <span className="text-foreground capitalize">{detailOrder.product_type === "book" ? "বই" : "কোর্স"}</span></div>
+                    <div><span className="text-muted-foreground">ধরন:</span> <span className="text-foreground capitalize">{detailOrder.product_type === "book" ? "বই" : detailOrder.product_type === "course" ? "কোর্স" : "কুইজ"}</span></div>
                     <div><span className="text-muted-foreground">মূল্য:</span> <span className="text-foreground font-semibold">৳{detailOrder.price}</span></div>
                   </div>
                 </div>
