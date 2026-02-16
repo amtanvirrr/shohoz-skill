@@ -444,7 +444,9 @@ const AdminOrders = () => {
                     </td>
                     <td className="py-3 pr-3 text-center">
                       {order.notes ? (
-                        <span title={order.notes}><StickyNote className="h-4 w-4 text-primary mx-auto" /></span>
+                        <button onClick={() => { setDetailOrder(order); setEditNotes(order.notes || ""); }} title={order.notes} className="cursor-pointer">
+                          <StickyNote className="h-4 w-4 text-primary mx-auto hover:text-primary/70 transition-colors" />
+                        </button>
                       ) : (
                         <span className="text-xs text-muted-foreground">—</span>
                       )}
