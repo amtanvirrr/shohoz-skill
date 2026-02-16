@@ -40,6 +40,7 @@ interface DbQuiz {
   id: string;
   title: string;
   lesson_id: string | null;
+  pass_mark: number;
 }
 
 const EnrolledCourse = () => {
@@ -50,6 +51,7 @@ const EnrolledCourse = () => {
   const [resources, setResources] = useState<Record<string, DbResource[]>>({});
   const [quizzes, setQuizzes] = useState<DbQuiz[]>([]);
   const [completedLessons, setCompletedLessons] = useState<Set<string>>(new Set());
+  const [quizPassStatus, setQuizPassStatus] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
   const [activeLesson, setActiveLesson] = useState<string | null>(null);
@@ -93,7 +95,7 @@ const EnrolledCourse = () => {
       if (lessonIds.length > 0) {
         const [resRes, quizRes] = await Promise.all([
           supabase.from("lesson_resources").select("id, lesson_id, title, file_url, file_type").in("lesson_id", lessonIds).order("sort_order"),
-          supabase.from("quizzes").select("id, title, lesson_id").not("lesson_id", "is", null),
+          supabase.from("quizzes").select("id, title, lesson_id, pass_mark").not("lesson_id", "is", null),
         ]);
         const grouped: Record<string, DbResource[]> = {};
         ((resRes.data as DbResource[]) || []).forEach((r) => {
@@ -101,7 +103,28 @@ const EnrolledCourse = () => {
           grouped[r.lesson_id].push(r);
         });
         setResources(grouped);
-        setQuizzes(((quizRes.data as DbQuiz[]) || []).filter((q) => q.lesson_id && lessonIds.includes(q.lesson_id)));
+        const courseQuizzes = ((quizRes.data as DbQuiz[]) || []).filter((q) => q.lesson_id && lessonIds.includes(q.lesson_id));
+        setQuizzes(courseQuizzes);
+
+        // Check quiz pass status for quizzes with pass_mark > 0
+        if (courseQuizzes.length > 0 && user) {
+          const quizIds = courseQuizzes.filter(q => q.pass_mark > 0).map(q => q.id);
+          if (quizIds.length > 0) {
+            const { data: attemptsData } = await supabase
+              .from("quiz_attempts")
+              .select("quiz_id, score")
+              .eq("user_id", user.id)
+              .in("quiz_id", quizIds);
+            const passMap: Record<string, boolean> = {};
+            (attemptsData || []).forEach((a: any) => {
+              const quiz = courseQuizzes.find(q => q.id === a.quiz_id);
+              if (quiz && a.score >= quiz.pass_mark) {
+                passMap[a.quiz_id] = true;
+              }
+            });
+            setQuizPassStatus(passMap);
+          }
+        }
       }
 
       setLoading(false);
@@ -174,6 +197,22 @@ const EnrolledCourse = () => {
         toast.success("লেসন সম্পূর্ণ হিসেবে মার্ক করা হয়েছে ✅");
       }
     }
+  };
+
+  // Check if a lesson is locked (previous lesson has an unpassed quiz with pass_mark > 0)
+  const isLessonLocked = (lessonIndex: number): { locked: boolean; reason: string } => {
+    if (lessonIndex === 0) return { locked: false, reason: "" };
+    
+    for (let i = 0; i < lessonIndex; i++) {
+      const prevLesson = lessons[i];
+      const prevQuizzes = quizzes.filter(q => q.lesson_id === prevLesson.id && q.pass_mark > 0);
+      for (const quiz of prevQuizzes) {
+        if (!quizPassStatus[quiz.id]) {
+          return { locked: true, reason: `"${prevLesson.title}" লেসনের কুইজ পাস করুন (পাস মার্ক: ${quiz.pass_mark})` };
+        }
+      }
+    }
+    return { locked: false, reason: "" };
   };
 
   const progressPercent = lessons.length > 0 ? Math.round((completedLessons.size / lessons.length) * 100) : 0;
@@ -285,17 +324,26 @@ const EnrolledCourse = () => {
                     <div className="mt-6">
                       <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">❓ কুইজ</h3>
                       <div className="space-y-2">
-                        {quizzes.filter((q) => q.lesson_id === currentLesson.id).map((quiz) => (
-                          <Link
-                            key={quiz.id}
-                            to={`/quizzes?id=${quiz.id}`}
-                            className="flex items-center gap-2 rounded-lg border border-border p-3 text-sm text-foreground transition-colors hover:bg-muted/50"
-                          >
-                            <HelpCircle className="h-4 w-4 text-primary" />
-                            <span className="flex-1">{quiz.title}</span>
-                            <span className="text-xs text-primary">কুইজ দিন →</span>
-                          </Link>
-                        ))}
+                        {quizzes.filter((q) => q.lesson_id === currentLesson.id).map((quiz) => {
+                          const isPassed = quizPassStatus[quiz.id];
+                          return (
+                            <div key={quiz.id} className={`flex items-center gap-2 rounded-lg border p-3 text-sm transition-colors ${isPassed ? "border-green-500/30 bg-green-500/5" : "border-border"}`}>
+                              <HelpCircle className={`h-4 w-4 ${isPassed ? "text-green-500" : "text-primary"}`} />
+                              <span className="flex-1 text-foreground">{quiz.title}</span>
+                              {quiz.pass_mark > 0 && (
+                                <span className={`text-xs ${isPassed ? "text-green-600 font-medium" : "text-muted-foreground"}`}>
+                                  {isPassed ? "✅ পাস" : `পাস মার্ক: ${quiz.pass_mark}`}
+                                </span>
+                              )}
+                              <Link
+                                to={`/quizzes?id=${quiz.id}`}
+                                className="text-xs text-primary hover:underline"
+                              >
+                                {isPassed ? "আবার দিন →" : "কুইজ দিন →"}
+                              </Link>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -321,31 +369,41 @@ const EnrolledCourse = () => {
                   const isCompleted = completedLessons.has(lesson.id);
                   const lessonResCount = (resources[lesson.id] || []).length;
                   const lessonQuizCount = quizzes.filter((q) => q.lesson_id === lesson.id).length;
+                  const lockInfo = isLessonLocked(i);
 
                   return (
                     <button
                       key={lesson.id}
-                      onClick={() => setActiveLesson(lesson.id)}
+                      onClick={() => {
+                        if (lockInfo.locked) {
+                          toast.error(lockInfo.reason);
+                          return;
+                        }
+                        setActiveLesson(lesson.id);
+                      }}
                       className={`flex w-full items-start gap-3 border-b border-border p-3 text-left transition-colors last:border-b-0 ${
-                        isActive ? "bg-primary/5" : "hover:bg-muted/50"
+                        lockInfo.locked ? "opacity-50 cursor-not-allowed" : isActive ? "bg-primary/5" : "hover:bg-muted/50"
                       }`}
                     >
                       <span
                         className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
-                          isCompleted
+                          lockInfo.locked
+                            ? "bg-muted text-muted-foreground"
+                            : isCompleted
                             ? "bg-green-500 text-white"
                             : isActive
                             ? "bg-primary text-primary-foreground"
                             : "bg-muted text-muted-foreground"
                         }`}
                       >
-                        {isCompleted ? <Check className="h-3.5 w-3.5" /> : i + 1}
+                        {lockInfo.locked ? <Lock className="h-3 w-3" /> : isCompleted ? <Check className="h-3.5 w-3.5" /> : i + 1}
                       </span>
                       <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-medium line-clamp-2 ${isCompleted ? "text-green-600 dark:text-green-400" : isActive ? "text-primary" : "text-foreground"}`}>
+                        <p className={`text-sm font-medium line-clamp-2 ${lockInfo.locked ? "text-muted-foreground" : isCompleted ? "text-green-600 dark:text-green-400" : isActive ? "text-primary" : "text-foreground"}`}>
                           {lesson.title}
                         </p>
                         <div className="mt-0.5 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                          {lockInfo.locked && <span className="text-destructive">🔒 লক করা</span>}
                           {lesson.lesson_type === "video" && <span>🎥 ভিডিও</span>}
                           {lesson.duration && <span>⏱ {lesson.duration}</span>}
                           {lessonResCount > 0 && <span>📁 {lessonResCount}</span>}

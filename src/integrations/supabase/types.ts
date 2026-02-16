@@ -675,6 +675,7 @@ export type Database = {
           lesson_id: string | null
           negative_mark_value: number
           negative_marking: boolean
+          pass_mark: number
           title: string
         }
         Insert: {
@@ -686,6 +687,7 @@ export type Database = {
           lesson_id?: string | null
           negative_mark_value?: number
           negative_marking?: boolean
+          pass_mark?: number
           title: string
         }
         Update: {
@@ -697,6 +699,7 @@ export type Database = {
           lesson_id?: string | null
           negative_mark_value?: number
           negative_marking?: boolean
+          pass_mark?: number
           title?: string
         }
         Relationships: [
