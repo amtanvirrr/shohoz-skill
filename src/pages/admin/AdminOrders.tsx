@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { AlertTriangle, Download, CheckCircle, XCircle, Truck, ExternalLink, Trash2 } from "lucide-react";
+import { AlertTriangle, Download, CheckCircle, XCircle, Truck, ExternalLink, Trash2, Search, X } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 interface Order {
@@ -74,6 +75,11 @@ const AdminOrders = () => {
   const [selectedCourier, setSelectedCourier] = useState<string>("");
   const [sending, setSending] = useState(false);
 
+  // Filter states
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterPayment, setFilterPayment] = useState<string>("all");
+
   const fetchOrders = async () => {
     const { data } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
     setOrders((data as unknown as Order[]) || []);
@@ -81,6 +87,33 @@ const AdminOrders = () => {
   };
 
   useEffect(() => { fetchOrders(); }, []);
+
+  const filteredOrders = useMemo(() => {
+    let result = orders;
+
+    if (filterStatus !== "all") {
+      result = result.filter((o) => o.status === filterStatus);
+    }
+    if (filterPayment !== "all") {
+      result = result.filter((o) => o.payment_method === filterPayment);
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      result = result.filter((o) =>
+        o.order_id.toLowerCase().includes(q) ||
+        o.customer_name.toLowerCase().includes(q) ||
+        o.customer_phone.toLowerCase().includes(q) ||
+        (o.customer_email || "").toLowerCase().includes(q) ||
+        (o.customer_address || "").toLowerCase().includes(q) ||
+        o.product_title.toLowerCase().includes(q) ||
+        (o.transaction_id || "").toLowerCase().includes(q)
+      );
+    }
+    return result;
+  }, [orders, searchQuery, filterStatus, filterPayment]);
+
+  const hasActiveFilters = searchQuery || filterStatus !== "all" || filterPayment !== "all";
+  const clearFilters = () => { setSearchQuery(""); setFilterStatus("all"); setFilterPayment("all"); };
 
   const updateStatus = async (id: string, status: string) => {
     const { error } = await supabase.from("orders").update({ status: status as any }).eq("id", id);
@@ -153,13 +186,53 @@ const AdminOrders = () => {
         <Button variant="outline" size="sm" onClick={exportCSV}><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
       </div>
 
+      {/* Search & Filters */}
+      <div className="mt-4 space-y-3">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="সার্চ করুন (Order ID, Name, Phone, Email, Address, Product, TXN ID)..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className="h-9 w-36"><SelectValue placeholder="স্ট্যাটাস" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">সব স্ট্যাটাস</SelectItem>
+              {["pending", "confirmed", "shipped", "delivered", "cancelled"].map((s) => (
+                <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={filterPayment} onValueChange={setFilterPayment}>
+            <SelectTrigger className="h-9 w-36"><SelectValue placeholder="পেমেন্ট" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">সব পেমেন্ট</SelectItem>
+              {["cod", "bkash", "nagad", "rocket", "upay"].map((p) => (
+                <SelectItem key={p} value={p} className="uppercase">{p}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {hasActiveFilters && (
+            <Button variant="ghost" size="sm" onClick={clearFilters} className="h-9 gap-1 text-xs">
+              <X className="h-3.5 w-3.5" /> ফিল্টার মুছুন
+            </Button>
+          )}
+          <span className="ml-auto text-xs text-muted-foreground">
+            {filteredOrders.length}/{orders.length} অর্ডার
+          </span>
+        </div>
+      </div>
+
       {loading ? (
         <p className="mt-8 text-center text-muted-foreground">Loading...</p>
-      ) : orders.length === 0 ? (
-        <p className="mt-8 text-center text-muted-foreground">No orders yet.</p>
+      ) : filteredOrders.length === 0 ? (
+        <p className="mt-8 text-center text-muted-foreground">{orders.length === 0 ? "No orders yet." : "কোনো অর্ডার পাওয়া যায়নি।"}</p>
       ) : (
         <>
-          {/* Desktop table */}
           <div className="mt-6 hidden overflow-x-auto lg:block">
             <table className="w-full text-left text-sm">
               <thead className="border-b border-border text-muted-foreground">
@@ -176,7 +249,7 @@ const AdminOrders = () => {
                 </tr>
               </thead>
               <tbody>
-                {orders.map((order) => (
+                {filteredOrders.map((order) => (
                   <tr key={order.id} className={`border-b border-border ${order.is_fraud_flagged ? "bg-destructive/5" : ""}`}>
                     <td className="py-3 pr-3 font-mono text-xs">{order.order_id}</td>
                     <td className="py-3 pr-3">
@@ -255,7 +328,7 @@ const AdminOrders = () => {
 
           {/* Mobile cards */}
           <div className="mt-4 space-y-3 lg:hidden">
-            {orders.map((order) => (
+            {filteredOrders.map((order) => (
               <div key={order.id} className={`rounded-xl border border-border bg-card p-4 space-y-3 ${order.is_fraud_flagged ? "border-destructive/30 bg-destructive/5" : ""}`}>
                 <div className="flex items-start justify-between gap-2">
                   <div>
