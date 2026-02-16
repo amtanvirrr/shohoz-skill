@@ -8,7 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { AlertTriangle, Download, CheckCircle, XCircle, Truck, ExternalLink, Trash2, Search, X, CalendarIcon, CheckSquare } from "lucide-react";
+import { AlertTriangle, Download, CheckCircle, XCircle, Truck, ExternalLink, Trash2, Search, X, CalendarIcon, CheckSquare, Eye } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -93,6 +95,7 @@ const AdminOrders = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkStatusValue, setBulkStatusValue] = useState<string>("");
+  const [detailOrder, setDetailOrder] = useState<Order | null>(null);
 
   const fetchOrders = async () => {
     const { data } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
@@ -437,6 +440,9 @@ const AdminOrders = () => {
                     </td>
                     <td className="py-3">
                       <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => setDetailOrder(order)} title="বিস্তারিত দেখুন">
+                          <Eye className="h-4 w-4 text-muted-foreground hover:text-primary" />
+                        </Button>
                         <Button variant="ghost" size="icon" onClick={() => toggleFraud(order.id, order.is_fraud_flagged)} title={order.is_fraud_flagged ? "Remove fraud flag" : "Flag as suspicious"}>
                           <AlertTriangle className={`h-4 w-4 ${order.is_fraud_flagged ? "text-destructive" : "text-muted-foreground"}`} />
                         </Button>
@@ -478,7 +484,10 @@ const AdminOrders = () => {
                       <p className="text-xs text-muted-foreground">{order.customer_phone}</p>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center justify-between gap-1">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setDetailOrder(order)} title="বিস্তারিত দেখুন">
+                      <Eye className="h-4 w-4 text-primary" />
+                    </Button>
                     <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => toggleFraud(order.id, order.is_fraud_flagged)}>
                       <AlertTriangle className={`h-4 w-4 ${order.is_fraud_flagged ? "text-destructive" : "text-muted-foreground"}`} />
                     </Button>
@@ -602,6 +611,95 @@ const AdminOrders = () => {
               {sending ? "পাঠানো হচ্ছে..." : "কুরিয়ারে পাঠান"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* Order Detail Dialog */}
+      <Dialog open={!!detailOrder} onOpenChange={(open) => { if (!open) setDetailOrder(null); }}>
+        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              অর্ডার ডিটেইলস
+              {detailOrder && <Badge variant="outline" className="font-mono text-xs">{detailOrder.order_id}</Badge>}
+            </DialogTitle>
+          </DialogHeader>
+          {detailOrder && (
+            <div className="space-y-4">
+              {/* Status & Flags */}
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge className={statusColors[detailOrder.status] || "bg-muted text-muted-foreground"}>{detailOrder.status}</Badge>
+                {detailOrder.is_fraud_flagged && <Badge variant="destructive">⚠️ সন্দেহজনক</Badge>}
+                {detailOrder.payment_verified && <Badge className="bg-green-500/15 text-green-600">✅ পেমেন্ট ভেরিফাইড</Badge>}
+              </div>
+
+              <Separator />
+
+              {/* Customer Info */}
+              <div>
+                <h4 className="text-sm font-semibold text-foreground mb-2">কাস্টমার তথ্য</h4>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div><span className="text-muted-foreground">নাম:</span> <span className="text-foreground font-medium">{detailOrder.customer_name}</span></div>
+                  <div><span className="text-muted-foreground">ফোন:</span> <span className="text-foreground font-medium">{detailOrder.customer_phone}</span></div>
+                  {detailOrder.customer_email && <div className="col-span-2"><span className="text-muted-foreground">ইমেইল:</span> <span className="text-foreground">{detailOrder.customer_email}</span></div>}
+                  {detailOrder.customer_address && <div className="col-span-2"><span className="text-muted-foreground">ঠিকানা:</span> <span className="text-foreground">{detailOrder.customer_address}</span></div>}
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Product Info */}
+              <div>
+                <h4 className="text-sm font-semibold text-foreground mb-2">প্রোডাক্ট তথ্য</h4>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="col-span-2"><span className="text-muted-foreground">প্রোডাক্ট:</span> <span className="text-foreground font-medium">{detailOrder.product_title}</span></div>
+                  <div><span className="text-muted-foreground">ধরন:</span> <span className="text-foreground capitalize">{detailOrder.product_type}</span></div>
+                  <div><span className="text-muted-foreground">মূল্য:</span> <span className="text-foreground font-semibold">৳{detailOrder.price}</span></div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Payment Info */}
+              <div>
+                <h4 className="text-sm font-semibold text-foreground mb-2">পেমেন্ট তথ্য</h4>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div><span className="text-muted-foreground">পদ্ধতি:</span> <span className="text-foreground uppercase font-medium">{detailOrder.payment_method}</span></div>
+                  <div><span className="text-muted-foreground">ভেরিফাইড:</span> <span className="text-foreground">{detailOrder.payment_verified ? "✅ হ্যাঁ" : "❌ না"}</span></div>
+                  {detailOrder.transaction_id && <div className="col-span-2"><span className="text-muted-foreground">TXN ID:</span> <span className="font-mono text-foreground">{detailOrder.transaction_id}</span></div>}
+                </div>
+              </div>
+
+              {/* Courier Info */}
+              {detailOrder.courier_provider && (
+                <>
+                  <Separator />
+                  <div>
+                    <h4 className="text-sm font-semibold text-foreground mb-2">কুরিয়ার তথ্য</h4>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div><span className="text-muted-foreground">কুরিয়ার:</span> <span className="text-foreground capitalize font-medium">{detailOrder.courier_provider}</span></div>
+                      {detailOrder.courier_status && <div><span className="text-muted-foreground">স্ট্যাটাস:</span> <span className={`rounded px-2 py-0.5 text-xs font-medium ${courierStatusStyle(detailOrder.courier_status)}`}>{courierStatusLabel(detailOrder.courier_status)}</span></div>}
+                      {detailOrder.courier_tracking_id && (
+                        <div className="col-span-2">
+                          <span className="text-muted-foreground">ট্র্যাকিং:</span>{" "}
+                          <a href={courierTrackingUrl[detailOrder.courier_provider]?.(detailOrder.courier_tracking_id) || "#"} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">
+                            {detailOrder.courier_tracking_id} <ExternalLink className="h-3 w-3" />
+                          </a>
+                        </div>
+                      )}
+                      {detailOrder.courier_consignment_id && <div className="col-span-2"><span className="text-muted-foreground">Consignment:</span> <span className="font-mono text-foreground text-xs">{detailOrder.courier_consignment_id}</span></div>}
+                      {detailOrder.courier_sent_at && <div className="col-span-2"><span className="text-muted-foreground">পাঠানো:</span> <span className="text-foreground">{format(new Date(detailOrder.courier_sent_at), "dd/MM/yyyy hh:mm a")}</span></div>}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <Separator />
+
+              {/* Dates */}
+              <div className="text-xs text-muted-foreground">
+                অর্ডারের তারিখ: {format(new Date(detailOrder.created_at), "dd/MM/yyyy hh:mm a")}
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
