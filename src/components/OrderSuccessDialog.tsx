@@ -6,7 +6,7 @@ import {
   DialogContent,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 interface OrderSuccessDialogProps {
   open: boolean;
@@ -38,6 +38,24 @@ const ConfettiPiece = ({ index }: { index: number }) => {
   return <div style={style} />;
 };
 
+const playSuccessSound = () => {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.15, ctx.currentTime + i * 0.12);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.12 + 0.4);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(ctx.currentTime + i * 0.12);
+      osc.stop(ctx.currentTime + i * 0.12 + 0.4);
+    });
+  } catch {}
+};
+
 const OrderSuccessDialog = ({ open, onClose, orderId, productTitle, message, isFree }: OrderSuccessDialogProps) => {
   const { toast } = useToast();
 
@@ -51,6 +69,7 @@ const OrderSuccessDialog = ({ open, onClose, orderId, productTitle, message, isF
   useEffect(() => {
     if (open) {
       setShowConfetti(true);
+      playSuccessSound();
       const timer = setTimeout(() => setShowConfetti(false), 3000);
       return () => clearTimeout(timer);
     }
