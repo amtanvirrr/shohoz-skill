@@ -63,7 +63,7 @@ const CoursesPage = () => {
             {courses.map((course) => {
               const status = orderMap[course.id];
               return (
-                <Link key={course.id} to={`/course/${course.id}`} className="group relative overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all hover:shadow-md">
+                <Link key={course.id} to={`/course/${(course as any).slug || course.id}`} className="group relative overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all hover:shadow-md">
                   {status && (
                     <div className={`absolute top-3 right-3 z-10 flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
                       ["confirmed", "delivered"].includes(status)

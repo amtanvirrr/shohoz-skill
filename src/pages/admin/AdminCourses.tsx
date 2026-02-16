@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { generateSlug } from "@/lib/slugify";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +33,7 @@ const initialForm = {
   category: "",
   duration: "",
   is_published: true,
+  slug: "",
 };
 
 const AdminCourses = () => {
@@ -70,6 +72,7 @@ const AdminCourses = () => {
       category: course.category,
       duration: course.duration,
       is_published: course.is_published,
+      slug: (course as any).slug || "",
     });
     setDialogOpen(true);
   };
@@ -95,6 +98,7 @@ const AdminCourses = () => {
       toast({ title: "Title and price required", variant: "destructive" });
       return;
     }
+    const slugValue = form.slug || generateSlug(form.title);
     const payload = {
       title: form.title,
       instructor: form.instructor,
@@ -105,6 +109,7 @@ const AdminCourses = () => {
       category: form.category,
       duration: form.duration,
       is_published: form.is_published,
+      slug: slugValue,
     };
 
     if (editing) {
@@ -139,7 +144,12 @@ const AdminCourses = () => {
           <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
             <DialogHeader><DialogTitle>{editing ? "Edit Course" : "Add Course"}</DialogTitle></DialogHeader>
             <div className="space-y-4 pt-4">
-              <div><Label>Title *</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="mt-1" /></div>
+              <div><Label>Title *</Label><Input value={form.title} onChange={(e) => { const title = e.target.value; if (!editing && !form.slug) setForm((f) => ({ ...f, title, slug: generateSlug(title) })); else setForm((f) => ({ ...f, title })); }} className="mt-1" /></div>
+              <div>
+                <Label>Slug (URL)</Label>
+                <Input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} className="mt-1" placeholder="seo-friendly-url-slug" />
+                <p className="text-xs text-muted-foreground mt-1">SEO ফ্রেন্ডলি URL। খালি রাখলে টাইটেল থেকে অটো তৈরি হবে।</p>
+              </div>
               <div><Label>Instructor</Label><Input value={form.instructor} onChange={(e) => setForm({ ...form, instructor: e.target.value })} className="mt-1" /></div>
 
               <div className="grid grid-cols-2 gap-3">

@@ -156,6 +156,7 @@ export type Database = {
           original_price: number | null
           page_count: number | null
           price: number
+          slug: string
           stock_quantity: number | null
           title: string
           updated_at: string
@@ -174,6 +175,7 @@ export type Database = {
           original_price?: number | null
           page_count?: number | null
           price?: number
+          slug: string
           stock_quantity?: number | null
           title: string
           updated_at?: string
@@ -192,6 +194,7 @@ export type Database = {
           original_price?: number | null
           page_count?: number | null
           price?: number
+          slug?: string
           stock_quantity?: number | null
           title?: string
           updated_at?: string
@@ -210,6 +213,7 @@ export type Database = {
           is_published: boolean
           original_price: number | null
           price: number
+          slug: string
           title: string
           updated_at: string
         }
@@ -224,6 +228,7 @@ export type Database = {
           is_published?: boolean
           original_price?: number | null
           price?: number
+          slug: string
           title: string
           updated_at?: string
         }
@@ -238,6 +243,7 @@ export type Database = {
           is_published?: boolean
           original_price?: number | null
           price?: number
+          slug?: string
           title?: string
           updated_at?: string
         }
@@ -678,6 +684,7 @@ export type Database = {
           original_price: number | null
           pass_mark: number
           price: number
+          slug: string
           title: string
         }
         Insert: {
@@ -692,6 +699,7 @@ export type Database = {
           original_price?: number | null
           pass_mark?: number
           price?: number
+          slug: string
           title: string
         }
         Update: {
@@ -706,6 +714,7 @@ export type Database = {
           original_price?: number | null
           pass_mark?: number
           price?: number
+          slug?: string
           title?: string
         }
         Relationships: [

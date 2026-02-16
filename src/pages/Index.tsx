@@ -193,7 +193,7 @@ const Index = () => {
           {dbCourses.length > 0 ? (
             <div className="mt-6 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 sm:gap-6 sm:mt-8">
               {dbCourses.map((course) => (
-                <Link key={course.id} to={`/course/${course.id}`} className="group relative overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all hover:shadow-md">
+                <Link key={course.id} to={`/course/${(course as any).slug || course.id}`} className="group relative overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all hover:shadow-md">
                   {renderCourseBadge(course.id)}
                   {course.image_url && <div className="aspect-video overflow-hidden"><img src={course.image_url} alt={course.title} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" /></div>}
                   <div className="p-5">
@@ -245,7 +245,7 @@ const Index = () => {
           {dbBooks.length > 0 ? (
             <div className="mt-6 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 sm:gap-6 sm:mt-8">
               {dbBooks.map((book) => (
-                <Link key={book.id} to={`/book/${book.id}`} className="group relative overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all hover:shadow-md">
+                <Link key={book.id} to={`/book/${(book as any).slug || book.id}`} className="group relative overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all hover:shadow-md">
                   {renderBookBadge(book)}
                   {book.image_url && <div className="aspect-[3/4] overflow-hidden"><img src={book.image_url} alt={book.title} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" /></div>}
                   <div className="p-5">

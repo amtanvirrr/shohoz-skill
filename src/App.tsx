@@ -57,8 +57,8 @@ const App = () => (
             <Route path="/" element={<Layout><Index /></Layout>} />
             <Route path="/courses" element={<Layout><CoursesPage /></Layout>} />
             <Route path="/books" element={<Layout><BooksPage /></Layout>} />
-            <Route path="/course/:id" element={<Layout><CourseDetail /></Layout>} />
-            <Route path="/book/:id" element={<Layout><BookDetail /></Layout>} />
+            <Route path="/course/:slug" element={<Layout><CourseDetail /></Layout>} />
+            <Route path="/book/:slug" element={<Layout><BookDetail /></Layout>} />
             <Route path="/quizzes" element={<Layout><QuizPage /></Layout>} />
             <Route path="/about" element={<Layout><About /></Layout>} />
             <Route path="/blog" element={<Layout><BlogPage /></Layout>} />
