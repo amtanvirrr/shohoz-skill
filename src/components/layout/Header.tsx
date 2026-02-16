@@ -1,9 +1,11 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { supabase } from "@/integrations/supabase/client";
 
 const navLinks = [
   { to: "/", label: "Home" },
@@ -17,10 +19,32 @@ const navLinks = [
 
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [profileName, setProfileName] = useState("");
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isAdmin, signOut } = useAuth();
   const { settings } = useSiteSettings();
+
+  useEffect(() => {
+    if (!user) { setAvatarUrl(null); setProfileName(""); return; }
+    const fetchProfile = async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("avatar_url, full_name")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (data) {
+        setAvatarUrl(data.avatar_url || null);
+        setProfileName(data.full_name || "");
+      }
+    };
+    fetchProfile();
+  }, [user]);
+
+  const initials = profileName
+    ? profileName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+    : user?.email?.[0]?.toUpperCase() || "U";
 
   const handleSignOut = async () => {
     await signOut();
@@ -54,6 +78,12 @@ const Header = () => {
         <div className="hidden items-center gap-3 md:flex">
           {user ? (
             <>
+              <Link to="/dashboard" className="flex items-center gap-2">
+                <Avatar className="h-8 w-8 border border-border">
+                  {avatarUrl ? <AvatarImage src={avatarUrl} alt={profileName} /> : null}
+                  <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">{initials}</AvatarFallback>
+                </Avatar>
+              </Link>
               <Button variant="outline" size="sm" asChild>
                 <Link to="/dashboard">Dashboard</Link>
               </Button>
@@ -88,6 +118,18 @@ const Header = () => {
 
       {mobileOpen && (
         <div className="border-t border-border bg-card px-4 py-4 md:hidden">
+          {user && (
+            <Link to="/dashboard" onClick={() => setMobileOpen(false)} className="mb-3 flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-secondary">
+              <Avatar className="h-9 w-9 border border-border">
+                {avatarUrl ? <AvatarImage src={avatarUrl} alt={profileName} /> : null}
+                <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">{initials}</AvatarFallback>
+              </Avatar>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium text-foreground">{profileName || user.email}</p>
+                {profileName && <p className="truncate text-xs text-muted-foreground">{user.email}</p>}
+              </div>
+            </Link>
+          )}
           <nav className="flex flex-col gap-1">
             {navLinks.map((link) => (
               <Link
