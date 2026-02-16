@@ -196,147 +196,200 @@ const BookDetail = () => {
             <p className="mt-2 text-muted-foreground">by {book.author}</p>
 
             <div className="mt-4 flex items-baseline gap-3">
-              <span className="text-3xl font-bold text-foreground">৳{book.price}</span>
-              {book.original_price && <span className="text-lg text-muted-foreground line-through">৳{book.original_price}</span>}
+              {book.price === 0 ? (
+                <span className="text-3xl font-bold text-green-600">ফ্রি</span>
+              ) : (
+                <>
+                  <span className="text-3xl font-bold text-foreground">৳{book.price}</span>
+                  {book.original_price && <span className="text-lg text-muted-foreground line-through">৳{book.original_price}</span>}
+                </>
+              )}
             </div>
 
             <p className="mt-6 leading-relaxed text-muted-foreground">{book.description}</p>
 
-            <div className="mt-8 rounded-xl border border-border bg-card p-6">
-              <h3 className="flex items-center gap-2 font-display text-lg font-semibold text-foreground">
-                <ShoppingBag className="h-5 w-5 text-primary" /> {isPhysical ? "Order Now" : "Buy Now"}
-              </h3>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {isPhysical ? "Cash on Delivery — সারা বাংলাদেশে ডেলিভারি" : "বিকাশ / নগদ পেমেন্টে ইবুক পান"}
-              </p>
+            {book.price === 0 ? (
+              <div className="mt-8 rounded-xl border border-border bg-card p-6">
+                <h3 className="flex items-center gap-2 font-display text-lg font-semibold text-foreground">
+                  <ShoppingBag className="h-5 w-5 text-primary" /> ফ্রি বই
+                </h3>
+                <p className="mt-1 text-xs text-muted-foreground">এই বইটি সম্পূর্ণ ফ্রি! একটি ক্লিকেই পেয়ে যান।</p>
+                <Button
+                  size="lg"
+                  className="mt-5 w-full"
+                  disabled={submitting}
+                  onClick={async () => {
+                    setSubmitting(true);
+                    const { data, error } = await supabase.from("orders").insert({
+                      customer_name: user?.user_metadata?.full_name || "Free User",
+                      customer_phone: user?.user_metadata?.phone || "",
+                      customer_email: user?.email || null,
+                      product_type: "book" as any,
+                      product_id: book.id,
+                      product_title: book.title,
+                      price: 0,
+                      payment_method: "cod" as any,
+                      user_id: user?.id || null,
+                      status: "confirmed" as any,
+                      payment_verified: true,
+                      notes: "Free product - auto confirmed",
+                    }).select("order_id").single();
+                    setSubmitting(false);
+                    if (error) {
+                      toast({ title: "Failed", description: error.message, variant: "destructive" });
+                    } else {
+                      trackEvent("Purchase", {
+                        content_name: book.title,
+                        content_type: "book",
+                        content_ids: [book.id],
+                        value: 0,
+                        currency: "BDT",
+                        order_id: data.order_id,
+                      });
+                      toast({ title: "সফলভাবে সম্পন্ন! 🎉", description: `আপনার অর্ডার ID: ${data.order_id}` });
+                    }
+                  }}
+                >
+                  {submitting ? "Processing..." : "ফ্রিতে নিন"}
+                </Button>
+              </div>
+            ) : (
+              <div className="mt-8 rounded-xl border border-border bg-card p-6">
+                <h3 className="flex items-center gap-2 font-display text-lg font-semibold text-foreground">
+                  <ShoppingBag className="h-5 w-5 text-primary" /> {isPhysical ? "Order Now" : "Buy Now"}
+                </h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {isPhysical ? "Cash on Delivery — সারা বাংলাদেশে ডেলিভারি" : "বিকাশ / নগদ পেমেন্টে ইবুক পান"}
+                </p>
 
-              <form onSubmit={handleOrder} className="mt-5 space-y-4">
-                <div><Label htmlFor="fullname">Full Name *</Label><Input id="fullname" value={order.name} onChange={(e) => setOrder({ ...order, name: e.target.value })} className="mt-1" /></div>
-                <div><Label htmlFor="phone">Phone Number *</Label><Input id="phone" value={order.phone} onChange={(e) => setOrder({ ...order, phone: e.target.value })} className="mt-1" /></div>
-                <div><Label htmlFor="email">Email (optional)</Label><Input id="email" type="email" value={order.email} onChange={(e) => setOrder({ ...order, email: e.target.value })} className="mt-1" /></div>
-                {isPhysical && (
-                  <div><Label htmlFor="address">Full Address *</Label><Textarea id="address" rows={3} value={order.address} onChange={(e) => setOrder({ ...order, address: e.target.value })} className="mt-1" /></div>
-                )}
+                <form onSubmit={handleOrder} className="mt-5 space-y-4">
+                  <div><Label htmlFor="fullname">Full Name *</Label><Input id="fullname" value={order.name} onChange={(e) => setOrder({ ...order, name: e.target.value })} className="mt-1" /></div>
+                  <div><Label htmlFor="phone">Phone Number *</Label><Input id="phone" value={order.phone} onChange={(e) => setOrder({ ...order, phone: e.target.value })} className="mt-1" /></div>
+                  <div><Label htmlFor="email">Email (optional)</Label><Input id="email" type="email" value={order.email} onChange={(e) => setOrder({ ...order, email: e.target.value })} className="mt-1" /></div>
+                  {isPhysical && (
+                    <div><Label htmlFor="address">Full Address *</Label><Textarea id="address" rows={3} value={order.address} onChange={(e) => setOrder({ ...order, address: e.target.value })} className="mt-1" /></div>
+                  )}
 
-                {/* Shipping Zone Selector for physical books */}
-                {isPhysical && shippingZones.length > 0 && (
-                  <div className="space-y-2">
-                    <Label>ডেলিভারি জোন *</Label>
-                    <div className="flex flex-wrap gap-3">
-                      {shippingZones.map((z) => (
-                        <Button
-                          key={z.id}
-                          type="button"
-                          variant={selectedZone === z.zone_name ? "default" : "outline"}
-                          className="flex-1"
-                          onClick={() => setSelectedZone(z.zone_name)}
-                        >
-                          {z.zone_label}
-                        </Button>
-                      ))}
-                    </div>
-                    {activeZone && (
-                      <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">শিপিং চার্জ:</span>
-                          {shippingCost === 0 ? (
-                            <span className="font-medium text-green-600">ফ্রি শিপিং ✅</span>
-                          ) : (
-                            <span className="font-medium text-foreground">৳{shippingCost}</span>
-                          )}
-                        </div>
-                        {activeZone.free_shipping_minimum && shippingCost > 0 && (
-                          <p className="text-xs text-muted-foreground">
-                            ৳{activeZone.free_shipping_minimum}+ অর্ডারে ফ্রি শিপিং
-                          </p>
-                        )}
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">ডেলিভারি সময়:</span>
-                          <span className="font-medium text-foreground">
-                            {activeZone.delivery_time_min}-{activeZone.delivery_time_max}{" "}
-                            {activeZone.delivery_time_unit === "days" ? "দিন" : activeZone.delivery_time_unit === "hours" ? "ঘণ্টা" : "সপ্তাহ"}
-                          </span>
-                        </div>
+                  {/* Shipping Zone Selector for physical books */}
+                  {isPhysical && shippingZones.length > 0 && (
+                    <div className="space-y-2">
+                      <Label>ডেলিভারি জোন *</Label>
+                      <div className="flex flex-wrap gap-3">
+                        {shippingZones.map((z) => (
+                          <Button
+                            key={z.id}
+                            type="button"
+                            variant={selectedZone === z.zone_name ? "default" : "outline"}
+                            className="flex-1"
+                            onClick={() => setSelectedZone(z.zone_name)}
+                          >
+                            {z.zone_label}
+                          </Button>
+                        ))}
                       </div>
-                    )}
-                  </div>
-                )}
-
-                {isPhysical ? (
-                  <div className="rounded-lg bg-secondary p-3 text-sm text-muted-foreground">💵 Payment: <span className="font-medium text-foreground">Cash on Delivery</span></div>
-                ) : (
-                  <div className="space-y-2">
-                    <Label>Payment Method *</Label>
-                    <div className="flex flex-wrap gap-3">
-                      {mfsMethods.length > 0 ? mfsMethods.map((m) => (
-                        <Button key={m.id} type="button" variant={order.paymentMethod === m.provider ? "default" : "outline"} className="flex-1" onClick={() => setOrder({ ...order, paymentMethod: m.provider })}>
-                          {m.display_name || m.provider}
-                        </Button>
-                      )) : (
-                        <>
-                          <Button type="button" variant={order.paymentMethod === "bkash" ? "default" : "outline"} className="flex-1" onClick={() => setOrder({ ...order, paymentMethod: "bkash" })}>বিকাশ</Button>
-                          <Button type="button" variant={order.paymentMethod === "nagad" ? "default" : "outline"} className="flex-1" onClick={() => setOrder({ ...order, paymentMethod: "nagad" })}>নগদ</Button>
-                        </>
+                      {activeZone && (
+                        <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">শিপিং চার্জ:</span>
+                            {shippingCost === 0 ? (
+                              <span className="font-medium text-green-600">ফ্রি শিপিং ✅</span>
+                            ) : (
+                              <span className="font-medium text-foreground">৳{shippingCost}</span>
+                            )}
+                          </div>
+                          {activeZone.free_shipping_minimum && shippingCost > 0 && (
+                            <p className="text-xs text-muted-foreground">
+                              ৳{activeZone.free_shipping_minimum}+ অর্ডারে ফ্রি শিপিং
+                            </p>
+                          )}
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">ডেলিভারি সময়:</span>
+                            <span className="font-medium text-foreground">
+                              {activeZone.delivery_time_min}-{activeZone.delivery_time_max}{" "}
+                              {activeZone.delivery_time_unit === "days" ? "দিন" : activeZone.delivery_time_unit === "hours" ? "ঘণ্টা" : "সপ্তাহ"}
+                            </span>
+                          </div>
+                        </div>
                       )}
                     </div>
+                  )}
 
-                    {/* Show selected MFS payment details */}
-                    {(() => {
-                      const selected = mfsMethods.find(m => m.provider === order.paymentMethod);
-                      if (!selected) return null;
-                      return (
-                        <div className="mt-3 rounded-lg border border-border bg-muted/30 p-4 space-y-3">
-                          <div className="flex items-center gap-2 text-sm">
-                            <Smartphone className="h-4 w-4 text-primary" />
-                            <span className="font-medium text-foreground">{selected.phone_number}</span>
-                            <span className="rounded bg-primary/10 px-2 py-0.5 text-xs text-primary capitalize">{selected.mfs_type}</span>
+                  {isPhysical ? (
+                    <div className="rounded-lg bg-secondary p-3 text-sm text-muted-foreground">💵 Payment: <span className="font-medium text-foreground">Cash on Delivery</span></div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Label>Payment Method *</Label>
+                      <div className="flex flex-wrap gap-3">
+                        {mfsMethods.length > 0 ? mfsMethods.map((m) => (
+                          <Button key={m.id} type="button" variant={order.paymentMethod === m.provider ? "default" : "outline"} className="flex-1" onClick={() => setOrder({ ...order, paymentMethod: m.provider })}>
+                            {m.display_name || m.provider}
+                          </Button>
+                        )) : (
+                          <>
+                            <Button type="button" variant={order.paymentMethod === "bkash" ? "default" : "outline"} className="flex-1" onClick={() => setOrder({ ...order, paymentMethod: "bkash" })}>বিকাশ</Button>
+                            <Button type="button" variant={order.paymentMethod === "nagad" ? "default" : "outline"} className="flex-1" onClick={() => setOrder({ ...order, paymentMethod: "nagad" })}>নগদ</Button>
+                          </>
+                        )}
+                      </div>
+
+                      {/* Show selected MFS payment details */}
+                      {(() => {
+                        const selected = mfsMethods.find(m => m.provider === order.paymentMethod);
+                        if (!selected) return null;
+                        return (
+                          <div className="mt-3 rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+                            <div className="flex items-center gap-2 text-sm">
+                              <Smartphone className="h-4 w-4 text-primary" />
+                              <span className="font-medium text-foreground">{selected.phone_number}</span>
+                              <span className="rounded bg-primary/10 px-2 py-0.5 text-xs text-primary capitalize">{selected.mfs_type}</span>
+                            </div>
+                            {selected.qr_code_url && (
+                              <img src={selected.qr_code_url} alt="QR Code" className="mx-auto h-32 w-32 rounded-lg border border-border object-contain" />
+                            )}
+                            {selected.payment_instruction && (
+                              <p className="text-sm text-muted-foreground whitespace-pre-line">{selected.payment_instruction}</p>
+                            )}
+                            {selected.process_message && (
+                              <div className="rounded-md bg-primary/5 p-3 text-xs text-foreground whitespace-pre-line">{selected.process_message}</div>
+                            )}
                           </div>
-                          {selected.qr_code_url && (
-                            <img src={selected.qr_code_url} alt="QR Code" className="mx-auto h-32 w-32 rounded-lg border border-border object-contain" />
-                          )}
-                          {selected.payment_instruction && (
-                            <p className="text-sm text-muted-foreground whitespace-pre-line">{selected.payment_instruction}</p>
-                          )}
-                          {selected.process_message && (
-                            <div className="rounded-md bg-primary/5 p-3 text-xs text-foreground whitespace-pre-line">{selected.process_message}</div>
-                          )}
-                        </div>
-                      );
-                    })()}
-                  </div>
-                )}
-
-                {/* Transaction ID field for digital payments */}
-                {!isPhysical && (
-                  <div>
-                    <Label htmlFor="txnId">Transaction ID *</Label>
-                    <Input id="txnId" value={order.transactionId} onChange={(e) => setOrder({ ...order, transactionId: e.target.value })} className="mt-1" placeholder="যেমন: TXN1234ABCD" />
-                  </div>
-                )}
-
-                {/* Order Summary for physical */}
-                {isPhysical && (
-                  <div className="rounded-lg border border-border bg-card p-4 space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">বইয়ের মূল্য:</span>
-                      <span className="font-medium text-foreground">৳{book.price}</span>
+                        );
+                      })()}
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">শিপিং:</span>
-                      <span className={`font-medium ${shippingCost === 0 ? "text-green-600" : "text-foreground"}`}>
-                        {shippingCost === 0 ? "ফ্রি" : `৳${shippingCost}`}
-                      </span>
-                    </div>
-                    <div className="border-t border-border pt-2 flex justify-between">
-                      <span className="font-semibold text-foreground">সর্বমোট:</span>
-                      <span className="text-lg font-bold text-primary">৳{totalPrice}</span>
-                    </div>
-                  </div>
-                )}
+                  )}
 
-                <Button type="submit" size="lg" className="w-full" disabled={submitting}>{submitting ? "Placing Order..." : isPhysical ? `Place Order — ৳${totalPrice}` : "Buy Now"}</Button>
-              </form>
-            </div>
+                  {/* Transaction ID field for digital payments */}
+                  {!isPhysical && (
+                    <div>
+                      <Label htmlFor="txnId">Transaction ID *</Label>
+                      <Input id="txnId" value={order.transactionId} onChange={(e) => setOrder({ ...order, transactionId: e.target.value })} className="mt-1" placeholder="যেমন: TXN1234ABCD" />
+                    </div>
+                  )}
+
+                  {/* Order Summary for physical */}
+                  {isPhysical && (
+                    <div className="rounded-lg border border-border bg-card p-4 space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">বইয়ের মূল্য:</span>
+                        <span className="font-medium text-foreground">৳{book.price}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">শিপিং:</span>
+                        <span className={`font-medium ${shippingCost === 0 ? "text-green-600" : "text-foreground"}`}>
+                          {shippingCost === 0 ? "ফ্রি" : `৳${shippingCost}`}
+                        </span>
+                      </div>
+                      <div className="border-t border-border pt-2 flex justify-between">
+                        <span className="font-semibold text-foreground">সর্বমোট:</span>
+                        <span className="text-lg font-bold text-primary">৳{totalPrice}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  <Button type="submit" size="lg" className="w-full" disabled={submitting}>{submitting ? "Placing Order..." : isPhysical ? `Place Order — ৳${totalPrice}` : "Buy Now"}</Button>
+                </form>
+              </div>
+            )}
           </div>
         </div>
       </div>
