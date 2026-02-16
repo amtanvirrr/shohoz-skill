@@ -36,6 +36,7 @@ interface Order {
   courier_consignment_id: string | null;
   courier_status: string | null;
   courier_sent_at: string | null;
+  notes: string | null;
 }
 
 const statusColors: Record<string, string> = {
@@ -96,6 +97,8 @@ const AdminOrders = () => {
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkStatusValue, setBulkStatusValue] = useState<string>("");
   const [detailOrder, setDetailOrder] = useState<Order | null>(null);
+  const [editNotes, setEditNotes] = useState("");
+  const [savingNotes, setSavingNotes] = useState(false);
 
   const fetchOrders = async () => {
     const { data } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
@@ -440,7 +443,7 @@ const AdminOrders = () => {
                     </td>
                     <td className="py-3">
                       <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => setDetailOrder(order)} title="বিস্তারিত দেখুন">
+                        <Button variant="ghost" size="icon" onClick={() => { setDetailOrder(order); setEditNotes(order.notes || ""); }} title="বিস্তারিত দেখুন">
                           <Eye className="h-4 w-4 text-muted-foreground hover:text-primary" />
                         </Button>
                         <Button variant="ghost" size="icon" onClick={() => toggleFraud(order.id, order.is_fraud_flagged)} title={order.is_fraud_flagged ? "Remove fraud flag" : "Flag as suspicious"}>
@@ -485,7 +488,7 @@ const AdminOrders = () => {
                     </div>
                   </div>
                   <div className="flex items-center justify-between gap-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setDetailOrder(order)} title="বিস্তারিত দেখুন">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => { setDetailOrder(order); setEditNotes(order.notes || ""); }} title="বিস্তারিত দেখুন">
                       <Eye className="h-4 w-4 text-primary" />
                     </Button>
                     <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => toggleFraud(order.id, order.is_fraud_flagged)}>
@@ -691,6 +694,38 @@ const AdminOrders = () => {
                   </div>
                 </>
               )}
+
+              <Separator />
+
+              {/* Notes */}
+              <div>
+                <h4 className="text-sm font-semibold text-foreground mb-2">নোটস / মন্তব্য</h4>
+                <textarea
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-[80px] resize-y"
+                  placeholder="এখানে নোট লিখুন..."
+                  value={editNotes}
+                  onChange={(e) => setEditNotes(e.target.value)}
+                />
+                <Button
+                  size="sm"
+                  className="mt-2"
+                  disabled={savingNotes || editNotes === (detailOrder.notes || "")}
+                  onClick={async () => {
+                    setSavingNotes(true);
+                    const { error } = await supabase.from("orders").update({ notes: editNotes || null }).eq("id", detailOrder.id);
+                    if (error) {
+                      toast({ title: "Error", description: error.message, variant: "destructive" });
+                    } else {
+                      toast({ title: "নোট সেভ করা হয়েছে ✅" });
+                      setDetailOrder({ ...detailOrder, notes: editNotes || null });
+                      fetchOrders();
+                    }
+                    setSavingNotes(false);
+                  }}
+                >
+                  {savingNotes ? "সেভ হচ্ছে..." : "নোট সেভ করুন"}
+                </Button>
+              </div>
 
               <Separator />
 
