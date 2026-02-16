@@ -59,6 +59,7 @@ interface Quiz {
   lesson_id: string | null;
   negative_marking: boolean;
   negative_mark_value: number;
+  pass_mark: number;
 }
 
 const lessonInitial = {
@@ -176,6 +177,7 @@ const SortableLessonItem = ({
                   <div key={quiz.id} className="flex items-center gap-2 rounded-md border border-border p-2 text-sm">
                     <HelpCircle className="h-4 w-4 text-primary" />
                     <span className="flex-1 text-foreground">{quiz.title}</span>
+                    {quiz.pass_mark > 0 && <span className="text-xs text-muted-foreground">পাস: {quiz.pass_mark}</span>}
                     <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => navigate(`/admin/quizzes`)}>Manage</Button>
                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleDeleteQuiz(quiz.id)}>
                       <Trash2 className="h-3 w-3 text-destructive" />
@@ -223,7 +225,7 @@ const AdminCourseDetail = () => {
   // Quiz dialog
   const [quizDialogOpen, setQuizDialogOpen] = useState(false);
   const [quizLessonId, setQuizLessonId] = useState<string | null>(null);
-  const [quizForm, setQuizForm] = useState({ title: "", description: "" });
+  const [quizForm, setQuizForm] = useState({ title: "", description: "", pass_mark: "0" });
   const [availableQuizzes, setAvailableQuizzes] = useState<Quiz[]>([]);
   const [quizMode, setQuizMode] = useState<"select" | "create">("select");
 
@@ -369,7 +371,7 @@ const AdminCourseDetail = () => {
   // ---- Quiz for lesson ----
   const openAddQuiz = async (lessonId: string) => {
     setQuizLessonId(lessonId);
-    setQuizForm({ title: "", description: "" });
+    setQuizForm({ title: "", description: "", pass_mark: "0" });
     setQuizMode("select");
     // Fetch quizzes not linked to any lesson
     const { data } = await supabase.from("quizzes").select("*").is("lesson_id", null).eq("is_published", true);
@@ -377,9 +379,9 @@ const AdminCourseDetail = () => {
     setQuizDialogOpen(true);
   };
 
-  const handleLinkExistingQuiz = async (quizId: string) => {
+  const handleLinkExistingQuiz = async (quizId: string, passMark: number) => {
     if (!quizLessonId) return;
-    const { error } = await supabase.from("quizzes").update({ lesson_id: quizLessonId }).eq("id", quizId);
+    const { error } = await supabase.from("quizzes").update({ lesson_id: quizLessonId, pass_mark: passMark }).eq("id", quizId);
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     toast({ title: "কুইজ লেসনে যুক্ত করা হয়েছে" });
     setQuizDialogOpen(false);
@@ -396,6 +398,7 @@ const AdminCourseDetail = () => {
       description: quizForm.description || null,
       lesson_id: quizLessonId,
       is_published: true,
+      pass_mark: parseFloat(quizForm.pass_mark) || 0,
     });
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     toast({ title: "কুইজ তৈরি ও লেসনে যুক্ত করা হয়েছে" });
@@ -552,6 +555,13 @@ const AdminCourseDetail = () => {
               </Button>
             </div>
 
+            {/* Pass mark input (shared) */}
+            <div>
+              <Label>পাস মার্ক (0 = পাস মার্ক নেই)</Label>
+              <Input type="number" min="0" step="0.5" value={quizForm.pass_mark} onChange={(e) => setQuizForm({ ...quizForm, pass_mark: e.target.value })} className="mt-1" placeholder="যেমন: 5" />
+              <p className="mt-1 text-xs text-muted-foreground">পরবর্তী লেসনে যেতে এই মার্ক পেতে হবে</p>
+            </div>
+
             {quizMode === "select" ? (
               <div>
                 {availableQuizzes.length === 0 ? (
@@ -566,7 +576,7 @@ const AdminCourseDetail = () => {
                           <p className="text-sm font-medium text-foreground">{q.title}</p>
                           {q.description && <p className="text-xs text-muted-foreground line-clamp-1">{q.description}</p>}
                         </div>
-                        <Button size="sm" onClick={() => handleLinkExistingQuiz(q.id)}>যুক্ত করুন</Button>
+                        <Button size="sm" onClick={() => handleLinkExistingQuiz(q.id, parseFloat(quizForm.pass_mark) || 0)}>যুক্ত করুন</Button>
                       </div>
                     ))}
                   </div>
