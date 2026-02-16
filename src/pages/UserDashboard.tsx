@@ -1,14 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { BookOpen, PlayCircle, ExternalLink, ShoppingBag, Clock, CheckCircle, Truck, XCircle, Package, Eye, UserCircle, Save, Loader2, Bookmark, Trash2 } from "lucide-react";
+import { BookOpen, PlayCircle, ExternalLink, ShoppingBag, Clock, CheckCircle, Truck, XCircle, Package, Eye, UserCircle, Save, Loader2, Bookmark, Trash2, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 
 interface Order {
@@ -20,6 +23,16 @@ interface Order {
   price: number;
   status: string;
   payment_method: string;
+  transaction_id: string | null;
+  payment_verified: boolean;
+  customer_name: string;
+  customer_phone: string;
+  customer_email: string | null;
+  customer_address: string | null;
+  notes: string | null;
+  courier_provider: string | null;
+  courier_tracking_id: string | null;
+  courier_status: string | null;
   created_at: string;
 }
 
@@ -52,6 +65,32 @@ const paymentMethodLabels: Record<string, string> = {
   cod: "ক্যাশ অন ডেলিভারি",
   bkash: "বিকাশ",
   nagad: "নগদ",
+  rocket: "রকেট",
+  upay: "উপায়",
+};
+
+const convertToWebP = (file: File): Promise<Blob> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { reject(new Error("Canvas error")); return; }
+      ctx.drawImage(img, 0, 0);
+      canvas.toBlob(
+        (blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error("WebP conversion failed"));
+        },
+        "image/webp",
+        0.85
+      );
+    };
+    img.onerror = () => reject(new Error("Image load failed"));
+    img.src = URL.createObjectURL(file);
+  });
 };
 
 const UserDashboard = () => {
@@ -70,15 +109,20 @@ const UserDashboard = () => {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [email, setEmail] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Order detail modal
+  const [detailOrder, setDetailOrder] = useState<Order | null>(null);
 
   useEffect(() => {
     if (!user) return;
 
     const fetchData = async () => {
-      // Fetch orders, profile, and bookmarks in parallel
       const [ordersRes, profileRes, bookmarksRes] = await Promise.all([
         supabase.from("orders").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
-        supabase.from("profiles").select("full_name, phone, address, email").eq("user_id", user.id).maybeSingle(),
+        supabase.from("profiles").select("full_name, phone, address, email, avatar_url").eq("user_id", user.id).maybeSingle(),
         supabase.from("bookmarks").select("id, blog_post_id, created_at, blog_posts(title, slug, category, cover_image_url)").eq("user_id", user.id).order("created_at", { ascending: false }),
       ]);
 
@@ -101,6 +145,7 @@ const UserDashboard = () => {
         setPhone(profileRes.data.phone || "");
         setAddress(profileRes.data.address || "");
         setEmail(profileRes.data.email || "");
+        setAvatarUrl((profileRes.data as any).avatar_url || "");
       }
       setProfileLoading(false);
 
@@ -137,6 +182,44 @@ const UserDashboard = () => {
 
     fetchData();
   }, [user]);
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("শুধুমাত্র ইমেজ ফাইল আপলোড করুন");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("ইমেজ সাইজ ৫MB এর বেশি হতে পারবে না");
+      return;
+    }
+
+    setAvatarUploading(true);
+    try {
+      const webpBlob = await convertToWebP(file);
+      const filePath = `${user.id}/avatar.webp`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, webpBlob, { contentType: "image/webp", upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(filePath);
+      const newUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+
+      await supabase.from("profiles").update({ avatar_url: newUrl } as any).eq("user_id", user.id);
+
+      setAvatarUrl(newUrl);
+      toast.success("প্রোফাইল ছবি আপলোড হয়েছে ✅");
+    } catch (err: any) {
+      toast.error(err.message || "আপলোড ব্যর্থ হয়েছে");
+    }
+    setAvatarUploading(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
   const handleProfileSave = async () => {
     if (!user) return;
@@ -373,15 +456,9 @@ const UserDashboard = () => {
                         </div>
                       </div>
                       <div className="flex shrink-0 gap-2">
-                        {order.product_type === "book" ? (
-                          <Button size="sm" variant="outline" asChild>
-                            <Link to={`/book/${order.product_id}`}>বিস্তারিত</Link>
-                          </Button>
-                        ) : (
-                          <Button size="sm" variant="outline" asChild>
-                            <Link to={`/course/${order.product_id}`}>বিস্তারিত</Link>
-                          </Button>
-                        )}
+                        <Button size="sm" variant="outline" className="gap-1" onClick={() => setDetailOrder(order)}>
+                          <Eye className="h-3.5 w-3.5" /> বিস্তারিত
+                        </Button>
                       </div>
                     </div>
                   );
@@ -389,6 +466,7 @@ const UserDashboard = () => {
               </div>
             )}
           </TabsContent>
+
           {/* Profile Tab */}
           <TabsContent value="profile" className="mt-6">
             <div className="mx-auto max-w-lg rounded-xl border border-border bg-card p-6">
@@ -399,6 +477,37 @@ const UserDashboard = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
+                  {/* Avatar Upload */}
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="relative group">
+                      <Avatar className="h-24 w-24 border-2 border-border">
+                        <AvatarImage src={avatarUrl || undefined} alt={fullName} />
+                        <AvatarFallback className="text-2xl bg-primary/10 text-primary">
+                          {fullName ? fullName.charAt(0).toUpperCase() : "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={avatarUploading}
+                        className="absolute inset-0 flex items-center justify-center rounded-full bg-background/60 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                      >
+                        {avatarUploading ? (
+                          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                        ) : (
+                          <Camera className="h-6 w-6 text-foreground" />
+                        )}
+                      </button>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleAvatarUpload}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">ছবি আপলোড করুন (স্বয়ংক্রিয়ভাবে WebP এ কনভার্ট হবে)</p>
+                  </div>
+
                   <div>
                     <Label htmlFor="email">ইমেইল</Label>
                     <Input id="email" value={email} disabled className="mt-1 bg-muted" />
@@ -448,6 +557,104 @@ const UserDashboard = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Order Detail Modal */}
+      <Dialog open={!!detailOrder} onOpenChange={(open) => { if (!open) setDetailOrder(null); }}>
+        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              অর্ডার ডিটেইলস
+              {detailOrder && <Badge variant="outline" className="font-mono text-xs">{detailOrder.order_id}</Badge>}
+            </DialogTitle>
+          </DialogHeader>
+          {detailOrder && (() => {
+            const sc = statusConfig[detailOrder.status] || statusConfig.pending;
+            const StatusIcon = sc.icon;
+            return (
+              <div className="space-y-4">
+                {/* Status */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant={sc.variant} className="gap-1">
+                    <StatusIcon className="h-3.5 w-3.5" /> {sc.label}
+                  </Badge>
+                  {detailOrder.payment_verified && <Badge className="bg-green-500/15 text-green-600">✅ পেমেন্ট ভেরিফাইড</Badge>}
+                </div>
+
+                <Separator />
+
+                {/* Product Info */}
+                <div>
+                  <h4 className="text-sm font-semibold text-foreground mb-2">প্রোডাক্ট তথ্য</h4>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="col-span-2"><span className="text-muted-foreground">প্রোডাক্ট:</span> <span className="text-foreground font-medium">{detailOrder.product_title}</span></div>
+                    <div><span className="text-muted-foreground">ধরন:</span> <span className="text-foreground capitalize">{detailOrder.product_type === "book" ? "বই" : "কোর্স"}</span></div>
+                    <div><span className="text-muted-foreground">মূল্য:</span> <span className="text-foreground font-semibold">৳{detailOrder.price}</span></div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Payment Info */}
+                <div>
+                  <h4 className="text-sm font-semibold text-foreground mb-2">পেমেন্ট তথ্য</h4>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div><span className="text-muted-foreground">পদ্ধতি:</span> <span className="text-foreground font-medium">{paymentMethodLabels[detailOrder.payment_method] || detailOrder.payment_method}</span></div>
+                    <div><span className="text-muted-foreground">ভেরিফাইড:</span> <span className="text-foreground">{detailOrder.payment_verified ? "✅ হ্যাঁ" : "❌ না"}</span></div>
+                    {detailOrder.transaction_id && <div className="col-span-2"><span className="text-muted-foreground">TXN ID:</span> <span className="font-mono text-foreground">{detailOrder.transaction_id}</span></div>}
+                  </div>
+                </div>
+
+                {/* Shipping Info */}
+                {detailOrder.customer_address && (
+                  <>
+                    <Separator />
+                    <div>
+                      <h4 className="text-sm font-semibold text-foreground mb-2">শিপিং তথ্য</h4>
+                      <div className="text-sm">
+                        <div><span className="text-muted-foreground">নাম:</span> <span className="text-foreground">{detailOrder.customer_name}</span></div>
+                        <div><span className="text-muted-foreground">ফোন:</span> <span className="text-foreground">{detailOrder.customer_phone}</span></div>
+                        {detailOrder.customer_email && <div><span className="text-muted-foreground">ইমেইল:</span> <span className="text-foreground">{detailOrder.customer_email}</span></div>}
+                        <div><span className="text-muted-foreground">ঠিকানা:</span> <span className="text-foreground">{detailOrder.customer_address}</span></div>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Courier Info */}
+                {detailOrder.courier_provider && (
+                  <>
+                    <Separator />
+                    <div>
+                      <h4 className="text-sm font-semibold text-foreground mb-2">কুরিয়ার তথ্য</h4>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div><span className="text-muted-foreground">কুরিয়ার:</span> <span className="text-foreground capitalize font-medium">{detailOrder.courier_provider}</span></div>
+                        {detailOrder.courier_status && <div><span className="text-muted-foreground">স্ট্যাটাস:</span> <span className="text-foreground capitalize">{detailOrder.courier_status}</span></div>}
+                        {detailOrder.courier_tracking_id && <div className="col-span-2"><span className="text-muted-foreground">ট্র্যাকিং ID:</span> <span className="font-mono text-foreground">{detailOrder.courier_tracking_id}</span></div>}
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Notes */}
+                {detailOrder.notes && (
+                  <>
+                    <Separator />
+                    <div>
+                      <h4 className="text-sm font-semibold text-foreground mb-1">নোট</h4>
+                      <p className="text-sm text-muted-foreground">{detailOrder.notes}</p>
+                    </div>
+                  </>
+                )}
+
+                <Separator />
+                <div className="text-xs text-muted-foreground">
+                  অর্ডারের তারিখ: {new Date(detailOrder.created_at).toLocaleDateString("bn-BD")} {new Date(detailOrder.created_at).toLocaleTimeString("bn-BD")}
+                </div>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
