@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useEffect, useState } from "react";
 
 interface OrderSuccessDialogProps {
   open: boolean;
@@ -16,6 +17,27 @@ interface OrderSuccessDialogProps {
   isFree?: boolean;
 }
 
+const confettiColors = [
+  "hsl(var(--primary))",
+  "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#ec4899", "#06b6d4",
+];
+
+const ConfettiPiece = ({ index }: { index: number }) => {
+  const style: React.CSSProperties = {
+    position: "absolute",
+    width: `${6 + Math.random() * 6}px`,
+    height: `${6 + Math.random() * 6}px`,
+    backgroundColor: confettiColors[index % confettiColors.length],
+    borderRadius: Math.random() > 0.5 ? "50%" : "2px",
+    left: `${5 + Math.random() * 90}%`,
+    top: "-10px",
+    opacity: 0,
+    animation: `confetti-fall ${1.5 + Math.random() * 1.5}s ease-out ${Math.random() * 0.5}s forwards`,
+    transform: `rotate(${Math.random() * 360}deg)`,
+  };
+  return <div style={style} />;
+};
+
 const OrderSuccessDialog = ({ open, onClose, orderId, productTitle, message, isFree }: OrderSuccessDialogProps) => {
   const { toast } = useToast();
 
@@ -24,10 +46,27 @@ const OrderSuccessDialog = ({ open, onClose, orderId, productTitle, message, isF
     toast({ title: "কপি হয়েছে!" });
   };
 
+  const [showConfetti, setShowConfetti] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setShowConfetti(true);
+      const timer = setTimeout(() => setShowConfetti(false), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [open]);
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md text-center sm:max-w-lg">
+      <DialogContent className="max-w-md text-center sm:max-w-lg overflow-hidden">
         <DialogTitle className="sr-only">অর্ডার সম্পন্ন</DialogTitle>
+        {showConfetti && (
+          <div className="pointer-events-none absolute inset-0 z-50">
+            {Array.from({ length: 40 }).map((_, i) => (
+              <ConfettiPiece key={i} index={i} />
+            ))}
+          </div>
+        )}
         <div className="flex flex-col items-center gap-4 py-4">
           {/* Animated checkmark */}
           <div className="relative flex h-20 w-20 items-center justify-center">
