@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { usePixel } from "@/components/MetaPixelProvider";
+import OrderSuccessDialog from "@/components/OrderSuccessDialog";
 
 interface DbCourse {
   id: string;
@@ -81,6 +82,7 @@ const CourseDetail = () => {
   const [submitting, setSubmitting] = useState(false);
   const [reviews, setReviews] = useState<DbReview[]>([]);
   const [orderStatus, setOrderStatus] = useState<string | null>(null);
+  const [successDialog, setSuccessDialog] = useState<{ open: boolean; orderId: string; message?: string; isFree?: boolean } | null>(null);
   const [reviewForm, setReviewForm] = useState({ rating: 5, comment: "" });
   const [submittingReview, setSubmittingReview] = useState(false);
   const [mfsMethods, setMfsMethods] = useState<MfsMethod[]>([]);
@@ -215,7 +217,7 @@ const CourseDetail = () => {
         currency: "BDT",
         order_id: data.order_id,
       }, { em: user.email || undefined });
-      toast({ title: "Purchase Initiated! 🎉", description: `Order ID: ${data.order_id}. পেমেন্ট ভেরিফিকেশনের পর কোর্স অ্যাক্সেস পাবেন।` });
+      setSuccessDialog({ open: true, orderId: data.order_id, message: "পেমেন্ট ভেরিফিকেশনের পর কোর্স অ্যাক্সেস পাবেন।" });
       setTransactionId("");
       setOrderStatus("pending");
     }
@@ -483,7 +485,7 @@ const CourseDetail = () => {
                         currency: "BDT",
                         order_id: data.order_id,
                       });
-                      toast({ title: "এনরোল সফল! 🎉", description: "আপনি এখন কোর্সটি অ্যাক্সেস করতে পারবেন।" });
+                      setSuccessDialog({ open: true, orderId: data.order_id, isFree: true, message: "আপনি এখন কোর্সটি অ্যাক্সেস করতে পারবেন।" });
                       setOrderStatus("confirmed");
                     }
                   }}
@@ -563,6 +565,16 @@ const CourseDetail = () => {
           </div>
         </div>
       </div>
+      {successDialog && course && (
+        <OrderSuccessDialog
+          open={successDialog.open}
+          onClose={() => setSuccessDialog(null)}
+          orderId={successDialog.orderId}
+          productTitle={course.title}
+          message={successDialog.message}
+          isFree={successDialog.isFree}
+        />
+      )}
     </div>
   );
 };

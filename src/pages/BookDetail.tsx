@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, ShoppingBag, Smartphone, BookOpen, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { usePixel } from "@/components/MetaPixelProvider";
+import OrderSuccessDialog from "@/components/OrderSuccessDialog";
 
 interface DbBook {
   id: string;
@@ -57,6 +58,7 @@ const BookDetail = () => {
   const [shippingZones, setShippingZones] = useState<ShippingZone[]>([]);
   const [selectedZone, setSelectedZone] = useState<string>("");
   const [orderStatus, setOrderStatus] = useState<string | null>(null);
+  const [successDialog, setSuccessDialog] = useState<{ open: boolean; orderId: string; message?: string; isFree?: boolean } | null>(null);
   const isPhysical = book?.book_type === "physical";
   const isEbook = book?.book_type === "ebook";
 
@@ -193,7 +195,7 @@ const BookDetail = () => {
         currency: "BDT",
         order_id: data.order_id,
       }, { em: order.email || undefined, ph: order.phone || undefined });
-      toast({ title: "Order Placed! 🎉", description: `Your Order ID: ${data.order_id}` });
+      setSuccessDialog({ open: true, orderId: data.order_id, message: isPhysical ? "আপনার অর্ডারটি সফলভাবে গৃহীত হয়েছে।" : "পেমেন্ট যাচাইয়ের পর আপনি বইটি পড়তে পারবেন।" });
       setOrder({ name: "", phone: "", email: "", address: "", paymentMethod: "bkash", transactionId: "" });
       if (isEbook) setOrderStatus("pending");
     }
@@ -299,7 +301,7 @@ const BookDetail = () => {
                         currency: "BDT",
                         order_id: data.order_id,
                       });
-                      toast({ title: "সফলভাবে সম্পন্ন! 🎉", description: `আপনার অর্ডার ID: ${data.order_id}` });
+                      setSuccessDialog({ open: true, orderId: data.order_id, isFree: true });
                       setOrderStatus("confirmed");
                     }
                   }}
@@ -447,6 +449,16 @@ const BookDetail = () => {
           </div>
         </div>
       </div>
+      {successDialog && book && (
+        <OrderSuccessDialog
+          open={successDialog.open}
+          onClose={() => setSuccessDialog(null)}
+          orderId={successDialog.orderId}
+          productTitle={book.title}
+          message={successDialog.message}
+          isFree={successDialog.isFree}
+        />
+      )}
     </div>
   );
 };
