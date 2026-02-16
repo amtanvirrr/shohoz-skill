@@ -675,7 +675,9 @@ export type Database = {
           lesson_id: string | null
           negative_mark_value: number
           negative_marking: boolean
+          original_price: number | null
           pass_mark: number
+          price: number
           title: string
         }
         Insert: {
@@ -687,7 +689,9 @@ export type Database = {
           lesson_id?: string | null
           negative_mark_value?: number
           negative_marking?: boolean
+          original_price?: number | null
           pass_mark?: number
+          price?: number
           title: string
         }
         Update: {
@@ -699,7 +703,9 @@ export type Database = {
           lesson_id?: string | null
           negative_mark_value?: number
           negative_marking?: boolean
+          original_price?: number | null
           pass_mark?: number
+          price?: number
           title?: string
         }
         Relationships: [
@@ -908,7 +914,7 @@ export type Database = {
         | "delivered"
         | "cancelled"
       payment_method: "cod" | "bkash" | "nagad" | "rocket" | "upay"
-      product_type: "book" | "course"
+      product_type: "book" | "course" | "quiz"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1045,7 +1051,7 @@ export const Constants = {
         "cancelled",
       ],
       payment_method: ["cod", "bkash", "nagad", "rocket", "upay"],
-      product_type: ["book", "course"],
+      product_type: ["book", "course", "quiz"],
     },
   },
 } as const
