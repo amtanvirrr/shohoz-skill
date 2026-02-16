@@ -8,9 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { AlertTriangle, Download, CheckCircle, XCircle, Truck, ExternalLink, Trash2, Search, X, CalendarIcon } from "lucide-react";
+import { AlertTriangle, Download, CheckCircle, XCircle, Truck, ExternalLink, Trash2, Search, X, CalendarIcon, CheckSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface Order {
   id: string;
@@ -86,6 +87,11 @@ const AdminOrders = () => {
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
 
+  // Bulk selection
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkStatusValue, setBulkStatusValue] = useState<string>("");
+
   const fetchOrders = async () => {
     const { data } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
     setOrders((data as unknown as Order[]) || []);
@@ -154,7 +160,44 @@ const AdminOrders = () => {
     const { error } = await supabase.from("orders").delete().eq("id", id);
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     toast({ title: "অর্ডার ডিলিট করা হয়েছে 🗑️" });
+    setSelectedIds((prev) => { const n = new Set(prev); n.delete(id); return n; });
     fetchOrders();
+  };
+
+  const bulkDelete = async () => {
+    const ids = Array.from(selectedIds);
+    const { error } = await supabase.from("orders").delete().in("id", ids);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    toast({ title: `${ids.length}টি অর্ডার ডিলিট করা হয়েছে 🗑️` });
+    setSelectedIds(new Set());
+    setBulkDeleteOpen(false);
+    fetchOrders();
+  };
+
+  const bulkUpdateStatus = async (status: string) => {
+    const ids = Array.from(selectedIds);
+    const { error } = await supabase.from("orders").update({ status: status as any }).in("id", ids);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    toast({ title: `${ids.length}টি অর্ডারের স্ট্যাটাস "${status}" করা হয়েছে ✅` });
+    setSelectedIds(new Set());
+    setBulkStatusValue("");
+    fetchOrders();
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredOrders.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredOrders.map((o) => o.id)));
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
+    });
   };
 
   const sendToCourier = async () => {
@@ -271,10 +314,52 @@ const AdminOrders = () => {
         <p className="mt-8 text-center text-muted-foreground">{orders.length === 0 ? "No orders yet." : "কোনো অর্ডার পাওয়া যায়নি।"}</p>
       ) : (
         <>
+          {/* Bulk Actions Bar */}
+          {selectedIds.size > 0 && (
+            <div className="mt-4 flex flex-wrap items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3">
+              <CheckSquare className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium text-foreground">{selectedIds.size}টি সিলেক্টেড</span>
+              <Select value={bulkStatusValue} onValueChange={(val) => bulkUpdateStatus(val)}>
+                <SelectTrigger className="h-8 w-40"><SelectValue placeholder="স্ট্যাটাস পরিবর্তন" /></SelectTrigger>
+                <SelectContent>
+                  {["pending", "confirmed", "shipped", "delivered", "cancelled"].map((s) => (
+                    <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="sm" className="h-8 gap-1">
+                    <Trash2 className="h-3.5 w-3.5" /> বাল্ক ডিলিট
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>{selectedIds.size}টি অর্ডার ডিলিট করুন?</AlertDialogTitle>
+                    <AlertDialogDescription>সিলেক্ট করা সব অর্ডার স্থায়ীভাবে মুছে ফেলা হবে। এটি পূর্বাবস্থায় ফেরানো যাবে না।</AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>বাতিল</AlertDialogCancel>
+                    <AlertDialogAction onClick={bulkDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">ডিলিট করুন</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+              <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => setSelectedIds(new Set())}>
+                <X className="mr-1 h-3.5 w-3.5" /> সিলেকশন বাতিল
+              </Button>
+            </div>
+          )}
+
           <div className="mt-6 hidden overflow-x-auto lg:block">
             <table className="w-full text-left text-sm">
               <thead className="border-b border-border text-muted-foreground">
                 <tr>
+                  <th className="pb-3 pr-3 w-10">
+                    <Checkbox
+                      checked={filteredOrders.length > 0 && selectedIds.size === filteredOrders.length}
+                      onCheckedChange={toggleSelectAll}
+                    />
+                  </th>
                   <th className="pb-3 pr-3">Order ID</th>
                   <th className="pb-3 pr-3">Customer</th>
                   <th className="pb-3 pr-3">Product</th>
@@ -288,7 +373,10 @@ const AdminOrders = () => {
               </thead>
               <tbody>
                 {filteredOrders.map((order) => (
-                  <tr key={order.id} className={`border-b border-border ${order.is_fraud_flagged ? "bg-destructive/5" : ""}`}>
+                  <tr key={order.id} className={`border-b border-border ${order.is_fraud_flagged ? "bg-destructive/5" : ""} ${selectedIds.has(order.id) ? "bg-primary/5" : ""}`}>
+                    <td className="py-3 pr-3">
+                      <Checkbox checked={selectedIds.has(order.id)} onCheckedChange={() => toggleSelect(order.id)} />
+                    </td>
                     <td className="py-3 pr-3 font-mono text-xs">{order.order_id}</td>
                     <td className="py-3 pr-3">
                       <div className="font-medium text-foreground">{order.customer_name}</div>
@@ -369,10 +457,13 @@ const AdminOrders = () => {
             {filteredOrders.map((order) => (
               <div key={order.id} className={`rounded-xl border border-border bg-card p-4 space-y-3 ${order.is_fraud_flagged ? "border-destructive/30 bg-destructive/5" : ""}`}>
                 <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <span className="font-mono text-xs text-muted-foreground">{order.order_id}</span>
-                    <h4 className="mt-0.5 font-medium text-foreground text-sm">{order.customer_name}</h4>
-                    <p className="text-xs text-muted-foreground">{order.customer_phone}</p>
+                  <div className="flex items-start gap-2">
+                    <Checkbox checked={selectedIds.has(order.id)} onCheckedChange={() => toggleSelect(order.id)} className="mt-1" />
+                    <div>
+                      <span className="font-mono text-xs text-muted-foreground">{order.order_id}</span>
+                      <h4 className="mt-0.5 font-medium text-foreground text-sm">{order.customer_name}</h4>
+                      <p className="text-xs text-muted-foreground">{order.customer_phone}</p>
+                    </div>
                   </div>
                   <div className="flex items-center justify-between gap-2">
                     <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => toggleFraud(order.id, order.is_fraud_flagged)}>
