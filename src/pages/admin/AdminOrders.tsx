@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { AlertTriangle, Download, CheckCircle, XCircle, Truck, ExternalLink, Trash2, Search, X, CalendarIcon, CheckSquare, Eye } from "lucide-react";
+import { AlertTriangle, Download, CheckCircle, XCircle, Truck, ExternalLink, Trash2, Search, X, CalendarIcon, CheckSquare, Eye, StickyNote } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
@@ -387,6 +387,7 @@ const AdminOrders = () => {
                   <th className="pb-3 pr-3">TXN ID</th>
                   <th className="pb-3 pr-3">Courier</th>
                   <th className="pb-3 pr-3">Status</th>
+                  <th className="pb-3 pr-3 w-10 text-center">📝</th>
                   <th className="pb-3">Actions</th>
                 </tr>
               </thead>
@@ -440,6 +441,13 @@ const AdminOrders = () => {
                           ))}
                         </SelectContent>
                       </Select>
+                    </td>
+                    <td className="py-3 pr-3 text-center">
+                      {order.notes ? (
+                        <span title={order.notes}><StickyNote className="h-4 w-4 text-primary mx-auto" /></span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
                     </td>
                     <td className="py-3">
                       <div className="flex items-center gap-1">
