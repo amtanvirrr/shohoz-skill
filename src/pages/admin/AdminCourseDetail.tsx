@@ -224,6 +224,8 @@ const AdminCourseDetail = () => {
   const [quizDialogOpen, setQuizDialogOpen] = useState(false);
   const [quizLessonId, setQuizLessonId] = useState<string | null>(null);
   const [quizForm, setQuizForm] = useState({ title: "", description: "" });
+  const [availableQuizzes, setAvailableQuizzes] = useState<Quiz[]>([]);
+  const [quizMode, setQuizMode] = useState<"select" | "create">("select");
 
   const fetchAll = async () => {
     if (!id) return;
@@ -365,10 +367,23 @@ const AdminCourseDetail = () => {
   };
 
   // ---- Quiz for lesson ----
-  const openAddQuiz = (lessonId: string) => {
+  const openAddQuiz = async (lessonId: string) => {
     setQuizLessonId(lessonId);
     setQuizForm({ title: "", description: "" });
+    setQuizMode("select");
+    // Fetch quizzes not linked to any lesson
+    const { data } = await supabase.from("quizzes").select("*").is("lesson_id", null).eq("is_published", true);
+    setAvailableQuizzes((data as Quiz[]) || []);
     setQuizDialogOpen(true);
+  };
+
+  const handleLinkExistingQuiz = async (quizId: string) => {
+    if (!quizLessonId) return;
+    const { error } = await supabase.from("quizzes").update({ lesson_id: quizLessonId }).eq("id", quizId);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "কুইজ লেসনে যুক্ত করা হয়েছে" });
+    setQuizDialogOpen(false);
+    fetchAll();
   };
 
   const handleSaveQuiz = async () => {
@@ -383,15 +398,15 @@ const AdminCourseDetail = () => {
       is_published: true,
     });
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Quiz added to lesson" });
+    toast({ title: "কুইজ তৈরি ও লেসনে যুক্ত করা হয়েছে" });
     setQuizDialogOpen(false);
     fetchAll();
   };
 
   const handleDeleteQuiz = async (quizId: string) => {
-    if (!confirm("Delete this quiz?")) return;
-    await supabase.from("quizzes").delete().eq("id", quizId);
-    toast({ title: "Quiz deleted" });
+    if (!confirm("এই কুইজটি লেসন থেকে সরাতে চান? (কুইজটি ডিলিট হবে না, শুধু আনলিংক হবে)")) return;
+    await supabase.from("quizzes").update({ lesson_id: null }).eq("id", quizId);
+    toast({ title: "কুইজ লেসন থেকে সরানো হয়েছে" });
     fetchAll();
   };
 
@@ -524,13 +539,47 @@ const AdminCourseDetail = () => {
       <Dialog open={quizDialogOpen} onOpenChange={setQuizDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Add Quiz to Lesson</DialogTitle>
+            <DialogTitle>লেসনে কুইজ যুক্ত করুন</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-4">
-            <div><Label>Quiz Title *</Label><Input value={quizForm.title} onChange={(e) => setQuizForm({ ...quizForm, title: e.target.value })} className="mt-1" /></div>
-            <div><Label>Description</Label><Textarea rows={3} value={quizForm.description} onChange={(e) => setQuizForm({ ...quizForm, description: e.target.value })} className="mt-1" /></div>
-            <p className="text-xs text-muted-foreground">After creating, go to the Quizzes section to add questions.</p>
-            <Button onClick={handleSaveQuiz} className="w-full">Create Quiz</Button>
+            {/* Toggle between select existing and create new */}
+            <div className="flex gap-2">
+              <Button variant={quizMode === "select" ? "default" : "outline"} size="sm" className="flex-1" onClick={() => setQuizMode("select")}>
+                বিদ্যমান কুইজ নির্বাচন
+              </Button>
+              <Button variant={quizMode === "create" ? "default" : "outline"} size="sm" className="flex-1" onClick={() => setQuizMode("create")}>
+                নতুন কুইজ তৈরি
+              </Button>
+            </div>
+
+            {quizMode === "select" ? (
+              <div>
+                {availableQuizzes.length === 0 ? (
+                  <p className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+                    কোনো আনলিংকড কুইজ পাওয়া যায়নি। প্রথমে কুইজ সেকশন থেকে কুইজ তৈরি করুন।
+                  </p>
+                ) : (
+                  <div className="max-h-60 space-y-2 overflow-y-auto">
+                    {availableQuizzes.map((q) => (
+                      <div key={q.id} className="flex items-center justify-between rounded-lg border border-border p-3">
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{q.title}</p>
+                          {q.description && <p className="text-xs text-muted-foreground line-clamp-1">{q.description}</p>}
+                        </div>
+                        <Button size="sm" onClick={() => handleLinkExistingQuiz(q.id)}>যুক্ত করুন</Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div><Label>Quiz Title *</Label><Input value={quizForm.title} onChange={(e) => setQuizForm({ ...quizForm, title: e.target.value })} className="mt-1" /></div>
+                <div><Label>Description</Label><Textarea rows={3} value={quizForm.description} onChange={(e) => setQuizForm({ ...quizForm, description: e.target.value })} className="mt-1" /></div>
+                <p className="text-xs text-muted-foreground">তৈরির পর কুইজ সেকশনে গিয়ে প্রশ্ন যোগ করুন।</p>
+                <Button onClick={handleSaveQuiz} className="w-full">কুইজ তৈরি করুন</Button>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>

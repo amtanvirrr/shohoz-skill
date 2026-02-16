@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -43,6 +44,8 @@ interface Question {
 
 const QuizPage = () => {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const directQuizId = searchParams.get("id");
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [questionCounts, setQuestionCounts] = useState<Record<string, number>>({});
   const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
@@ -54,9 +57,24 @@ const QuizPage = () => {
   const [leaderboard, setLeaderboard] = useState<Record<string, LeaderboardEntry[]>>({});
   const [showLeaderboard, setShowLeaderboard] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [directQuizStarted, setDirectQuizStarted] = useState(false);
 
   useEffect(() => {
-    supabase.from("quizzes").select("*, quiz_questions(id)").eq("is_published", true).then(({ data }) => {
+    const fetchQuizzes = async () => {
+      // If accessing via direct ID (from enrolled course), load that specific quiz
+      if (directQuizId && !directQuizStarted) {
+        const { data } = await supabase.from("quizzes").select("*, quiz_questions(id)").eq("id", directQuizId).eq("is_published", true).single();
+        if (data) {
+          const { quiz_questions, ...rest } = data as any;
+          const quiz = rest as Quiz;
+          setDirectQuizStarted(true);
+          startQuiz(quiz);
+        }
+        return;
+      }
+
+      // Public quiz list: only show quizzes NOT linked to any lesson
+      const { data } = await supabase.from("quizzes").select("*, quiz_questions(id)").eq("is_published", true).is("lesson_id", null);
       if (data) {
         const counts: Record<string, number> = {};
         const mapped = data.map((q: any) => {
@@ -67,8 +85,9 @@ const QuizPage = () => {
         setQuestionCounts(counts);
         setQuizzes(mapped);
       }
-    });
-  }, []);
+    };
+    fetchQuizzes();
+  }, [directQuizId]);
 
   // Fetch user's past attempts
   useEffect(() => {
