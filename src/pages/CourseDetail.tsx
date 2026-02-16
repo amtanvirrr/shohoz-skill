@@ -410,74 +410,129 @@ const CourseDetail = () => {
           <div className="lg:col-span-1">
             <div className="sticky top-20 rounded-xl border border-border bg-card p-6 shadow-sm">
               <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-bold text-foreground">৳{course.price.toLocaleString()}</span>
-                {course.original_price && <span className="text-lg text-muted-foreground line-through">৳{course.original_price.toLocaleString()}</span>}
+                {course.price === 0 ? (
+                  <span className="text-3xl font-bold text-green-600">ফ্রি</span>
+                ) : (
+                  <>
+                    <span className="text-3xl font-bold text-foreground">৳{course.price.toLocaleString()}</span>
+                    {course.original_price && <span className="text-lg text-muted-foreground line-through">৳{course.original_price.toLocaleString()}</span>}
+                  </>
+                )}
               </div>
-              {course.original_price && (
+              {course.original_price && course.price > 0 && (
                 <p className="mt-1 text-sm text-success font-medium">
                   {Math.round(((course.original_price - course.price) / course.original_price) * 100)}% off
                 </p>
               )}
-              <div className="mt-6">
-                <p className="text-sm font-medium text-foreground">Payment Method</p>
-                <div className="mt-3 grid grid-cols-2 gap-3">
-                  {mfsMethods.length > 0 ? mfsMethods.map((m) => (
-                    <button
-                      key={m.id}
-                      onClick={() => setPaymentMethod(m.provider)}
-                      className={`rounded-lg border-2 px-4 py-3 text-center text-sm font-semibold transition-colors ${
-                        paymentMethod === m.provider ? "border-primary bg-primary/5 text-primary" : "border-border text-muted-foreground hover:border-primary/30"
-                      }`}
-                    >
-                      {m.display_name || m.provider}
-                    </button>
-                  )) : (["bkash", "nagad"] as const).map((method) => (
-                    <button
-                      key={method}
-                      onClick={() => setPaymentMethod(method)}
-                      className={`rounded-lg border-2 px-4 py-3 text-center text-sm font-semibold transition-colors ${
-                        paymentMethod === method ? "border-primary bg-primary/5 text-primary" : "border-border text-muted-foreground hover:border-primary/30"
-                      }`}
-                    >
-                      {method === "bkash" ? "bKash" : "Nagad"}
-                    </button>
-                  ))}
-                </div>
 
-                {/* Show selected MFS payment details */}
-                {(() => {
-                  const selected = mfsMethods.find(m => m.provider === paymentMethod);
-                  if (!selected) return null;
-                  return (
-                    <div className="mt-4 rounded-lg border border-border bg-muted/30 p-4 space-y-3">
-                      <div className="flex items-center gap-2 text-sm">
-                        <Smartphone className="h-4 w-4 text-primary" />
-                        <span className="font-medium text-foreground">{selected.phone_number}</span>
-                        <span className="rounded bg-primary/10 px-2 py-0.5 text-xs text-primary capitalize">{selected.mfs_type}</span>
-                      </div>
-                      {selected.qr_code_url && (
-                        <img src={selected.qr_code_url} alt="QR Code" className="mx-auto h-32 w-32 rounded-lg border border-border object-contain" />
-                      )}
-                      {selected.payment_instruction && (
-                        <p className="text-sm text-muted-foreground whitespace-pre-line">{selected.payment_instruction}</p>
-                      )}
-                      {selected.process_message && (
-                        <div className="rounded-md bg-primary/5 p-3 text-xs text-foreground whitespace-pre-line">{selected.process_message}</div>
-                      )}
+              {course.price === 0 ? (
+                <Button
+                  size="lg"
+                  className="mt-6 w-full"
+                  disabled={submitting}
+                  onClick={async () => {
+                    if (!user) {
+                      toast({ title: "প্রথমে লগইন করুন", description: "ফ্রি কোর্সে এনরোল করতে লগইন প্রয়োজন।", variant: "destructive" });
+                      return;
+                    }
+                    setSubmitting(true);
+                    const { data, error } = await supabase.from("orders").insert({
+                      customer_name: user.user_metadata?.full_name || "Free User",
+                      customer_phone: user.user_metadata?.phone || "",
+                      customer_email: user.email,
+                      product_type: "course" as any,
+                      product_id: course.id,
+                      product_title: course.title,
+                      price: 0,
+                      payment_method: "cod" as any,
+                      user_id: user.id,
+                      status: "confirmed" as any,
+                      payment_verified: true,
+                      notes: "Free product - auto confirmed",
+                    }).select("order_id").single();
+                    setSubmitting(false);
+                    if (error) {
+                      toast({ title: "Failed", description: error.message, variant: "destructive" });
+                    } else {
+                      trackEvent("Purchase", {
+                        content_name: course.title,
+                        content_type: "course",
+                        content_ids: [course.id],
+                        value: 0,
+                        currency: "BDT",
+                        order_id: data.order_id,
+                      });
+                      toast({ title: "এনরোল সফল! 🎉", description: "আপনি এখন কোর্সটি অ্যাক্সেস করতে পারবেন।" });
+                      setHasPurchased(true);
+                    }
+                  }}
+                >
+                  {submitting ? "Processing..." : "ফ্রিতে এনরোল করুন"}
+                </Button>
+              ) : (
+                <>
+                  <div className="mt-6">
+                    <p className="text-sm font-medium text-foreground">Payment Method</p>
+                    <div className="mt-3 grid grid-cols-2 gap-3">
+                      {mfsMethods.length > 0 ? mfsMethods.map((m) => (
+                        <button
+                          key={m.id}
+                          onClick={() => setPaymentMethod(m.provider)}
+                          className={`rounded-lg border-2 px-4 py-3 text-center text-sm font-semibold transition-colors ${
+                            paymentMethod === m.provider ? "border-primary bg-primary/5 text-primary" : "border-border text-muted-foreground hover:border-primary/30"
+                          }`}
+                        >
+                          {m.display_name || m.provider}
+                        </button>
+                      )) : (["bkash", "nagad"] as const).map((method) => (
+                        <button
+                          key={method}
+                          onClick={() => setPaymentMethod(method)}
+                          className={`rounded-lg border-2 px-4 py-3 text-center text-sm font-semibold transition-colors ${
+                            paymentMethod === method ? "border-primary bg-primary/5 text-primary" : "border-border text-muted-foreground hover:border-primary/30"
+                          }`}
+                        >
+                          {method === "bkash" ? "bKash" : "Nagad"}
+                        </button>
+                      ))}
                     </div>
-                  );
-                })()}
-              </div>
 
-              {/* Transaction ID field */}
-              <div className="mt-4">
-                <Label htmlFor="courseTxnId" className="text-sm font-medium">Transaction ID *</Label>
-                <Input id="courseTxnId" value={transactionId} onChange={(e) => setTransactionId(e.target.value)} className="mt-1" placeholder="যেমন: TXN1234ABCD" />
-              </div>
+                    {/* Show selected MFS payment details */}
+                    {(() => {
+                      const selected = mfsMethods.find(m => m.provider === paymentMethod);
+                      if (!selected) return null;
+                      return (
+                        <div className="mt-4 rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+                          <div className="flex items-center gap-2 text-sm">
+                            <Smartphone className="h-4 w-4 text-primary" />
+                            <span className="font-medium text-foreground">{selected.phone_number}</span>
+                            <span className="rounded bg-primary/10 px-2 py-0.5 text-xs text-primary capitalize">{selected.mfs_type}</span>
+                          </div>
+                          {selected.qr_code_url && (
+                            <img src={selected.qr_code_url} alt="QR Code" className="mx-auto h-32 w-32 rounded-lg border border-border object-contain" />
+                          )}
+                          {selected.payment_instruction && (
+                            <p className="text-sm text-muted-foreground whitespace-pre-line">{selected.payment_instruction}</p>
+                          )}
+                          {selected.process_message && (
+                            <div className="rounded-md bg-primary/5 p-3 text-xs text-foreground whitespace-pre-line">{selected.process_message}</div>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
 
-              <Button onClick={handlePurchase} size="lg" className="mt-4 w-full" disabled={submitting}>
-                {submitting ? "Processing..." : "Purchase Course"}
-              </Button>
+                  {/* Transaction ID field */}
+                  <div className="mt-4">
+                    <Label htmlFor="courseTxnId" className="text-sm font-medium">Transaction ID *</Label>
+                    <Input id="courseTxnId" value={transactionId} onChange={(e) => setTransactionId(e.target.value)} className="mt-1" placeholder="যেমন: TXN1234ABCD" />
+                  </div>
+
+                  <Button onClick={handlePurchase} size="lg" className="mt-4 w-full" disabled={submitting}>
+                    {submitting ? "Processing..." : "Purchase Course"}
+                  </Button>
+                </>
+              )}
               <ul className="mt-6 space-y-2 text-xs text-muted-foreground">
                 <li className="flex items-center gap-2"><PlayCircle className="h-3.5 w-3.5 text-primary" /> Lifetime access</li>
                 <li className="flex items-center gap-2"><BookOpen className="h-3.5 w-3.5 text-primary" /> {lessons.length} lessons</li>
