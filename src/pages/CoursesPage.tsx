@@ -79,7 +79,10 @@ const CoursesPage = () => {
                   )}
                   {course.image_url && <div className="aspect-video overflow-hidden"><img src={course.image_url} alt={course.title} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" /></div>}
                   <div className="p-5">
-                    <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">{course.category}</span>
+                    <div className="flex flex-wrap gap-2">
+                      <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">{course.category}</span>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2.5 py-1 text-xs font-medium text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">🎓 অনলাইন কোর্স</span>
+                    </div>
                     <h3 className="mt-3 font-display text-lg font-semibold text-card-foreground line-clamp-2">{course.title}</h3>
                     <p className="mt-1 text-sm text-muted-foreground">{course.instructor}</p>
                     <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
