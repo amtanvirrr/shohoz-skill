@@ -253,7 +253,16 @@ const Index = () => {
                   {renderBookBadge(book)}
                   {book.image_url && <div className="aspect-[3/4] overflow-hidden"><img src={book.image_url} alt={book.title} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" /></div>}
                   <div className="p-5">
-                    <span className="inline-block rounded-full bg-accent/15 px-3 py-1 text-xs font-medium text-accent">{book.category}</span>
+                    <div className="flex flex-wrap gap-2">
+                      <span className="inline-block rounded-full bg-accent/15 px-3 py-1 text-xs font-medium text-accent">{book.category}</span>
+                      <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
+                        book.book_type === "ebook"
+                          ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                          : "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
+                      }`}>
+                        {book.book_type === "ebook" ? "📱 ইবুক" : "📦 ফিজিক্যাল বই"}
+                      </span>
+                    </div>
                     <h3 className="mt-3 font-display text-lg font-semibold text-card-foreground">{book.title}</h3>
                     <p className="mt-1 text-sm text-muted-foreground">{book.author}</p>
                     <div className="mt-3 flex items-center gap-2">
