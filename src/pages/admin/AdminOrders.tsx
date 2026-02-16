@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { AlertTriangle, Download, CheckCircle, XCircle, Truck, ExternalLink } from "lucide-react";
+import { AlertTriangle, Download, CheckCircle, XCircle, Truck, ExternalLink, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 interface Order {
   id: string;
@@ -97,6 +98,13 @@ const AdminOrders = () => {
   const togglePaymentVerified = async (id: string, current: boolean) => {
     await supabase.from("orders").update({ payment_verified: !current }).eq("id", id);
     toast({ title: !current ? "পেমেন্ট ভেরিফাইড ✅" : "ভেরিফিকেশন সরানো হয়েছে" });
+    fetchOrders();
+  };
+
+  const deleteOrder = async (id: string) => {
+    const { error } = await supabase.from("orders").delete().eq("id", id);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "অর্ডার ডিলিট করা হয়েছে 🗑️" });
     fetchOrders();
   };
 
@@ -216,9 +224,28 @@ const AdminOrders = () => {
                       </Select>
                     </td>
                     <td className="py-3">
-                      <Button variant="ghost" size="icon" onClick={() => toggleFraud(order.id, order.is_fraud_flagged)} title={order.is_fraud_flagged ? "Remove fraud flag" : "Flag as suspicious"}>
-                        <AlertTriangle className={`h-4 w-4 ${order.is_fraud_flagged ? "text-destructive" : "text-muted-foreground"}`} />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => toggleFraud(order.id, order.is_fraud_flagged)} title={order.is_fraud_flagged ? "Remove fraud flag" : "Flag as suspicious"}>
+                          <AlertTriangle className={`h-4 w-4 ${order.is_fraud_flagged ? "text-destructive" : "text-muted-foreground"}`} />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" title="ডিলিট করুন">
+                              <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>অর্ডার ডিলিট করুন?</AlertDialogTitle>
+                              <AlertDialogDescription>এই অর্ডারটি ({order.order_id}) স্থায়ীভাবে মুছে ফেলা হবে। এটি পূর্বাবস্থায় ফেরানো যাবে না।</AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>বাতিল</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => deleteOrder(order.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">ডিলিট</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -236,9 +263,28 @@ const AdminOrders = () => {
                     <h4 className="mt-0.5 font-medium text-foreground text-sm">{order.customer_name}</h4>
                     <p className="text-xs text-muted-foreground">{order.customer_phone}</p>
                   </div>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => toggleFraud(order.id, order.is_fraud_flagged)}>
-                    <AlertTriangle className={`h-4 w-4 ${order.is_fraud_flagged ? "text-destructive" : "text-muted-foreground"}`} />
-                  </Button>
+                  <div className="flex items-center justify-between gap-2">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => toggleFraud(order.id, order.is_fraud_flagged)}>
+                      <AlertTriangle className={`h-4 w-4 ${order.is_fraud_flagged ? "text-destructive" : "text-muted-foreground"}`} />
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" title="ডিলিট করুন">
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>অর্ডার ডিলিট করুন?</AlertDialogTitle>
+                          <AlertDialogDescription>এই অর্ডারটি ({order.order_id}) স্থায়ীভাবে মুছে ফেলা হবে।</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>বাতিল</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => deleteOrder(order.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">ডিলিট</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </div>
                 
                 <div className="text-sm text-foreground">{order.product_title}</div>
