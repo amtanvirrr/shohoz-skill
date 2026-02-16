@@ -17,6 +17,8 @@ interface Quiz {
   negative_mark_value: number;
   is_published: boolean;
   duration_minutes: number;
+  price: number;
+  original_price: number | null;
 }
 
 interface Question {
@@ -38,7 +40,7 @@ const AdminQuizzes = () => {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Quiz | null>(null);
-  const [form, setForm] = useState({ title: "", description: "", negative_marking: false, negative_mark_value: "0.25", is_published: true, duration_minutes: "10" });
+  const [form, setForm] = useState({ title: "", description: "", negative_marking: false, negative_mark_value: "0.25", is_published: true, duration_minutes: "10", price: "0", original_price: "" });
 
   const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -70,13 +72,13 @@ const AdminQuizzes = () => {
   useEffect(() => { fetchQuizzes(); }, []);
 
   const resetForm = () => {
-    setForm({ title: "", description: "", negative_marking: false, negative_mark_value: "0.25", is_published: true, duration_minutes: "10" });
+    setForm({ title: "", description: "", negative_marking: false, negative_mark_value: "0.25", is_published: true, duration_minutes: "10", price: "0", original_price: "" });
     setEditing(null);
   };
 
   const openEdit = (quiz: Quiz) => {
     setEditing(quiz);
-    setForm({ title: quiz.title, description: quiz.description || "", negative_marking: quiz.negative_marking, negative_mark_value: String(quiz.negative_mark_value), is_published: quiz.is_published, duration_minutes: String(quiz.duration_minutes) });
+    setForm({ title: quiz.title, description: quiz.description || "", negative_marking: quiz.negative_marking, negative_mark_value: String(quiz.negative_mark_value), is_published: quiz.is_published, duration_minutes: String(quiz.duration_minutes), price: String(quiz.price), original_price: quiz.original_price ? String(quiz.original_price) : "" });
     setDialogOpen(true);
   };
 
@@ -89,6 +91,8 @@ const AdminQuizzes = () => {
       negative_mark_value: parseFloat(form.negative_mark_value),
       is_published: form.is_published,
       duration_minutes: parseInt(form.duration_minutes) || 10,
+      price: parseInt(form.price) || 0,
+      original_price: form.original_price ? parseInt(form.original_price) : null,
     };
 
     if (editing) {
@@ -169,6 +173,7 @@ const AdminQuizzes = () => {
             <p className="text-sm text-muted-foreground">
               {questions.length} টি প্রশ্ন • {selectedQuiz.duration_minutes} মিনিট
               {selectedQuiz.negative_marking && ` • নেগেটিভ মার্কিং (${selectedQuiz.negative_mark_value})`}
+              {selectedQuiz.price > 0 ? ` • ৳${selectedQuiz.price}` : " • ফ্রি"}
             </p>
           </div>
           <Dialog open={qDialogOpen} onOpenChange={(open) => { setQDialogOpen(open); if (!open) resetQForm(); }}>
@@ -245,12 +250,31 @@ const AdminQuizzes = () => {
         <h1 className="text-2xl font-bold text-foreground">Quizzes</h1>
         <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
           <DialogTrigger asChild><Button><Plus className="mr-2 h-4 w-4" /> Add Quiz</Button></DialogTrigger>
-          <DialogContent className="sm:max-w-lg">
+          <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader><DialogTitle>{editing ? "Edit" : "Add"} Quiz</DialogTitle></DialogHeader>
             <div className="space-y-4 pt-4">
               <div><Label>Title *</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="mt-1" placeholder="কুইজের শিরোনাম" /></div>
               <div><Label>Description</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="mt-1" rows={3} placeholder="কুইজের বিবরণ (ঐচ্ছিক)" /></div>
               <div><Label>সময়সীমা (মিনিট)</Label><Input type="number" min="1" value={form.duration_minutes} onChange={(e) => setForm({ ...form, duration_minutes: e.target.value })} className="mt-1" /></div>
+              
+              {/* Price fields */}
+              <div className="rounded-lg border border-border p-4 space-y-3">
+                <Label className="text-sm font-semibold">💰 মূল্য নির্ধারণ</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs">দাম (৳)</Label>
+                    <Input type="number" min="0" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="mt-1" placeholder="0 = ফ্রি" />
+                  </div>
+                  <div>
+                    <Label className="text-xs">আসল দাম (৳) - ঐচ্ছিক</Label>
+                    <Input type="number" min="0" value={form.original_price} onChange={(e) => setForm({ ...form, original_price: e.target.value })} className="mt-1" placeholder="ডিসকাউন্ট দেখাতে" />
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {parseInt(form.price) > 0 ? "⚠️ পেইড কুইজ - ইউজারদের পেমেন্ট করতে হবে এবং অ্যাডমিন অ্যাপ্রুভ করতে হবে।" : "✅ ফ্রি কুইজ - সবাই সরাসরি এক্সেস করতে পারবে।"}
+                </p>
+              </div>
+
               <div className="flex items-center justify-between">
                 <Label>Negative Marking</Label>
                 <Switch checked={form.negative_marking} onCheckedChange={(v) => setForm({ ...form, negative_marking: v })} />
@@ -280,6 +304,11 @@ const AdminQuizzes = () => {
                   <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {quiz.duration_minutes} মিনিট</span>
                   <span>{questionCounts[quiz.id] || 0} টি প্রশ্ন</span>
                   {quiz.negative_marking && <span className="text-destructive">নেগেটিভ মার্কিং ({quiz.negative_mark_value})</span>}
+                  {quiz.price > 0 ? (
+                    <span className="font-medium text-primary">৳{quiz.price}</span>
+                  ) : (
+                    <span className="text-green-600 font-medium">ফ্রি</span>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-2 ml-3">

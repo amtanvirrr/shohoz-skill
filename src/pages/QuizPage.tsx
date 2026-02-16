@@ -3,9 +3,13 @@ import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, XCircle, Clock, ArrowLeft, AlertTriangle, History, Trophy, Medal } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { CheckCircle, XCircle, Clock, ArrowLeft, AlertTriangle, History, Trophy, Medal, Lock, Smartphone } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { format } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
+import OrderSuccessDialog from "@/components/OrderSuccessDialog";
 
 interface QuizAttempt {
   id: string;
@@ -29,6 +33,8 @@ interface Quiz {
   negative_marking: boolean;
   negative_mark_value: number;
   duration_minutes: number;
+  price: number;
+  original_price: number | null;
 }
 
 interface Question {
@@ -42,8 +48,20 @@ interface Question {
   explanation: string | null;
 }
 
+interface MfsMethod {
+  id: string;
+  provider: string;
+  display_name: string;
+  phone_number: string;
+  qr_code_url: string | null;
+  mfs_type: string;
+  payment_instruction: string;
+  process_message: string;
+}
+
 const QuizPage = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const directQuizId = searchParams.get("id");
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
@@ -58,6 +76,15 @@ const QuizPage = () => {
   const [showLeaderboard, setShowLeaderboard] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [directQuizStarted, setDirectQuizStarted] = useState(false);
+
+  // Purchase state
+  const [quizOrderStatus, setQuizOrderStatus] = useState<Record<string, string>>({});
+  const [purchasingQuiz, setPurchasingQuiz] = useState<string | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState("bkash");
+  const [transactionId, setTransactionId] = useState("");
+  const [mfsMethods, setMfsMethods] = useState<MfsMethod[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [successDialog, setSuccessDialog] = useState<{ open: boolean; orderId: string; message?: string; isFree?: boolean } | null>(null);
 
   useEffect(() => {
     const fetchQuizzes = async () => {
@@ -88,6 +115,39 @@ const QuizPage = () => {
     };
     fetchQuizzes();
   }, [directQuizId]);
+
+  // Fetch MFS methods
+  useEffect(() => {
+    supabase.from("payment_methods").select("*").eq("is_active", true).order("sort_order").then(({ data }) => {
+      const methods = (data as MfsMethod[]) || [];
+      setMfsMethods(methods);
+      if (methods.length > 0) setPaymentMethod(methods[0].provider);
+    });
+  }, []);
+
+  // Fetch user's purchase status for paid quizzes
+  useEffect(() => {
+    if (!user || quizzes.length === 0) return;
+    const paidQuizIds = quizzes.filter(q => q.price > 0).map(q => q.id);
+    if (paidQuizIds.length === 0) return;
+
+    supabase.from("orders")
+      .select("product_id, status")
+      .eq("user_id", user.id)
+      .eq("product_type", "quiz" as any)
+      .in("product_id", paidQuizIds)
+      .not("status", "eq", "cancelled")
+      .order("created_at", { ascending: false })
+      .then(({ data }) => {
+        if (data) {
+          const statusMap: Record<string, string> = {};
+          data.forEach((o: any) => {
+            if (!statusMap[o.product_id]) statusMap[o.product_id] = o.status;
+          });
+          setQuizOrderStatus(statusMap);
+        }
+      });
+  }, [user, quizzes]);
 
   // Fetch user's past attempts
   useEffect(() => {
@@ -200,6 +260,104 @@ const QuizPage = () => {
       score = correct - wrong * (selectedQuiz?.negative_mark_value || 0);
     }
     return { correct, wrong, skipped, score };
+  };
+
+  // Handle quiz purchase
+  const handlePurchaseQuiz = async (quiz: Quiz) => {
+    if (!user) {
+      toast({ title: "লগইন করুন", description: "কুইজ কিনতে আগে লগইন করুন।", variant: "destructive" });
+      return;
+    }
+
+    // Free quiz: auto-approve
+    if (quiz.price === 0) {
+      const { data, error } = await supabase.from("orders").insert({
+        customer_name: user.user_metadata?.full_name || "User",
+        customer_phone: user.user_metadata?.phone || "",
+        customer_email: user.email,
+        product_type: "quiz" as any,
+        product_id: quiz.id,
+        product_title: quiz.title,
+        price: 0,
+        payment_method: "bkash" as any,
+        user_id: user.id,
+        status: "confirmed" as any,
+      }).select("order_id").single();
+      if (!error && data) {
+        setQuizOrderStatus(prev => ({ ...prev, [quiz.id]: "confirmed" }));
+        startQuiz(quiz);
+      }
+      return;
+    }
+
+    // Paid quiz: show payment form
+    setPurchasingQuiz(quiz.id);
+    setTransactionId("");
+  };
+
+  const submitPurchase = async (quiz: Quiz) => {
+    if (!user) return;
+    if (!transactionId.trim()) {
+      toast({ title: "Transaction ID দিন", description: "পেমেন্ট করার পর Transaction ID লিখুন", variant: "destructive" });
+      return;
+    }
+    setSubmitting(true);
+    const { data, error } = await supabase.from("orders").insert({
+      customer_name: user.user_metadata?.full_name || "User",
+      customer_phone: user.user_metadata?.phone || "",
+      customer_email: user.email,
+      product_type: "quiz" as any,
+      product_id: quiz.id,
+      product_title: quiz.title,
+      price: quiz.price,
+      payment_method: paymentMethod as any,
+      user_id: user.id,
+      transaction_id: transactionId.trim(),
+    }).select("order_id").single();
+    setSubmitting(false);
+
+    if (error) {
+      toast({ title: "ত্রুটি", description: error.message, variant: "destructive" });
+    } else if (data) {
+      setQuizOrderStatus(prev => ({ ...prev, [quiz.id]: "pending" }));
+      setPurchasingQuiz(null);
+      setSuccessDialog({ open: true, orderId: data.order_id, message: "পেমেন্ট যাচাই করা হলে কুইজে এক্সেস পাবেন।" });
+
+      supabase.functions.invoke("notify-order", {
+        body: {
+          orderId: data.order_id,
+          orderData: {
+            order_id: data.order_id,
+            customer_name: user.user_metadata?.full_name || "User",
+            customer_phone: user.user_metadata?.phone || "",
+            customer_email: user.email,
+            product_title: quiz.title,
+            product_type: "quiz",
+            price: quiz.price,
+            payment_method: paymentMethod,
+            transaction_id: transactionId.trim(),
+          },
+        },
+      });
+    }
+  };
+
+  const canAccessQuiz = (quiz: Quiz): boolean => {
+    if (quiz.price === 0) return true;
+    const status = quizOrderStatus[quiz.id];
+    return status === "confirmed" || status === "delivered";
+  };
+
+  const getQuizStatusBadge = (quiz: Quiz) => {
+    if (quiz.price === 0) return null;
+    const status = quizOrderStatus[quiz.id];
+    if (status === "confirmed" || status === "delivered") {
+      return <span className="rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-medium text-green-600">✅ কেনা হয়েছে</span>;
+    }
+    if (status === "pending") {
+      return <span className="rounded-full bg-yellow-500/10 px-2 py-0.5 text-xs font-medium text-yellow-600">⏳ যাচাই অপেক্ষমাণ</span>;
+    }
+    return null;
   };
 
   // ── Quiz taking view ──
@@ -364,6 +522,8 @@ const QuizPage = () => {
     );
   }
 
+  const selectedMfs = mfsMethods.find(m => m.provider === paymentMethod);
+
   // ── Quiz list view ──
   return (
     <div className="py-16">
@@ -375,79 +535,164 @@ const QuizPage = () => {
           <p className="mt-10 text-center text-muted-foreground">এখন কোনো কুইজ পাওয়া যাচ্ছে না।</p>
         ) : (
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {quizzes.map((quiz) => (
-              <div key={quiz.id} className="rounded-xl border border-border bg-card p-6 transition-shadow hover:shadow-md">
-                <h3 className="font-display text-lg font-semibold text-foreground">{quiz.title}</h3>
-                {quiz.description && <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{quiz.description}</p>}
-                <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {quiz.duration_minutes} মিনিট</span>
-                  <span>{questionCounts[quiz.id] || 0} টি প্রশ্ন</span>
-                </div>
-                {quiz.negative_marking && (
-                  <p className="mt-2 flex items-center gap-1 text-xs text-destructive">
-                    <AlertTriangle className="h-3.5 w-3.5" /> নেগেটিভ মার্কিং ({quiz.negative_mark_value})
-                  </p>
-                )}
-                <div className="mt-4 flex gap-2">
-                  <Button onClick={() => startQuiz(quiz)} className="flex-1">কুইজ শুরু করুন</Button>
-                  <Button variant="outline" size="icon" onClick={() => fetchLeaderboard(quiz.id)} title="লিডারবোর্ড">
-                    <Trophy className="h-4 w-4" />
-                  </Button>
-                </div>
+            {quizzes.map((quiz) => {
+              const isPaid = quiz.price > 0;
+              const hasAccess = canAccessQuiz(quiz);
+              const statusBadge = getQuizStatusBadge(quiz);
+              const orderSt = quizOrderStatus[quiz.id];
 
-                {/* Leaderboard */}
-                {showLeaderboard === quiz.id && leaderboard[quiz.id] && (
-                  <div className="mt-4 border-t border-border pt-3">
-                    <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-foreground">
-                      <Trophy className="h-3.5 w-3.5 text-primary" /> টপ স্কোরার
-                    </p>
-                    {leaderboard[quiz.id].length === 0 ? (
-                      <p className="text-xs text-muted-foreground">এখনো কেউ অ্যাটেম্পট করেনি।</p>
+              return (
+                <div key={quiz.id} className="rounded-xl border border-border bg-card p-6 transition-shadow hover:shadow-md">
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="font-display text-lg font-semibold text-foreground">{quiz.title}</h3>
+                    {statusBadge}
+                  </div>
+                  {quiz.description && <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{quiz.description}</p>}
+                  <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {quiz.duration_minutes} মিনিট</span>
+                    <span>{questionCounts[quiz.id] || 0} টি প্রশ্ন</span>
+                  </div>
+
+                  {/* Pricing */}
+                  <div className="mt-3">
+                    {isPaid ? (
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg font-bold text-primary">৳{quiz.price}</span>
+                        {quiz.original_price && quiz.original_price > quiz.price && (
+                          <span className="text-sm text-muted-foreground line-through">৳{quiz.original_price}</span>
+                        )}
+                      </div>
                     ) : (
-                      <div className="space-y-1.5">
-                        {leaderboard[quiz.id].map((entry, idx) => (
-                          <div key={entry.user_id} className={`flex items-center gap-2 rounded-md px-3 py-2 text-xs ${idx < 3 ? "bg-primary/5" : "bg-muted/50"}`}>
-                            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold">
-                              {idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `#${idx + 1}`}
+                      <span className="inline-block rounded-full bg-green-500/10 px-3 py-1 text-sm font-semibold text-green-600">ফ্রি</span>
+                    )}
+                  </div>
+
+                  {quiz.negative_marking && (
+                    <p className="mt-2 flex items-center gap-1 text-xs text-destructive">
+                      <AlertTriangle className="h-3.5 w-3.5" /> নেগেটিভ মার্কিং ({quiz.negative_mark_value})
+                    </p>
+                  )}
+
+                  {/* Action area */}
+                  <div className="mt-4">
+                    {/* Free or already purchased */}
+                    {hasAccess ? (
+                      <div className="flex gap-2">
+                        <Button onClick={() => startQuiz(quiz)} className="flex-1">কুইজ শুরু করুন</Button>
+                        <Button variant="outline" size="icon" onClick={() => fetchLeaderboard(quiz.id)} title="লিডারবোর্ড">
+                          <Trophy className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : orderSt === "pending" ? (
+                      <Button disabled className="w-full" variant="outline">
+                        ⏳ পেমেন্ট যাচাই অপেক্ষমাণ
+                      </Button>
+                    ) : purchasingQuiz === quiz.id ? (
+                      /* Payment form */
+                      <div className="space-y-3 rounded-lg border border-border p-3">
+                        <div>
+                          <Label className="text-xs">পেমেন্ট মেথড</Label>
+                          <div className="mt-1 flex flex-wrap gap-2">
+                            {mfsMethods.map((m) => (
+                              <button
+                                key={m.id}
+                                onClick={() => setPaymentMethod(m.provider)}
+                                className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${paymentMethod === m.provider ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-primary/40"}`}
+                              >
+                                {m.display_name}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        {selectedMfs && (
+                          <div className="rounded-md bg-muted/50 p-2 text-xs text-muted-foreground">
+                            <p><Smartphone className="mr-1 inline h-3 w-3" /> {selectedMfs.mfs_type}: <strong>{selectedMfs.phone_number}</strong></p>
+                            {selectedMfs.payment_instruction && <p className="mt-1">{selectedMfs.payment_instruction}</p>}
+                          </div>
+                        )}
+                        <div>
+                          <Label className="text-xs">Transaction ID *</Label>
+                          <Input value={transactionId} onChange={(e) => setTransactionId(e.target.value)} placeholder="Transaction ID" className="mt-1" />
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline" onClick={() => setPurchasingQuiz(null)} className="flex-1">বাতিল</Button>
+                          <Button size="sm" onClick={() => submitPurchase(quiz)} disabled={submitting} className="flex-1">
+                            {submitting ? "..." : "জমা দিন"}
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <Button onClick={() => handlePurchaseQuiz(quiz)} className="w-full">
+                        <Lock className="mr-2 h-4 w-4" /> ৳{quiz.price} দিয়ে কিনুন
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* Leaderboard */}
+                  {showLeaderboard === quiz.id && leaderboard[quiz.id] && (
+                    <div className="mt-4 border-t border-border pt-3">
+                      <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                        <Trophy className="h-3.5 w-3.5 text-primary" /> টপ স্কোরার
+                      </p>
+                      {leaderboard[quiz.id].length === 0 ? (
+                        <p className="text-xs text-muted-foreground">এখনো কেউ অ্যাটেম্পট করেনি।</p>
+                      ) : (
+                        <div className="space-y-1.5">
+                          {leaderboard[quiz.id].map((entry, idx) => (
+                            <div key={entry.user_id} className={`flex items-center gap-2 rounded-md px-3 py-2 text-xs ${idx < 3 ? "bg-primary/5" : "bg-muted/50"}`}>
+                              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold">
+                                {idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `#${idx + 1}`}
+                              </span>
+                              <span className="flex-1 truncate font-medium text-foreground">
+                                {entry.full_name}
+                                {user && entry.user_id === user.id && <span className="ml-1 text-primary">(আপনি)</span>}
+                              </span>
+                              <span className="font-bold text-primary">{entry.best_score}</span>
+                              <span className="text-muted-foreground">({entry.attempts_count}×)</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Attempt History */}
+                  {user && attempts[quiz.id] && attempts[quiz.id].length > 0 && (
+                    <div className="mt-4 border-t border-border pt-3">
+                      <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+                        <History className="h-3.5 w-3.5" /> আগের অ্যাটেম্পট ({attempts[quiz.id].length})
+                      </p>
+                      <div className="max-h-32 space-y-1.5 overflow-y-auto">
+                        {attempts[quiz.id].slice(0, 5).map((att, idx) => (
+                          <div key={att.id} className="flex items-center justify-between rounded-md bg-muted/50 px-3 py-1.5 text-xs">
+                            <span className="text-muted-foreground">
+                              #{attempts[quiz.id].length - idx} · {format(new Date(att.created_at), "dd MMM yyyy, hh:mm a")}
                             </span>
-                            <span className="flex-1 truncate font-medium text-foreground">
-                              {entry.full_name}
-                              {user && entry.user_id === user.id && <span className="ml-1 text-primary">(আপনি)</span>}
+                            <span className={`font-bold ${att.score >= att.total_questions * 0.5 ? "text-success" : "text-destructive"}`}>
+                              {att.score}/{att.total_questions}
                             </span>
-                            <span className="font-bold text-primary">{entry.best_score}</span>
-                            <span className="text-muted-foreground">({entry.attempts_count}×)</span>
                           </div>
                         ))}
                       </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Attempt History */}
-                {user && attempts[quiz.id] && attempts[quiz.id].length > 0 && (
-                  <div className="mt-4 border-t border-border pt-3">
-                    <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
-                      <History className="h-3.5 w-3.5" /> আগের অ্যাটেম্পট ({attempts[quiz.id].length})
-                    </p>
-                    <div className="max-h-32 space-y-1.5 overflow-y-auto">
-                      {attempts[quiz.id].slice(0, 5).map((att, idx) => (
-                        <div key={att.id} className="flex items-center justify-between rounded-md bg-muted/50 px-3 py-1.5 text-xs">
-                          <span className="text-muted-foreground">
-                            #{attempts[quiz.id].length - idx} · {format(new Date(att.created_at), "dd MMM yyyy, hh:mm a")}
-                          </span>
-                          <span className={`font-bold ${att.score >= att.total_questions * 0.5 ? "text-success" : "text-destructive"}`}>
-                            {att.score}/{att.total_questions}
-                          </span>
-                        </div>
-                      ))}
                     </div>
-                  </div>
-                )}
-              </div>
-            ))}
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
+
+      {successDialog && (
+        <OrderSuccessDialog
+          open={successDialog.open}
+          onClose={() => setSuccessDialog(null)}
+          orderId={successDialog.orderId}
+          productTitle="কুইজ"
+          message={successDialog.message}
+          isFree={successDialog.isFree}
+        />
+      )}
     </div>
   );
 };
