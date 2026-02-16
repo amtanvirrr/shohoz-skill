@@ -443,13 +443,13 @@ const AdminOrders = () => {
                       </Select>
                     </td>
                     <td className="py-3 pr-3 text-center">
-                      {order.notes ? (
-                        <button onClick={() => { setDetailOrder(order); setEditNotes(order.notes || ""); }} title={order.notes} className="cursor-pointer">
+                      <button onClick={() => { setDetailOrder(order); setEditNotes(order.notes || ""); }} title={order.notes || "নোট যোগ করুন"} className="cursor-pointer">
+                        {order.notes ? (
                           <StickyNote className="h-4 w-4 text-primary mx-auto hover:text-primary/70 transition-colors" />
-                        </button>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
-                      )}
+                        ) : (
+                          <StickyNote className="h-4 w-4 text-muted-foreground mx-auto hover:text-primary transition-colors" />
+                        )}
+                      </button>
                     </td>
                     <td className="py-3">
                       <div className="flex items-center gap-1">
