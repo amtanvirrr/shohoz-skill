@@ -87,6 +87,7 @@ const AdminOrders = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterPayment, setFilterPayment] = useState<string>("all");
+  const [filterProductType, setFilterProductType] = useState<string>("all");
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
 
@@ -117,6 +118,9 @@ const AdminOrders = () => {
     if (filterPayment !== "all") {
       result = result.filter((o) => o.payment_method === filterPayment);
     }
+    if (filterProductType !== "all") {
+      result = result.filter((o) => o.product_type === filterProductType);
+    }
     if (dateFrom) {
       const fromStart = new Date(dateFrom);
       fromStart.setHours(0, 0, 0, 0);
@@ -140,10 +144,10 @@ const AdminOrders = () => {
       );
     }
     return result;
-  }, [orders, searchQuery, filterStatus, filterPayment, dateFrom, dateTo]);
+  }, [orders, searchQuery, filterStatus, filterPayment, filterProductType, dateFrom, dateTo]);
 
-  const hasActiveFilters = searchQuery || filterStatus !== "all" || filterPayment !== "all" || dateFrom || dateTo;
-  const clearFilters = () => { setSearchQuery(""); setFilterStatus("all"); setFilterPayment("all"); setDateFrom(undefined); setDateTo(undefined); setCurrentPage(1); };
+  const hasActiveFilters = searchQuery || filterStatus !== "all" || filterPayment !== "all" || filterProductType !== "all" || dateFrom || dateTo;
+  const clearFilters = () => { setSearchQuery(""); setFilterStatus("all"); setFilterPayment("all"); setFilterProductType("all"); setDateFrom(undefined); setDateTo(undefined); setCurrentPage(1); };
 
   // Pagination computed
   const totalPages = Math.ceil(filteredOrders.length / pageSize);
@@ -154,7 +158,7 @@ const AdminOrders = () => {
 
   // Reset page when filters change
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { setCurrentPage(1); }, [searchQuery, filterStatus, filterPayment, dateFrom, dateTo]);
+  useEffect(() => { setCurrentPage(1); }, [searchQuery, filterStatus, filterPayment, filterProductType, dateFrom, dateTo]);
 
   const updateStatus = async (id: string, status: string) => {
     const { error } = await supabase.from("orders").update({ status: status as any }).eq("id", id);
@@ -292,6 +296,15 @@ const AdminOrders = () => {
               {["cod", "bkash", "nagad", "rocket", "upay"].map((p) => (
                 <SelectItem key={p} value={p} className="uppercase">{p}</SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+          <Select value={filterProductType} onValueChange={setFilterProductType}>
+            <SelectTrigger className="h-9 w-36"><SelectValue placeholder="প্রোডাক্ট টাইপ" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">সব টাইপ</SelectItem>
+              <SelectItem value="book">📚 বই</SelectItem>
+              <SelectItem value="course">🎓 কোর্স</SelectItem>
+              <SelectItem value="quiz">📝 কুইজ</SelectItem>
             </SelectContent>
           </Select>
           <Popover>
