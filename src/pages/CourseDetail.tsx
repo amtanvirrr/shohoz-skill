@@ -80,7 +80,7 @@ const CourseDetail = () => {
   const [transactionId, setTransactionId] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [reviews, setReviews] = useState<DbReview[]>([]);
-  const [hasPurchased, setHasPurchased] = useState(false);
+  const [orderStatus, setOrderStatus] = useState<string | null>(null);
   const [reviewForm, setReviewForm] = useState({ rating: 5, comment: "" });
   const [submittingReview, setSubmittingReview] = useState(false);
   const [mfsMethods, setMfsMethods] = useState<MfsMethod[]>([]);
@@ -133,13 +133,18 @@ const CourseDetail = () => {
   useEffect(() => {
     if (!user || !id) return;
     supabase.from("orders")
-      .select("id")
+      .select("status")
       .eq("user_id", user.id)
       .eq("product_id", id)
       .eq("product_type", "course")
-      .in("status", ["confirmed", "delivered"])
+      .not("status", "eq", "cancelled")
+      .order("created_at", { ascending: false })
       .limit(1)
-      .then(({ data }) => setHasPurchased((data || []).length > 0));
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          setOrderStatus(data[0].status);
+        }
+      });
   }, [user, id]);
 
   if (loading) return <div className="flex min-h-[50vh] items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>;
@@ -212,6 +217,7 @@ const CourseDetail = () => {
       }, { em: user.email || undefined });
       toast({ title: "Purchase Initiated! 🎉", description: `Order ID: ${data.order_id}. পেমেন্ট ভেরিফিকেশনের পর কোর্স অ্যাক্সেস পাবেন।` });
       setTransactionId("");
+      setOrderStatus("pending");
     }
   };
 
@@ -359,7 +365,7 @@ const CourseDetail = () => {
               <h2 className="text-2xl font-bold text-foreground">রিভিউ ({reviews.length})</h2>
 
               {/* Review Form for purchased users */}
-              {hasPurchased && (
+              {orderStatus && ["confirmed", "delivered"].includes(orderStatus) && (
                 <div className="mt-4 rounded-xl border border-border bg-card p-5">
                   <h3 className="text-sm font-semibold text-foreground">আপনার রিভিউ দিন</h3>
                   <div className="mt-3 flex items-center gap-1">
@@ -425,10 +431,18 @@ const CourseDetail = () => {
                 </p>
               )}
 
-              {hasPurchased ? (
+              {orderStatus && ["confirmed", "delivered"].includes(orderStatus) ? (
                 <Button size="lg" className="mt-6 w-full" asChild>
                   <Link to={`/enrolled/${course.id}`}>কোর্সে যান →</Link>
                 </Button>
+              ) : orderStatus === "pending" ? (
+                <div className="mt-6">
+                  <div className="rounded-lg bg-yellow-500/10 p-4 text-center">
+                    <Clock className="mx-auto h-6 w-6 text-yellow-500" />
+                    <p className="mt-2 text-sm font-medium text-foreground">পেমেন্ট যাচাই অপেক্ষমাণ</p>
+                    <p className="mt-1 text-xs text-muted-foreground">অ্যাডমিন পেমেন্ট যাচাই করার পর আপনি কোর্সটি অ্যাক্সেস করতে পারবেন।</p>
+                  </div>
+                </div>
               ) : course.price === 0 ? (
                 <Button
                   size="lg"
@@ -467,7 +481,7 @@ const CourseDetail = () => {
                         order_id: data.order_id,
                       });
                       toast({ title: "এনরোল সফল! 🎉", description: "আপনি এখন কোর্সটি অ্যাক্সেস করতে পারবেন।" });
-                      setHasPurchased(true);
+                      setOrderStatus("confirmed");
                     }
                   }}
                 >
