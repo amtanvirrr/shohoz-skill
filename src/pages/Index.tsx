@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 import HeroBanner from "@/components/HeroBanner";
 
@@ -50,6 +51,7 @@ interface OrderInfo {
 const Index = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { settings } = useSiteSettings();
   const [trackQuery, setTrackQuery] = useState("");
   const [trackResult, setTrackResult] = useState<any>(null);
   const [dbBooks, setDbBooks] = useState<DbBook[]>([]);
@@ -58,9 +60,42 @@ const Index = () => {
   const [bookOrderMap, setBookOrderMap] = useState<Record<string, OrderInfo>>({});
   const [courseOrderMap, setCourseOrderMap] = useState<Record<string, string>>({});
 
+  // Fetch featured products based on settings
   useEffect(() => {
-    supabase.from("books").select("id, title, author, price, original_price, image_url, category, book_type").eq("is_published", true).limit(3).then(({ data }) => setDbBooks(data || []));
-    supabase.from("courses").select("id, title, instructor, price, original_price, image_url, category, duration").eq("is_published", true).limit(3).then(({ data }) => setDbCourses(data || []));
+    const featuredCourseIds = settings.featured_course_ids ? settings.featured_course_ids.split(",").filter(Boolean) : [];
+    const featuredBookIds = settings.featured_book_ids ? settings.featured_book_ids.split(",").filter(Boolean) : [];
+
+    // Courses
+    if (featuredCourseIds.length > 0) {
+      supabase.from("courses")
+        .select("id, title, instructor, price, original_price, image_url, category, duration, slug")
+        .eq("is_published", true)
+        .in("id", featuredCourseIds)
+        .then(({ data }) => setDbCourses(data || []));
+    } else {
+      supabase.from("courses")
+        .select("id, title, instructor, price, original_price, image_url, category, duration, slug")
+        .eq("is_published", true)
+        .limit(3)
+        .then(({ data }) => setDbCourses(data || []));
+    }
+
+    // Books
+    if (featuredBookIds.length > 0) {
+      supabase.from("books")
+        .select("id, title, author, price, original_price, image_url, category, book_type, slug")
+        .eq("is_published", true)
+        .in("id", featuredBookIds)
+        .then(({ data }) => setDbBooks(data || []));
+    } else {
+      supabase.from("books")
+        .select("id, title, author, price, original_price, image_url, category, book_type, slug")
+        .eq("is_published", true)
+        .limit(3)
+        .then(({ data }) => setDbBooks(data || []));
+    }
+
+    // Reviews (always latest)
     supabase.from("reviews").select("id, reviewer_name, rating, comment, course_id, courses(title)").eq("is_active", true).order("created_at", { ascending: false }).limit(8).then(({ data }) => {
       const mapped = (data || []).map((r: any) => ({
         id: r.id, reviewer_name: r.reviewer_name, rating: r.rating, comment: r.comment,
@@ -68,11 +103,10 @@ const Index = () => {
       }));
       setDbReviews(mapped);
     });
-  }, []);
+  }, [settings.featured_course_ids, settings.featured_book_ids]);
 
   useEffect(() => {
     if (!user) return;
-    // Fetch book orders
     supabase.from("orders").select("product_id, status, product_type")
       .eq("user_id", user.id).not("status", "eq", "cancelled")
       .then(({ data }) => {
@@ -166,11 +200,11 @@ const Index = () => {
   };
 
   const statusLabels: Record<string, string> = {
-    pending: "⏳ Pending",
-    confirmed: "✅ Confirmed",
-    shipped: "🚚 Shipped",
-    delivered: "📦 Delivered",
-    cancelled: "❌ Cancelled",
+    pending: "⏳ পেন্ডিং",
+    confirmed: "✅ কনফার্মড",
+    shipped: "🚚 শিপড",
+    delivered: "📦 ডেলিভারড",
+    cancelled: "❌ বাতিল",
   };
 
   return (
@@ -183,11 +217,11 @@ const Index = () => {
         <div className="container mx-auto px-4">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-foreground sm:text-3xl">Featured Courses</h2>
-              <p className="mt-1 text-sm text-muted-foreground sm:mt-2 sm:text-base">ক্যারিয়ার গড়তে সেরা কোর্সগুলো</p>
+              <h2 className="text-2xl font-bold text-foreground sm:text-3xl">{settings.homepage_courses_title || "ফিচার্ড কোর্স"}</h2>
+              <p className="mt-1 text-sm text-muted-foreground sm:mt-2 sm:text-base">{settings.homepage_courses_subtitle || "ক্যারিয়ার গড়তে সেরা কোর্সগুলো"}</p>
             </div>
             <Link to="/courses" className="hidden items-center gap-1 text-sm font-medium text-primary hover:underline sm:flex">
-              View All <ArrowRight className="h-4 w-4" />
+              সব দেখুন <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
           {dbCourses.length > 0 ? (
@@ -224,10 +258,10 @@ const Index = () => {
               ))}
             </div>
           ) : (
-            <p className="mt-8 text-center text-muted-foreground">No courses available yet. Check back soon!</p>
+            <p className="mt-8 text-center text-muted-foreground">এখনো কোন কোর্স নেই। শীঘ্রই আসছে!</p>
           )}
           <Link to="/courses" className="mt-4 flex items-center justify-center gap-1 text-sm font-medium text-primary hover:underline sm:hidden">
-            View All Courses <ArrowRight className="h-4 w-4" />
+            সব কোর্স দেখুন <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       </section>
@@ -237,10 +271,10 @@ const Index = () => {
         <div className="container mx-auto px-4">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-foreground sm:text-3xl">Featured Books</h2>
-              <p className="mt-1 text-sm text-muted-foreground sm:mt-2 sm:text-base">নিজেকে এক ধাপ এগিয়ে নিন</p>
+              <h2 className="text-2xl font-bold text-foreground sm:text-3xl">{settings.homepage_books_title || "ফিচার্ড বই"}</h2>
+              <p className="mt-1 text-sm text-muted-foreground sm:mt-2 sm:text-base">{settings.homepage_books_subtitle || "নিজেকে এক ধাপ এগিয়ে নিন"}</p>
             </div>
-            <Link to="/books" className="hidden items-center gap-1 text-sm font-medium text-primary hover:underline sm:flex">View All <ArrowRight className="h-4 w-4" /></Link>
+            <Link to="/books" className="hidden items-center gap-1 text-sm font-medium text-primary hover:underline sm:flex">সব দেখুন <ArrowRight className="h-4 w-4" /></Link>
           </div>
           {dbBooks.length > 0 ? (
             <div className="mt-6 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 sm:gap-6 sm:mt-8">
@@ -279,7 +313,7 @@ const Index = () => {
               ))}
             </div>
           ) : (
-            <p className="mt-8 text-center text-muted-foreground">No books available yet. Check back soon!</p>
+            <p className="mt-8 text-center text-muted-foreground">এখনো কোন বই নেই। শীঘ্রই আসছে!</p>
           )}
         </div>
       </section>
@@ -288,8 +322,8 @@ const Index = () => {
       {dbReviews.length > 0 && (
       <section className="py-10 sm:py-16 lg:py-20">
           <div className="container mx-auto px-4">
-            <h2 className="text-center text-2xl font-bold text-foreground sm:text-3xl">What Our Students Say</h2>
-            <p className="mx-auto mt-2 text-center text-muted-foreground">আমাদের শিক্ষার্থীদের মতামত</p>
+            <h2 className="text-center text-2xl font-bold text-foreground sm:text-3xl">{settings.homepage_reviews_title || "আমাদের শিক্ষার্থীরা যা বলেন"}</h2>
+            <p className="mx-auto mt-2 text-center text-muted-foreground">{settings.homepage_reviews_subtitle || "আমাদের শিক্ষার্থীদের মতামত"}</p>
             <div className="mt-6 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 sm:mt-10 sm:gap-6">
               {dbReviews.map((review) => (
                 <div key={review.id} className="rounded-xl border border-border bg-card p-5 shadow-sm">
@@ -315,21 +349,21 @@ const Index = () => {
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-lg text-center">
             <Search className="mx-auto h-10 w-10 text-primary" />
-            <h2 className="mt-4 text-2xl font-bold text-foreground">Track Your Order</h2>
-            <p className="mt-2 text-sm text-muted-foreground">আপনার অর্ডারের বর্তমান অবস্থা জানুন</p>
+            <h2 className="mt-4 text-2xl font-bold text-foreground">{settings.homepage_track_title || "আপনার অর্ডার ট্র্যাক করুন"}</h2>
+            <p className="mt-2 text-sm text-muted-foreground">{settings.homepage_track_subtitle || "আপনার অর্ডারের বর্তমান অবস্থা জানুন"}</p>
             <div className="mt-6 flex gap-3">
               <Input placeholder="অর্ডার আইডি, ফোন, নাম, ইমেইল বা ট্রানজেকশন আইডি" value={trackQuery} onChange={(e) => setTrackQuery(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleTrack()} />
-              <Button className="shrink-0" onClick={handleTrack}>Track</Button>
+              <Button className="shrink-0" onClick={handleTrack}>ট্র্যাক করুন</Button>
             </div>
             <p className="mt-2 text-xs text-muted-foreground">যেকোনো তথ্য দিয়ে অর্ডার খুঁজুন</p>
             {trackResult && (
               <div className="mt-4 space-y-3">
                 {trackResult.map((order: any, idx: number) => (
                   <div key={idx} className="rounded-lg border border-border bg-card p-4 text-left">
-                    <p className="text-sm"><span className="font-medium">Order:</span> {order.order_id}</p>
-                    <p className="text-sm"><span className="font-medium">Product:</span> {order.product_title}</p>
-                    <p className="text-sm"><span className="font-medium">Status:</span> {statusLabels[order.status] || order.status}</p>
-                    <p className="text-xs text-muted-foreground mt-1">Placed: {new Date(order.created_at).toLocaleDateString()}</p>
+                    <p className="text-sm"><span className="font-medium">অর্ডার:</span> {order.order_id}</p>
+                    <p className="text-sm"><span className="font-medium">প্রোডাক্ট:</span> {order.product_title}</p>
+                    <p className="text-sm"><span className="font-medium">স্ট্যাটাস:</span> {statusLabels[order.status] || order.status}</p>
+                    <p className="text-xs text-muted-foreground mt-1">অর্ডারের তারিখ: {new Date(order.created_at).toLocaleDateString("bn-BD")}</p>
                   </div>
                 ))}
               </div>

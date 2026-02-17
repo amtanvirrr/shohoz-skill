@@ -18,6 +18,16 @@ export interface SiteSettings {
   about_content: string;
   contact_page_title: string;
   contact_page_subtitle: string;
+  homepage_courses_title: string;
+  homepage_courses_subtitle: string;
+  homepage_books_title: string;
+  homepage_books_subtitle: string;
+  homepage_reviews_title: string;
+  homepage_reviews_subtitle: string;
+  homepage_track_title: string;
+  homepage_track_subtitle: string;
+  featured_course_ids: string;
+  featured_book_ids: string;
 }
 
 const defaults: SiteSettings = {
@@ -37,6 +47,16 @@ const defaults: SiteSettings = {
   about_content: "",
   contact_page_title: "",
   contact_page_subtitle: "",
+  homepage_courses_title: "",
+  homepage_courses_subtitle: "",
+  homepage_books_title: "",
+  homepage_books_subtitle: "",
+  homepage_reviews_title: "",
+  homepage_reviews_subtitle: "",
+  homepage_track_title: "",
+  homepage_track_subtitle: "",
+  featured_course_ids: "",
+  featured_book_ids: "",
 };
 
 const SETTING_KEYS = Object.keys(defaults) as (keyof SiteSettings)[];
