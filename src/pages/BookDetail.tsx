@@ -117,8 +117,8 @@ const BookDetail = () => {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-foreground">Book not found</h2>
-          <Button className="mt-4" asChild><Link to="/books">Back to Books</Link></Button>
+          <h2 className="text-2xl font-bold text-foreground">বইটি পাওয়া যায়নি</h2>
+          <Button className="mt-4" asChild><Link to="/books">বইয়ের তালিকায় ফিরে যান</Link></Button>
         </div>
       </div>
     );
@@ -133,11 +133,11 @@ const BookDetail = () => {
   const handleOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!order.name || !order.phone) {
-      toast({ title: "Please fill all required fields", variant: "destructive" });
+      toast({ title: "সকল প্রয়োজনীয় তথ্য পূরণ করুন", variant: "destructive" });
       return;
     }
     if (isPhysical && !order.address) {
-      toast({ title: "Please enter your delivery address", variant: "destructive" });
+      toast({ title: "ডেলিভারি ঠিকানা লিখুন", variant: "destructive" });
       return;
     }
     if (isPhysical && !selectedZone) {
@@ -168,7 +168,7 @@ const BookDetail = () => {
     setSubmitting(false);
 
     if (error) {
-      toast({ title: "Order failed", description: error.message, variant: "destructive" });
+      toast({ title: "অর্ডার ব্যর্থ হয়েছে", description: error.message, variant: "destructive" });
     } else {
       // Send admin notification email (fire-and-forget)
       supabase.functions.invoke("notify-order", {
@@ -208,7 +208,7 @@ const BookDetail = () => {
     <div className="py-10 lg:py-16">
       <div className="container mx-auto px-4">
         <Link to="/books" className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary">
-          <ArrowLeft className="h-4 w-4" /> Back to Books
+          <ArrowLeft className="h-4 w-4" /> বইয়ের তালিকায় ফিরে যান
         </Link>
 
         <div className="mt-4 grid gap-10 lg:grid-cols-2">
@@ -228,7 +228,7 @@ const BookDetail = () => {
               </span>
             </div>
             <h1 className="mt-3 text-3xl font-bold text-foreground lg:text-4xl">{book.title}</h1>
-            <p className="mt-2 text-muted-foreground">by {book.author}</p>
+            <p className="mt-2 text-muted-foreground">লেখক: {book.author}</p>
 
             <div className="mt-4 flex items-baseline gap-3">
               {book.price === 0 ? (
@@ -311,7 +311,7 @@ const BookDetail = () => {
                     }).select("order_id").single();
                     setSubmitting(false);
                     if (error) {
-                      toast({ title: "Failed", description: error.message, variant: "destructive" });
+                      toast({ title: "ব্যর্থ হয়েছে", description: error.message, variant: "destructive" });
                     } else {
                       trackEvent("Purchase", {
                         content_name: book.title,
@@ -326,24 +326,24 @@ const BookDetail = () => {
                     }
                   }}
                 >
-                  {submitting ? "Processing..." : "ফ্রিতে নিন"}
+                  {submitting ? "প্রসেস হচ্ছে..." : "ফ্রিতে নিন"}
                 </Button>
               </div>
             ) : (
               <div className="mt-8 rounded-xl border border-border bg-card p-6">
                 <h3 className="flex items-center gap-2 font-display text-lg font-semibold text-foreground">
-                  <ShoppingBag className="h-5 w-5 text-primary" /> {isPhysical ? "Order Now" : "Buy Now"}
+                  <ShoppingBag className="h-5 w-5 text-primary" /> {isPhysical ? "এখনই অর্ডার করুন" : "এখনই কিনুন"}
                 </h3>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {isPhysical ? "Cash on Delivery — সারা বাংলাদেশে ডেলিভারি" : "বিকাশ / নগদ পেমেন্টে ইবুক পান"}
+                  {isPhysical ? "ক্যাশ অন ডেলিভারি — সারা বাংলাদেশে ডেলিভারি" : "বিকাশ / নগদ পেমেন্টে ইবুক পান"}
                 </p>
 
                 <form onSubmit={handleOrder} className="mt-5 space-y-4">
-                  <div><Label htmlFor="fullname">Full Name *</Label><Input id="fullname" value={order.name} onChange={(e) => setOrder({ ...order, name: e.target.value })} className="mt-1" /></div>
-                  <div><Label htmlFor="phone">Phone Number *</Label><Input id="phone" value={order.phone} onChange={(e) => setOrder({ ...order, phone: e.target.value })} className="mt-1" /></div>
-                  <div><Label htmlFor="email">Email (optional)</Label><Input id="email" type="email" value={order.email} onChange={(e) => setOrder({ ...order, email: e.target.value })} className="mt-1" /></div>
+                  <div><Label htmlFor="fullname">পূর্ণ নাম *</Label><Input id="fullname" value={order.name} onChange={(e) => setOrder({ ...order, name: e.target.value })} className="mt-1" /></div>
+                  <div><Label htmlFor="phone">ফোন নম্বর *</Label><Input id="phone" value={order.phone} onChange={(e) => setOrder({ ...order, phone: e.target.value })} className="mt-1" /></div>
+                  <div><Label htmlFor="email">ইমেইল (ঐচ্ছিক)</Label><Input id="email" type="email" value={order.email} onChange={(e) => setOrder({ ...order, email: e.target.value })} className="mt-1" /></div>
                   {isPhysical && (
-                    <div><Label htmlFor="address">Full Address *</Label><Textarea id="address" rows={3} value={order.address} onChange={(e) => setOrder({ ...order, address: e.target.value })} className="mt-1" /></div>
+                    <div><Label htmlFor="address">সম্পূর্ণ ঠিকানা *</Label><Textarea id="address" rows={3} value={order.address} onChange={(e) => setOrder({ ...order, address: e.target.value })} className="mt-1" /></div>
                   )}
 
                   {/* Shipping Zone Selector for physical books */}
@@ -391,10 +391,10 @@ const BookDetail = () => {
                   )}
 
                   {isPhysical ? (
-                    <div className="rounded-lg bg-secondary p-3 text-sm text-muted-foreground">💵 Payment: <span className="font-medium text-foreground">Cash on Delivery</span></div>
+                    <div className="rounded-lg bg-secondary p-3 text-sm text-muted-foreground">💵 পেমেন্ট: <span className="font-medium text-foreground">ক্যাশ অন ডেলিভারি</span></div>
                   ) : (
                     <div className="space-y-2">
-                      <Label>Payment Method *</Label>
+                      <Label>পেমেন্ট পদ্ধতি *</Label>
                       <div className="flex flex-wrap gap-3">
                         {mfsMethods.length > 0 ? mfsMethods.map((m) => (
                           <Button key={m.id} type="button" variant={order.paymentMethod === m.provider ? "default" : "outline"} className="flex-1" onClick={() => setOrder({ ...order, paymentMethod: m.provider })}>
@@ -437,7 +437,7 @@ const BookDetail = () => {
                   {/* Transaction ID field for digital payments */}
                   {!isPhysical && (
                     <div>
-                      <Label htmlFor="txnId">Transaction ID *</Label>
+                      <Label htmlFor="txnId">ট্রানজেকশন আইডি *</Label>
                       <Input id="txnId" value={order.transactionId} onChange={(e) => setOrder({ ...order, transactionId: e.target.value })} className="mt-1" placeholder="যেমন: TXN1234ABCD" />
                     </div>
                   )}
@@ -462,7 +462,7 @@ const BookDetail = () => {
               </div>
             )}
 
-                  <Button type="submit" size="lg" className="w-full" disabled={submitting}>{submitting ? "Placing Order..." : isPhysical ? `Place Order — ৳${totalPrice}` : "Buy Now"}</Button>
+                  <Button type="submit" size="lg" className="w-full" disabled={submitting}>{submitting ? "অর্ডার হচ্ছে..." : isPhysical ? `অর্ডার করুন — ৳${totalPrice}` : "এখনই কিনুন"}</Button>
                 </form>
               </div>
             )}
