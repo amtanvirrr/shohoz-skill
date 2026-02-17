@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700&display=swap');
+/* Fonts loaded dynamically via admin settings */
 
 @layer base {
   :root {
@@ -50,8 +50,8 @@
     --warning: 36 90% 55%;
     --warning-foreground: 220 20% 14%;
 
-    --font-display: 'Playfair Display', Georgia, serif;
-    --font-body: 'Inter', system-ui, sans-serif;
+    --font-display: 'Hind Siliguri', sans-serif;
+    --font-body: 'Hind Siliguri', sans-serif;
   }
 
   .dark {
