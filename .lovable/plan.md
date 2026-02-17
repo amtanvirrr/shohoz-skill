@@ -1,90 +1,62 @@
 
 
-# সেটিংস পেজ সমস্যা সমাধান এবং হার্ডকোড রিমুভ করার পরিকল্পনা
+## ফন্ট পরিবর্তন ফিচার - পরিকল্পনা
 
-## সমস্যা চিহ্নিতকরণ
+অ্যাডমিন প্যানেলের সেটিংস থেকে পুরো সাইটের ফন্ট পরিবর্তন করার সুবিধা যোগ করা হবে। চারটি বাংলা ফন্ট অপশন থাকবে: **সিলেটি কেতেকি**, **জামি**, **মোহন**, এবং **রূপালি**।
 
-### 1. মূল সমস্যা: `public_site_settings` টেবিল অস্তিত্বহীন
-ডাটাবেজে `public_site_settings` নামে কোনো টেবিলই নেই। কিন্তু কোডের একাধিক জায়গায় এই টেবিল থেকে ডাটা পড়া এবং লেখা হচ্ছে। ফলে:
-- **সেটিংস সেভ করলে পাবলিক সাইডে আপডেট হয় না** (HeroBanner, Footer, Contact পেজে পুরনো/ডিফল্ট ডাটা থাকে)
-- `(supabase as any)` দিয়ে TypeScript চেক বাইপাস করা হয়েছে, তাই কম্পাইল-টাইমে কোনো এরর দেখায় না
-- সেটিংস সেভ করার সময় `public_site_settings`-এ write ব্যর্থ হচ্ছে (silently fail)
+### যা হবে
 
-### 2. হার্ডকোডেড ভ্যালু চিহ্নিত
-নিচের জায়গাগুলোতে হার্ডকোডেড ফলব্যাক ভ্যালু আছে যেগুলো ডাটাবেজ থেকে আসা উচিত:
+1. অ্যাডমিন সেটিংসের "সাইট ব্র্যান্ডিং" সেকশনে একটি ড্রপডাউন যোগ হবে
+2. ড্রপডাউনে চারটি বাংলা ফন্ট থেকে একটি সিলেক্ট করা যাবে
+3. সিলেক্ট করার পর পুরো সাইটের ফন্ট সেই অনুযায়ী পরিবর্তন হবে
 
-| ফাইল | হার্ডকোডেড ভ্যালু |
-|------|-------------------|
-| `useSiteSettings.tsx` | `"ShikhonHub"`, `"info@shikhonhub.com"`, `"+880 1XXX-XXXXXX"`, `"Dhaka, Bangladesh"` |
-| `Footer.tsx` | `"info@shikhonhub.com"`, `"+880 1XXX-XXXXXX"`, `"Dhaka, Bangladesh"`, `"ShikhonHub"` |
-| `Contact.tsx` | `"info@shikhonhub.com"`, `"+880 1XXX-XXXXXX"`, `"Dhaka, Bangladesh"` |
-| `About.tsx` | পুরো পেজই `"ShikhonHub"` নামে হার্ডকোডেড |
-| `Footer.tsx` (line 49) | `"সহজ স্কিলের নিউজলেটার"` — হার্ডকোডেড |
+---
 
-## সমাধান পরিকল্পনা
+### টেকনিক্যাল ডিটেইলস
 
-### ধাপ ১: `public_site_settings` টেবিল তৈরি (Database Migration)
-- `site_settings` টেবিলের মতোই structure-এ একটি `public_site_settings` টেবিল তৈরি
-- RLS পলিসি: যেকেউ SELECT করতে পারবে, শুধুমাত্র অ্যাডমিন INSERT/UPDATE/DELETE করতে পারবে
-- বর্তমান `site_settings` থেকে পাবলিক কী-গুলো `public_site_settings`-এ কপি করার SQL
+**১. Google Fonts লোড করা (`index.html`)**
 
-### ধাপ ২: হার্ডকোডেড ফলব্যাক ভ্যালু আপডেট
-- **`useSiteSettings.tsx`**: ডিফল্ট ভ্যালু হিসেবে `"ShikhonHub"` এর বদলে খালি স্ট্রিং বা জেনেরিক ভ্যালু ব্যবহার। তবে ডাটাবেজ থেকে লোড না হওয়া পর্যন্ত ফলব্যাক হিসেবে ডাটাবেজের আসল ভ্যালু ব্যবহার করা হবে (site_settings টেবিল থেকে সরাসরি পড়া)
-- **`Footer.tsx`**: ফলব্যাক `"info@shikhonhub.com"` সরিয়ে শুধু `settings.contact_email` ব্যবহার
-- **`Contact.tsx`**: একই ফলব্যাক রিমুভ
-- **`About.tsx`**: `useSiteSettings` হুক ব্যবহার করে `settings.site_name` দিয়ে ডায়নামিক করা
+চারটি বাংলা ফন্টের Google Fonts লিংক যোগ করা হবে:
+- Galada (সিলেটি কেতেকি এর বিকল্প - Google Fonts এ সরাসরি "Sylheti Keteki" নেই, তাই সবচেয়ে কাছের Google Fonts হোস্টেড বাংলা ফন্ট ব্যবহার করা হবে)
+- Hind Siliguri (জামি এর বিকল্প)
+- Noto Sans Bengali (মোহন এর বিকল্প)
+- Tiro Bangla (রূপালি এর বিকল্প)
 
-### ধাপ ৩: `useSiteSettings.tsx` ফিক্স
-- `public_site_settings` টেবিল এখন তৈরি হবে, তাই সেখান থেকে সঠিকভাবে ডাটা লোড হবে
-- ফলব্যাক ভ্যালুগুলো থেকে "ShikhonHub" রিমুভ করে ডাটাবেজের আসল ডাটা ব্যবহার
+> **গুরুত্বপূর্ণ নোট:** "সিলেটি কেতেকি", "জামি", "মোহন", "রূপালি" - এগুলো Google Fonts এ সরাসরি হোস্ট করা নেই। দুটি পদ্ধতি আছে:
+> - **পদ্ধতি ১:** এই ফন্টগুলোর `.woff2` ফাইল `public/fonts/` ফোল্ডারে রেখে `@font-face` দিয়ে লোড করা
+> - **পদ্ধতি ২:** Google Fonts এ থাকা কাছের বাংলা ফন্ট ব্যবহার করা
+>
+> আমি **পদ্ধতি ১** ব্যবহার করব - ফন্ট ফাইলগুলো প্রজেক্টে যোগ করতে হবে, তবে যেহেতু ফন্ট ফাইল আপলোড সম্ভব নয়, তাই CDN লিংক ব্যবহার করা হবে যেখানে পাওয়া যায়, অন্যথায় Google Fonts এর বাংলা ফন্ট ব্যবহার হবে।
 
-### ধাপ ৪: AdminSettings সেভ ফাংশন যাচাই
-- `public_site_settings` টেবিল তৈরি হওয়ায় সেভ ফাংশন সঠিকভাবে কাজ করবে
-- `upsert` ব্যবহার করে সেভ লজিক সরলীকরণ (insert-or-update এর বদলে একটি কলেই কাজ হবে)
+**২. সেটিংস কী যোগ করা**
 
-## টেকনিক্যাল ডিটেইলস
+- `site_font` নামে নতুন সেটিংস কী যোগ হবে
+- `BrandingFields` ইন্টারফেসে `site_font` ফিল্ড যোগ হবে
+- `SiteSettings` ইন্টারফেসেও `site_font` যোগ হবে
+- `PUBLIC_KEYS` তে এটি অন্তর্ভুক্ত হবে (ফ্রন্টেন্ডে প্রয়োজন)
 
-### ডাটাবেজ মাইগ্রেশন SQL:
-```text
-CREATE TABLE public_site_settings (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  key text UNIQUE NOT NULL,
-  value text NOT NULL DEFAULT '',
-  updated_at timestamptz NOT NULL DEFAULT now()
-);
+**৩. অ্যাডমিন সেটিংস UI (`AdminSettings.tsx`)**
 
-ALTER TABLE public_site_settings ENABLE ROW LEVEL SECURITY;
+"সাইট ব্র্যান্ডিং" সেকশনে একটি `<Select>` ড্রপডাউন যোগ হবে:
+- ডিফল্ট (Inter/Playfair Display)
+- সিলেটি কেতেকি
+- জামি
+- মোহন
+- রূপালি
 
--- Anyone can read
-CREATE POLICY "Anyone can view public settings"
-  ON public_site_settings FOR SELECT USING (true);
+**৪. ফন্ট প্রয়োগ (`src/index.css` ও `App.tsx`)**
 
--- Only admins can write
-CREATE POLICY "Admins can manage public settings"
-  ON public_site_settings FOR ALL
-  USING (has_role(auth.uid(), 'admin'::app_role));
+- `index.css` এ `@font-face` দিয়ে ফন্ট ডিফাইন করা হবে
+- `useSiteSettings` হুক থেকে `site_font` মান পড়ে `<body>` এ CSS variable সেট করা হবে
+- মূল লেআউট কম্পোনেন্টে (`Layout.tsx`) `useEffect` দিয়ে `document.documentElement.style.setProperty('--font-body', ...)` সেট হবে
 
--- Copy existing public keys from site_settings
-INSERT INTO public_site_settings (key, value)
-SELECT key, value FROM site_settings
-WHERE key IN (
-  'site_name','site_description','copyright_text',
-  'logo_url','footer_logo_url','admin_logo_url','favicon_url',
-  'facebook_pixel_id','facebook_test_event_code',
-  'contact_email','contact_phone','contact_address',
-  'hero_title','hero_subtitle',
-  'hero_btn1_text','hero_btn1_link','hero_btn2_text','hero_btn2_link',
-  'hero_stat1_value','hero_stat1_label',
-  'hero_stat2_value','hero_stat2_label',
-  'hero_stat3_value','hero_stat3_label'
-)
-ON CONFLICT (key) DO NOTHING;
-```
+**৫. পরিবর্তিত ফাইলসমূহ:**
 
-### পরিবর্তন হবে এমন ফাইলসমূহ:
-1. `src/hooks/useSiteSettings.tsx` — হার্ডকোডেড ডিফল্ট রিমুভ
-2. `src/components/layout/Footer.tsx` — হার্ডকোডেড ফলব্যাক রিমুভ
-3. `src/pages/Contact.tsx` — হার্ডকোডেড ফলব্যাক রিমুভ
-4. `src/pages/About.tsx` — ডায়নামিক সাইট নাম ব্যবহার
-5. `src/pages/admin/AdminSettings.tsx` — সেভ লজিক উন্নতি (upsert ব্যবহার)
+| ফাইল | পরিবর্তন |
+|------|----------|
+| `index.html` | Google Fonts লিংক যোগ |
+| `src/index.css` | `@font-face` ডিক্লারেশন |
+| `src/hooks/useSiteSettings.tsx` | `site_font` ফিল্ড যোগ |
+| `src/pages/admin/AdminSettings.tsx` | ফন্ট সিলেক্ট ড্রপডাউন UI |
+| `src/components/layout/Layout.tsx` | ডাইনামিক ফন্ট প্রয়োগ |
 
