@@ -56,15 +56,15 @@ const Contact = () => {
                 <div className="mt-4 space-y-4">
                   <div className="flex items-start gap-3 text-sm text-muted-foreground">
                     <Mail className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                    {settings.contact_email || "info@shikhonhub.com"}
+                    {settings.contact_email}
                   </div>
                   <div className="flex items-start gap-3 text-sm text-muted-foreground">
                     <Phone className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                    {settings.contact_phone || "+880 1XXX-XXXXXX"}
+                    {settings.contact_phone}
                   </div>
                   <div className="flex items-start gap-3 text-sm text-muted-foreground">
                     <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                    {settings.contact_address || "Dhaka, Bangladesh"}
+                    {settings.contact_address}
                   </div>
                 </div>
               </div>

@@ -17,18 +17,18 @@ export interface SiteSettings {
 }
 
 const defaults: SiteSettings = {
-  site_name: "ShikhonHub",
-  site_description: "আপনার শেখার সেরা প্ল্যাটফর্ম। কোর্স, বই, এবং আরও অনেক কিছু এক জায়গায়।",
-  copyright_text: "© 2026 ShikhonHub. All rights reserved.",
+  site_name: "",
+  site_description: "",
+  copyright_text: "",
   logo_url: "/favicon.webp",
   footer_logo_url: "/favicon.webp",
   admin_logo_url: "/favicon.webp",
   favicon_url: "/favicon.webp",
   facebook_pixel_id: "",
   facebook_test_event_code: "",
-  contact_email: "info@shikhonhub.com",
-  contact_phone: "+880 1XXX-XXXXXX",
-  contact_address: "Dhaka, Bangladesh",
+  contact_email: "",
+  contact_phone: "",
+  contact_address: "",
 };
 
 const SETTING_KEYS = Object.keys(defaults) as (keyof SiteSettings)[];
