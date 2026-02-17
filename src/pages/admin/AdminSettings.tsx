@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Save } from "lucide-react";
+import RichTextEditor from "@/components/RichTextEditor";
 
 interface BrandingFields {
   site_name: string;
@@ -250,10 +251,12 @@ const AdminSettings = () => {
         {/* About Page */}
         <div className="rounded-xl border border-border bg-card p-6 space-y-4">
           <h3 className="font-display text-lg font-semibold text-foreground">About পেজ</h3>
-          <p className="text-sm text-muted-foreground">About পেজে প্রদর্শিত কন্টেন্ট পরিবর্তন করুন। HTML সাপোর্টেড।</p>
+          <p className="text-sm text-muted-foreground">About পেজে প্রদর্শিত কন্টেন্ট পরিবর্তন করুন।</p>
           <div>
-            <Label htmlFor="about_content">About কন্টেন্ট (HTML)</Label>
-            <Textarea id="about_content" value={fields.about_content} onChange={(e) => handleChange("about_content", e.target.value)} className="mt-1 font-mono text-sm" rows={12} placeholder="<p>আমাদের সম্পর্কে লিখুন...</p>" />
+            <Label>About কন্টেন্ট</Label>
+            <div className="mt-1">
+              <RichTextEditor content={fields.about_content} onChange={(html) => handleChange("about_content", html)} />
+            </div>
           </div>
         </div>
 
