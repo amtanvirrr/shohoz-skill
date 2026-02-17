@@ -79,6 +79,11 @@ interface LandingPage {
   show_quantity: boolean;
   is_published: boolean;
   created_at: string;
+  show_countdown: boolean;
+  countdown_end_time: string | null;
+  show_stock_badge: boolean;
+  stock_limit: number;
+  stock_sold: number;
 }
 
 interface Product {
@@ -120,6 +125,11 @@ const AdminLandingPages = () => {
     cta_color: "#e11d48",
     show_quantity: true,
     is_published: false,
+    show_countdown: false,
+    countdown_end_time: null,
+    show_stock_badge: false,
+    stock_limit: 100,
+    stock_sold: 0,
   };
 
   const [form, setForm] = useState<Omit<LandingPage, "id" | "created_at">>(emptyPage);
@@ -217,6 +227,11 @@ const AdminLandingPages = () => {
       cta_color: page.cta_color,
       show_quantity: page.show_quantity,
       is_published: page.is_published,
+      show_countdown: page.show_countdown || false,
+      countdown_end_time: page.countdown_end_time || null,
+      show_stock_badge: page.show_stock_badge || false,
+      stock_limit: page.stock_limit || 100,
+      stock_sold: page.stock_sold || 0,
     });
     setDialogOpen(true);
   };
@@ -482,6 +497,39 @@ const AdminLandingPages = () => {
                   <Switch checked={form.show_quantity} onCheckedChange={v => setForm(f => ({ ...f, show_quantity: v }))} />
                   <Label>কোয়ান্টিটি সিলেক্টর দেখান (ফিজিক্যাল প্রোডাক্ট)</Label>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Urgency */}
+            <Card>
+              <CardHeader><CardTitle className="text-base">🔥 আর্জেন্সি সেটিংস</CardTitle></CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <Switch checked={form.show_countdown} onCheckedChange={v => setForm(f => ({ ...f, show_countdown: v }))} />
+                  <Label>কাউন্টডাউন টাইমার দেখান</Label>
+                </div>
+                {form.show_countdown && (
+                  <div>
+                    <Label>অফার শেষ হওয়ার তারিখ ও সময়</Label>
+                    <Input type="datetime-local" className="mt-1" value={form.countdown_end_time?.slice(0, 16) || ""} onChange={e => setForm(f => ({ ...f, countdown_end_time: e.target.value ? new Date(e.target.value).toISOString() : null }))} />
+                  </div>
+                )}
+                <div className="flex items-center gap-3">
+                  <Switch checked={form.show_stock_badge} onCheckedChange={v => setForm(f => ({ ...f, show_stock_badge: v }))} />
+                  <Label>লিমিটেড স্টক ব্যাজ দেখান</Label>
+                </div>
+                {form.show_stock_badge && (
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div>
+                      <Label>মোট স্টক</Label>
+                      <Input type="number" className="mt-1" value={form.stock_limit} onChange={e => setForm(f => ({ ...f, stock_limit: Number(e.target.value) }))} />
+                    </div>
+                    <div>
+                      <Label>বিক্রি হয়েছে</Label>
+                      <Input type="number" className="mt-1" value={form.stock_sold} onChange={e => setForm(f => ({ ...f, stock_sold: Number(e.target.value) }))} />
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 

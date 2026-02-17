@@ -279,6 +279,7 @@ export type Database = {
       landing_pages: {
         Row: {
           benefits: Json
+          countdown_end_time: string | null
           created_at: string
           cta_color: string
           cta_text: string
@@ -292,14 +293,19 @@ export type Database = {
           product_id: string
           product_type: string
           reviews: Json
+          show_countdown: boolean
           show_quantity: boolean
+          show_stock_badge: boolean
           slug: string
+          stock_limit: number
+          stock_sold: number
           subheadline: string
           theme: string
           updated_at: string
         }
         Insert: {
           benefits?: Json
+          countdown_end_time?: string | null
           created_at?: string
           cta_color?: string
           cta_text?: string
@@ -313,14 +319,19 @@ export type Database = {
           product_id: string
           product_type?: string
           reviews?: Json
+          show_countdown?: boolean
           show_quantity?: boolean
+          show_stock_badge?: boolean
           slug: string
+          stock_limit?: number
+          stock_sold?: number
           subheadline?: string
           theme?: string
           updated_at?: string
         }
         Update: {
           benefits?: Json
+          countdown_end_time?: string | null
           created_at?: string
           cta_color?: string
           cta_text?: string
@@ -334,8 +345,12 @@ export type Database = {
           product_id?: string
           product_type?: string
           reviews?: Json
+          show_countdown?: boolean
           show_quantity?: boolean
+          show_stock_badge?: boolean
           slug?: string
+          stock_limit?: number
+          stock_sold?: number
           subheadline?: string
           theme?: string
           updated_at?: string
