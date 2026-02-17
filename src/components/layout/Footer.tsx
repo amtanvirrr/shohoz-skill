@@ -46,7 +46,7 @@ const Footer = () => {
               <Mail className="h-6 w-6 text-primary" />
             </div>
             <h3 className="font-display text-2xl font-bold text-foreground md:text-3xl">
-              সহজ স্কিলের নিউজলেটার
+              {settings.newsletter_title || "নিউজলেটার"}
             </h3>
             <p className="mt-3 text-muted-foreground">
               নতুন কোর্স, আর্টিকেল এবং স্কিল ডেভেলপমেন্ট টিপস সরাসরি আপনার ইনবক্সে পান।
