@@ -14,6 +14,7 @@ export interface SiteSettings {
   contact_email: string;
   contact_phone: string;
   contact_address: string;
+  newsletter_title: string;
 }
 
 const defaults: SiteSettings = {
@@ -29,6 +30,7 @@ const defaults: SiteSettings = {
   contact_email: "",
   contact_phone: "",
   contact_address: "",
+  newsletter_title: "",
 };
 
 const SETTING_KEYS = Object.keys(defaults) as (keyof SiteSettings)[];

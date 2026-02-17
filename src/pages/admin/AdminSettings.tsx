@@ -37,6 +37,7 @@ interface BrandingFields {
   contact_email: string;
   contact_phone: string;
   contact_address: string;
+  newsletter_title: string;
 }
 
 const defaultBranding: BrandingFields = {
@@ -69,13 +70,14 @@ const defaultBranding: BrandingFields = {
   contact_email: "",
   contact_phone: "",
   contact_address: "",
+  newsletter_title: "",
 };
 
 const PUBLIC_KEYS: (keyof BrandingFields)[] = [
   "site_name", "site_description", "copyright_text",
   "logo_url", "footer_logo_url", "admin_logo_url", "favicon_url",
   "facebook_pixel_id", "facebook_test_event_code",
-  "contact_email", "contact_phone", "contact_address",
+  "contact_email", "contact_phone", "contact_address", "newsletter_title",
 ];
 
 const ALL_KEYS = Object.keys(defaultBranding) as (keyof BrandingFields)[];
@@ -234,6 +236,15 @@ const AdminSettings = () => {
           </div>
         </div>
 
+        {/* Newsletter */}
+        <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+          <h3 className="font-display text-lg font-semibold text-foreground">নিউজলেটার</h3>
+          <p className="text-sm text-muted-foreground">ফুটারে প্রদর্শিত নিউজলেটার সেকশনের টাইটেল পরিবর্তন করুন।</p>
+          <div>
+            <Label htmlFor="newsletter_title">নিউজলেটার টাইটেল</Label>
+            <Input id="newsletter_title" value={fields.newsletter_title} onChange={(e) => handleChange("newsletter_title", e.target.value)} className="mt-1" placeholder="আমাদের নিউজলেটার" />
+          </div>
+        </div>
         {/* Courier Integration - Steadfast */}
         <div className="rounded-xl border border-border bg-card p-6 space-y-4">
           <h3 className="font-display text-lg font-semibold text-foreground">Steadfast Courier</h3>
