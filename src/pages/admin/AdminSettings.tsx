@@ -12,7 +12,6 @@ import RichTextEditor from "@/components/RichTextEditor";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const FONT_OPTIONS = [
-  { value: "default", label: "ডিফল্ট (Inter / Playfair Display)", family: "'Inter', system-ui, sans-serif" },
   { value: "sylheti-keteki", label: "সিলেটি কেতেকি (Galada)", family: "'Galada', cursive" },
   { value: "jami", label: "জামি (Hind Siliguri)", family: "'Hind Siliguri', sans-serif" },
   { value: "mohan", label: "মোহন (Noto Sans Bengali)", family: "'Noto Sans Bengali', sans-serif" },

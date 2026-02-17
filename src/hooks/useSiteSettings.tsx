@@ -35,7 +35,7 @@ const defaults: SiteSettings = {
   site_name: "",
   site_description: "",
   copyright_text: "",
-  site_font: "default",
+  site_font: "jami",
   logo_url: "/favicon.webp",
   footer_logo_url: "/favicon.webp",
   admin_logo_url: "/favicon.webp",
