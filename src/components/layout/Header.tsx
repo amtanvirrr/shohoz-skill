@@ -8,13 +8,13 @@ import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { supabase } from "@/integrations/supabase/client";
 
 const navLinks = [
-  { to: "/", label: "Home" },
-  { to: "/courses", label: "Courses" },
-  { to: "/books", label: "Books" },
-  { to: "/quizzes", label: "Quizzes" },
-  { to: "/blog", label: "Blog" },
-  { to: "/about", label: "About" },
-  { to: "/contact", label: "Contact" },
+  { to: "/", label: "হোম" },
+  { to: "/courses", label: "কোর্স" },
+  { to: "/books", label: "বই" },
+  { to: "/quizzes", label: "কুইজ" },
+  { to: "/blog", label: "ব্লগ" },
+  { to: "/about", label: "আমাদের সম্পর্কে" },
+  { to: "/contact", label: "যোগাযোগ" },
 ];
 
 const Header = () => {
@@ -85,24 +85,24 @@ const Header = () => {
                 </Avatar>
               </Link>
               <Button variant="outline" size="sm" asChild>
-                <Link to="/dashboard">Dashboard</Link>
+                <Link to="/dashboard">ড্যাশবোর্ড</Link>
               </Button>
               {isAdmin && (
                 <Button variant="outline" size="sm" asChild>
-                  <Link to="/admin">Admin</Link>
+                  <Link to="/admin">অ্যাডমিন</Link>
                 </Button>
               )}
               <Button variant="ghost" size="sm" onClick={handleSignOut}>
-                Sign Out
+                লগআউট
               </Button>
             </>
           ) : (
             <>
               <Button variant="outline" size="sm" asChild>
-                <Link to="/login">Login</Link>
+                <Link to="/login">লগইন</Link>
               </Button>
               <Button size="sm" asChild>
-                <Link to="/register">Register</Link>
+                <Link to="/register">রেজিস্টার</Link>
               </Button>
             </>
           )}
@@ -150,22 +150,22 @@ const Header = () => {
             {user ? (
               <>
                 <Button variant="outline" size="sm" className="flex-1" asChild>
-                  <Link to="/dashboard" onClick={() => setMobileOpen(false)}>Dashboard</Link>
+                  <Link to="/dashboard" onClick={() => setMobileOpen(false)}>ড্যাশবোর্ড</Link>
                 </Button>
                 {isAdmin && (
                   <Button variant="outline" size="sm" className="flex-1" asChild>
-                    <Link to="/admin" onClick={() => setMobileOpen(false)}>Admin</Link>
+                    <Link to="/admin" onClick={() => setMobileOpen(false)}>অ্যাডমিন</Link>
                   </Button>
                 )}
-                <Button variant="ghost" size="sm" className="flex-1" onClick={handleSignOut}>Sign Out</Button>
+                <Button variant="ghost" size="sm" className="flex-1" onClick={handleSignOut}>লগআউট</Button>
               </>
             ) : (
               <>
                 <Button variant="outline" size="sm" className="flex-1" asChild>
-                  <Link to="/login">Login</Link>
+                  <Link to="/login">লগইন</Link>
                 </Button>
                 <Button size="sm" className="flex-1" asChild>
-                  <Link to="/register">Register</Link>
+                  <Link to="/register">রেজিস্টার</Link>
                 </Button>
               </>
             )}

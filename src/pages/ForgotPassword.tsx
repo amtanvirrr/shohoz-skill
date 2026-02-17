@@ -24,7 +24,7 @@ const ForgotPassword = () => {
     });
     setLoading(false);
     if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: "ত্রুটি", description: error.message, variant: "destructive" });
     } else {
       setSent(true);
       toast({ title: "ইমেইল পাঠানো হয়েছে", description: "আপনার ইমেইলে পাসওয়ার্ড রিসেট লিংক পাঠানো হয়েছে।" });
@@ -52,7 +52,7 @@ const ForgotPassword = () => {
           ) : (
             <form onSubmit={handleSubmit} className="mt-6 space-y-4">
               <div>
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">ইমেইল</Label>
                 <Input
                   id="email"
                   type="email"

@@ -54,11 +54,11 @@ const CoursesPage = () => {
   return (
     <div className="py-16 lg:py-20">
       <div className="container mx-auto px-4">
-        <h1 className="text-4xl font-bold text-foreground">All Courses</h1>
+        <h1 className="text-4xl font-bold text-foreground">সকল কোর্স</h1>
         <p className="mt-2 text-muted-foreground">আমাদের সকল কোর্স ব্রাউজ করুন</p>
 
         {courses.length === 0 ? (
-          <p className="mt-10 text-center text-muted-foreground">No courses available yet.</p>
+          <p className="mt-10 text-center text-muted-foreground">এখনো কোন কোর্স নেই।</p>
         ) : (
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {courses.map((course) => {
