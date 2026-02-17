@@ -216,20 +216,6 @@ const BookDetail = () => {
             {book.image_url && <img src={book.image_url} alt={book.title} className="h-full max-h-[500px] w-full object-cover" />}
           </div>
 
-          {/* Demo Preview Button */}
-          {book.demo_pdf_url && (
-            <div className="mt-3 flex justify-center">
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2"
-                onClick={() => setDemoOpen(true)}
-              >
-                <Eye className="h-4 w-4" /> ডেমো দেখুন
-              </Button>
-            </div>
-          )}
-
           <div>
             <div className="flex flex-wrap gap-2">
               <span className="inline-block rounded-full bg-accent/15 px-3 py-1 text-xs font-medium text-accent">{book.category}</span>
@@ -256,6 +242,23 @@ const BookDetail = () => {
             </div>
 
             <p className="mt-6 leading-relaxed text-muted-foreground">{book.description}</p>
+
+            {/* Demo Preview Button */}
+            {book.demo_pdf_url && (
+              <button
+                onClick={() => setDemoOpen(true)}
+                className="mt-5 group flex w-full items-center gap-3 rounded-xl border border-primary/20 bg-primary/5 px-5 py-3.5 transition-all hover:border-primary/40 hover:bg-primary/10 hover:shadow-md"
+              >
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm transition-transform group-hover:scale-110">
+                  <Eye className="h-5 w-5" />
+                </span>
+                <span className="text-left">
+                  <span className="block text-sm font-semibold text-foreground">📖 ডেমো দেখুন</span>
+                  <span className="block text-xs text-muted-foreground">অর্ডারের আগে বইটির কিছু পৃষ্ঠা পড়ে দেখুন</span>
+                </span>
+                <ArrowLeft className="ml-auto h-4 w-4 rotate-180 text-muted-foreground transition-transform group-hover:translate-x-1" />
+              </button>
+            )}
 
             {/* Already purchased ebook - show read button */}
             {isEbook && orderStatus && ["confirmed", "delivered"].includes(orderStatus) ? (
