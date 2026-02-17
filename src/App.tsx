@@ -39,6 +39,7 @@ import AdminPayments from "./pages/admin/AdminPayments";
 import AdminShipping from "./pages/admin/AdminShipping";
 import AdminHero from "./pages/admin/AdminHero";
 import AdminLandingPages from "./pages/admin/AdminLandingPages";
+import AdminCoupons from "./pages/admin/AdminCoupons";
 import BlogPage from "./pages/BlogPage";
 import BlogDetailPage from "./pages/BlogDetailPage";
 import LandingPage from "./pages/LandingPage";
@@ -91,6 +92,7 @@ const App = () => (
             <Route path="/admin/shipping" element={<ProtectedRoute adminOnly><AdminLayout><AdminShipping /></AdminLayout></ProtectedRoute>} />
             <Route path="/admin/hero" element={<ProtectedRoute adminOnly><AdminLayout><AdminHero /></AdminLayout></ProtectedRoute>} />
             <Route path="/admin/landing-pages" element={<ProtectedRoute adminOnly><AdminLayout><AdminLandingPages /></AdminLayout></ProtectedRoute>} />
+            <Route path="/admin/coupons" element={<ProtectedRoute adminOnly><AdminLayout><AdminCoupons /></AdminLayout></ProtectedRoute>} />
 
             {/* Landing pages - no layout wrapper */}
             <Route path="/lp/:slug" element={<LandingPage />} />
