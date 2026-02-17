@@ -116,22 +116,22 @@ const Footer = () => {
             <div className="mt-3 flex flex-col gap-2">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Mail className="h-4 w-4" />
-                {settings.contact_email || "info@shikhonhub.com"}
+                {settings.contact_email}
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Phone className="h-4 w-4" />
-                {settings.contact_phone || "+880 1XXX-XXXXXX"}
+                {settings.contact_phone}
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <MapPin className="h-4 w-4" />
-                {settings.contact_address || "Dhaka, Bangladesh"}
+                {settings.contact_address}
               </div>
             </div>
           </div>
         </div>
 
         <div className="mt-10 border-t border-border pt-6 text-center text-xs text-muted-foreground">
-          {settings.copyright_text || `© ${new Date().getFullYear()} ShikhonHub. All rights reserved.`}
+          {settings.copyright_text || `© ${new Date().getFullYear()} All rights reserved.`}
         </div>
       </div>
     </footer>

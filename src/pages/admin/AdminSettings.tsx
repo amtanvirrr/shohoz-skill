@@ -109,35 +109,18 @@ const AdminSettings = () => {
 
   const saveAll = async () => {
     setSaving(true);
-    // Get existing keys from both tables
-    const [{ data: existing }, { data: existingPublic }] = await Promise.all([
-      supabase.from("site_settings").select("key").in("key", ALL_KEYS),
-      (supabase as any).from("public_site_settings").select("key").in("key", PUBLIC_KEYS),
-    ]);
-    const existingKeys = new Set(existing?.map((r: any) => r.key) || []);
-    const existingPublicKeys = new Set((existingPublic || []).map((r: any) => r.key));
 
-    // Save all to site_settings (admin-only)
-    const upserts = ALL_KEYS.map((key) => {
-      if (existingKeys.has(key)) {
-        return supabase.from("site_settings").update({ value: fields[key] }).eq("key", key);
-      } else if (fields[key]) {
-        return supabase.from("site_settings").insert({ key, value: fields[key] });
-      }
-      return null;
-    }).filter(Boolean);
+    // Upsert all keys to site_settings
+    const siteOps = ALL_KEYS.map((key) =>
+      supabase.from("site_settings").upsert({ key, value: fields[key] }, { onConflict: "key" })
+    );
 
-    // Sync public keys to public_site_settings
-    const publicOps = PUBLIC_KEYS.map((key) => {
-      if (existingPublicKeys.has(key)) {
-        return (supabase as any).from("public_site_settings").update({ value: fields[key] }).eq("key", key);
-      } else if (fields[key]) {
-        return (supabase as any).from("public_site_settings").insert({ key, value: fields[key] });
-      }
-      return null;
-    }).filter(Boolean);
+    // Upsert public keys to public_site_settings
+    const publicOps = PUBLIC_KEYS.map((key) =>
+      (supabase as any).from("public_site_settings").upsert({ key, value: fields[key] }, { onConflict: "key" })
+    );
 
-    await Promise.all([...upserts, ...publicOps]);
+    await Promise.all([...siteOps, ...publicOps]);
     setSaving(false);
     toast({ title: "সেটিংস সেভ হয়েছে" });
   };
