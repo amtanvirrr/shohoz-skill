@@ -111,6 +111,7 @@ const LandingPage = () => {
   const [couponLoading, setCouponLoading] = useState(false);
   const [appliedCoupon, setAppliedCoupon] = useState<{ id: string; code: string; discount_type: string; discount_value: number } | null>(null);
   const [couponError, setCouponError] = useState("");
+  const countdown = useCountdown(page?.show_countdown ? page?.countdown_end_time : null);
 
   useEffect(() => {
     if (!slug) return;
@@ -228,7 +229,6 @@ const LandingPage = () => {
     }
   };
 
-  const countdown = useCountdown(page.show_countdown ? page.countdown_end_time : null);
   const stockRemaining = page.stock_limit - page.stock_sold;
   const stockPercent = page.stock_limit > 0 ? Math.round((page.stock_sold / page.stock_limit) * 100) : 0;
 
