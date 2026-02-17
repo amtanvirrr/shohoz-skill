@@ -5,6 +5,7 @@ export interface SiteSettings {
   site_name: string;
   site_description: string;
   copyright_text: string;
+  site_font: string;
   logo_url: string;
   footer_logo_url: string;
   admin_logo_url: string;
@@ -34,6 +35,7 @@ const defaults: SiteSettings = {
   site_name: "",
   site_description: "",
   copyright_text: "",
+  site_font: "default",
   logo_url: "/favicon.webp",
   footer_logo_url: "/favicon.webp",
   admin_logo_url: "/favicon.webp",

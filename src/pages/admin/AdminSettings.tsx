@@ -9,11 +9,21 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Save } from "lucide-react";
 import RichTextEditor from "@/components/RichTextEditor";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+const FONT_OPTIONS = [
+  { value: "default", label: "ডিফল্ট (Inter / Playfair Display)", family: "'Inter', system-ui, sans-serif" },
+  { value: "sylheti-keteki", label: "সিলেটি কেতেকি (Galada)", family: "'Galada', cursive" },
+  { value: "jami", label: "জামি (Hind Siliguri)", family: "'Hind Siliguri', sans-serif" },
+  { value: "mohan", label: "মোহন (Noto Sans Bengali)", family: "'Noto Sans Bengali', sans-serif" },
+  { value: "rupali", label: "রূপালি (Tiro Bangla)", family: "'Tiro Bangla', serif" },
+];
 
 interface BrandingFields {
   site_name: string;
   site_description: string;
   copyright_text: string;
+  site_font: string;
   logo_url: string;
   footer_logo_url: string;
   admin_logo_url: string;
@@ -60,6 +70,7 @@ const defaultBranding: BrandingFields = {
   site_name: "",
   site_description: "",
   copyright_text: "",
+  site_font: "default",
   logo_url: "",
   footer_logo_url: "",
   admin_logo_url: "",
@@ -103,7 +114,7 @@ const defaultBranding: BrandingFields = {
 };
 
 const PUBLIC_KEYS: (keyof BrandingFields)[] = [
-  "site_name", "site_description", "copyright_text",
+  "site_name", "site_description", "copyright_text", "site_font",
   "logo_url", "footer_logo_url", "admin_logo_url", "favicon_url",
   "facebook_pixel_id", "facebook_test_event_code",
   "contact_email", "contact_phone", "contact_address", "newsletter_title", "about_content",
@@ -209,6 +220,22 @@ const AdminSettings = () => {
             <div>
               <Label htmlFor="copyright_text">কপিরাইট টেক্সট</Label>
               <Input id="copyright_text" value={fields.copyright_text} onChange={(e) => handleChange("copyright_text", e.target.value)} className="mt-1" placeholder="© 2026 Your Site. All rights reserved." />
+            </div>
+            <div>
+              <Label htmlFor="site_font">সাইট ফন্ট</Label>
+              <Select value={fields.site_font || "default"} onValueChange={(val) => handleChange("site_font", val)}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="ফন্ট নির্বাচন করুন" />
+                </SelectTrigger>
+                <SelectContent>
+                  {FONT_OPTIONS.map((f) => (
+                    <SelectItem key={f.value} value={f.value} style={{ fontFamily: f.family }}>
+                      {f.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="mt-1 text-xs text-muted-foreground">পুরো ওয়েবসাইটের ফন্ট পরিবর্তন করুন।</p>
             </div>
           </div>
         )}
