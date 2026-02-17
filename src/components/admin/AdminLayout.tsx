@@ -51,7 +51,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
           </button>
         </div>
 
-        <nav className="flex flex-col gap-1 p-3">
+        <nav className="flex flex-col gap-2 overflow-y-auto p-3" style={{ maxHeight: 'calc(100vh - 10rem)' }}>
           {sidebarLinks.map((link) => {
             const Icon = link.icon;
             const isActive = location.pathname === link.to;
