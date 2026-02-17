@@ -99,9 +99,9 @@ interface Product {
 }
 
 const THEMES = [
-  { value: "classic", label: "ক্লাসিক", description: "পরিচ্ছন্ন, পেশাদার ডিজাইন" },
-  { value: "bold", label: "বোল্ড", description: "উজ্জ্বল রং ও বড় টাইপোগ্রাফি" },
-  { value: "minimal", label: "মিনিমাল", description: "সাদামাটা, ফোকাসড লেআউট" },
+  { value: "minimalist", label: "মিনিমালিস্ট", description: "পরিচ্ছন্ন, সাদামাটা ডিজাইন — কম উপাদান, বেশি ফোকাস" },
+  { value: "premium", label: "প্রিমিয়াম", description: "সমৃদ্ধ, গ্র্যাডিয়েন্ট ও শ্যাডো — পেশাদার ও আকর্ষণীয়" },
+  { value: "exclusive", label: "এক্সক্লুসিভ", description: "ডার্ক লাক্সারি থিম — হাই-এন্ড ও ইউনিক ফিল" },
 ];
 
 const DEFAULT_SECTION_ORDER = ["hero", "benefits", "media_gallery", "reviews", "order_form", "faqs", "final_cta"];
@@ -142,7 +142,7 @@ const AdminLandingPages = () => {
     slug: "",
     product_id: "",
     product_type: "book",
-    theme: "classic",
+    theme: "minimalist",
     headline: "",
     subheadline: "",
     hero_image_url: "",
