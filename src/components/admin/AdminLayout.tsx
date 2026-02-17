@@ -113,9 +113,6 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
                       to={`/admin/settings#${sub.hash}`}
                       onClick={() => {
                         setSidebarOpen(false);
-                        setTimeout(() => {
-                          document.getElementById(sub.hash)?.scrollIntoView({ behavior: "smooth", block: "start" });
-                        }, 100);
                       }}
                       className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
                         isSubActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
