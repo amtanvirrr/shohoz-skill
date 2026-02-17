@@ -92,27 +92,27 @@ const Footer = () => {
           </div>
 
           <div>
-            <h4 className="font-display text-sm font-semibold text-foreground">Quick Links</h4>
+            <h4 className="font-display text-sm font-semibold text-foreground">দ্রুত লিংক</h4>
             <nav className="mt-3 flex flex-col gap-2">
-              <Link to="/courses" className="text-sm text-muted-foreground hover:text-primary transition-colors">Courses</Link>
-              <Link to="/books" className="text-sm text-muted-foreground hover:text-primary transition-colors">Books</Link>
-              <Link to="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors">About Us</Link>
-              <Link to="/contact" className="text-sm text-muted-foreground hover:text-primary transition-colors">Contact</Link>
+              <Link to="/courses" className="text-sm text-muted-foreground hover:text-primary transition-colors">কোর্স</Link>
+              <Link to="/books" className="text-sm text-muted-foreground hover:text-primary transition-colors">বই</Link>
+              <Link to="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors">আমাদের সম্পর্কে</Link>
+              <Link to="/contact" className="text-sm text-muted-foreground hover:text-primary transition-colors">যোগাযোগ</Link>
             </nav>
           </div>
 
           <div>
-            <h4 className="font-display text-sm font-semibold text-foreground">Support</h4>
+            <h4 className="font-display text-sm font-semibold text-foreground">সাপোর্ট</h4>
             <nav className="mt-3 flex flex-col gap-2">
-              <Link to="/contact" className="text-sm text-muted-foreground hover:text-primary transition-colors">Help Center</Link>
-              <span className="text-sm text-muted-foreground">Privacy Policy</span>
-              <span className="text-sm text-muted-foreground">Terms of Service</span>
-              <span className="text-sm text-muted-foreground">Refund Policy</span>
+              <Link to="/contact" className="text-sm text-muted-foreground hover:text-primary transition-colors">হেল্প সেন্টার</Link>
+              <span className="text-sm text-muted-foreground">প্রাইভেসি পলিসি</span>
+              <span className="text-sm text-muted-foreground">ব্যবহারের শর্তাবলী</span>
+              <span className="text-sm text-muted-foreground">রিফান্ড পলিসি</span>
             </nav>
           </div>
 
           <div>
-            <h4 className="font-display text-sm font-semibold text-foreground">Contact</h4>
+            <h4 className="font-display text-sm font-semibold text-foreground">যোগাযোগ</h4>
             <div className="mt-3 flex flex-col gap-2">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Mail className="h-4 w-4" />
@@ -131,7 +131,7 @@ const Footer = () => {
         </div>
 
         <div className="mt-10 border-t border-border pt-6 text-center text-xs text-muted-foreground">
-          {settings.copyright_text || `© ${new Date().getFullYear()} All rights reserved.`}
+          {settings.copyright_text || `© ${new Date().getFullYear()} সর্বস্বত্ব সংরক্ষিত।`}
         </div>
       </div>
     </footer>

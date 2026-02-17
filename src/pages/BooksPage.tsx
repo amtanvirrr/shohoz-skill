@@ -123,11 +123,11 @@ const BooksPage = () => {
   return (
     <div className="py-16 lg:py-20">
       <div className="container mx-auto px-4">
-        <h1 className="text-4xl font-bold text-foreground">All Books</h1>
+        <h1 className="text-4xl font-bold text-foreground">সকল বই</h1>
         <p className="mt-2 text-muted-foreground">আমাদের সকল বই ব্রাউজ করুন</p>
 
         {books.length === 0 ? (
-          <p className="mt-10 text-center text-muted-foreground">No books available yet.</p>
+          <p className="mt-10 text-center text-muted-foreground">এখনো কোন বই নেই।</p>
         ) : (
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {books.map((book) => (

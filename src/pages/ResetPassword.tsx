@@ -31,7 +31,7 @@ const ResetPassword = () => {
     const { error } = await supabase.auth.updateUser({ password });
     setLoading(false);
     if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: "ত্রুটি", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "পাসওয়ার্ড আপডেট হয়েছে!", description: "নতুন পাসওয়ার্ড দিয়ে লগইন করুন।" });
       navigate("/login");

@@ -17,16 +17,16 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      toast({ title: "Please fill all fields", variant: "destructive" });
+      toast({ title: "সব ফিল্ড পূরণ করুন", variant: "destructive" });
       return;
     }
     setLoading(true);
     const { error } = await signIn(email, password);
     setLoading(false);
     if (error) {
-      toast({ title: "Login failed", description: error.message, variant: "destructive" });
+      toast({ title: "লগইন ব্যর্থ হয়েছে", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Welcome back!" });
+      toast({ title: "স্বাগতম!" });
       navigate("/");
     }
   };
@@ -35,20 +35,20 @@ const Login = () => {
     <div className="flex min-h-[70vh] items-center justify-center py-16">
       <div className="mx-auto w-full max-w-md px-4">
         <div className="rounded-xl border border-border bg-card p-8 shadow-sm">
-          <h1 className="text-center font-display text-2xl font-bold text-foreground">Login</h1>
+          <h1 className="text-center font-display text-2xl font-bold text-foreground">লগইন</h1>
           <p className="mt-1 text-center text-sm text-muted-foreground">আপনার অ্যাকাউন্টে লগইন করুন</p>
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             <div>
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">ইমেইল</Label>
               <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="mt-1" placeholder="you@example.com" />
             </div>
             <div>
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">পাসওয়ার্ড</Label>
               <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="mt-1" />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Logging in..." : "Login"}
+              {loading ? "লগইন হচ্ছে..." : "লগইন"}
             </Button>
           </form>
 
@@ -57,8 +57,8 @@ const Login = () => {
           </p>
 
           <p className="mt-2 text-center text-sm text-muted-foreground">
-            Don't have an account?{" "}
-            <Link to="/register" className="font-medium text-primary hover:underline">Register</Link>
+            অ্যাকাউন্ট নেই?{" "}
+            <Link to="/register" className="font-medium text-primary hover:underline">রেজিস্টার করুন</Link>
           </p>
         </div>
       </div>
