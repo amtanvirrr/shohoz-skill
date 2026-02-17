@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Upload, X, FileText, Image as ImageIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import RichTextEditor from "@/components/RichTextEditor";
 
 interface Book {
   id: string;
@@ -285,7 +286,12 @@ const AdminBooks = () => {
                 )}
               </div>
 
-              <div><Label>Description</Label><Textarea rows={4} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="mt-1" /></div>
+              <div>
+                <Label>Description</Label>
+                <div className="mt-1">
+                  <RichTextEditor content={form.description} onChange={(html) => setForm({ ...form, description: html })} />
+                </div>
+              </div>
               <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_published} onChange={(e) => setForm({ ...form, is_published: e.target.checked })} /> Published</label>
               <Button onClick={handleSave} className="w-full">{editing ? "Update" : "Add"} Book</Button>
             </div>
