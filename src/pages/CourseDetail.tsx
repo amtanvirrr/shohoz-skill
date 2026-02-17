@@ -154,8 +154,8 @@ const CourseDetail = () => {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-foreground">Course not found</h2>
-          <Button className="mt-4" asChild><Link to="/courses">Back to Courses</Link></Button>
+          <h2 className="text-2xl font-bold text-foreground">কোর্সটি পাওয়া যায়নি</h2>
+          <Button className="mt-4" asChild><Link to="/courses">কোর্সের তালিকায় ফিরে যান</Link></Button>
         </div>
       </div>
     );
@@ -163,7 +163,7 @@ const CourseDetail = () => {
 
   const handlePurchase = async () => {
     if (!user) {
-      toast({ title: "Please login first", description: "You need to be logged in to purchase courses.", variant: "destructive" });
+      toast({ title: "প্রথমে লগইন করুন", description: "কোর্স কিনতে লগইন প্রয়োজন।", variant: "destructive" });
       return;
     }
     if (!transactionId.trim()) {
@@ -186,7 +186,7 @@ const CourseDetail = () => {
     setSubmitting(false);
 
     if (error) {
-      toast({ title: "Purchase failed", description: error.message, variant: "destructive" });
+      toast({ title: "ক্রয় ব্যর্থ হয়েছে", description: error.message, variant: "destructive" });
     } else {
       // Send admin notification email (fire-and-forget)
       supabase.functions.invoke("notify-order", {
@@ -225,7 +225,7 @@ const CourseDetail = () => {
   const handleSubmitReview = async () => {
     if (!user || !course) return;
     if (!reviewForm.comment.trim()) {
-      toast({ title: "Please write a comment", variant: "destructive" });
+      toast({ title: "মন্তব্য লিখুন", variant: "destructive" });
       return;
     }
     setSubmittingReview(true);
@@ -239,9 +239,9 @@ const CourseDetail = () => {
     });
     setSubmittingReview(false);
     if (error) {
-      toast({ title: "Failed to submit review", description: error.message, variant: "destructive" });
+      toast({ title: "রিভিউ জমা দিতে ব্যর্থ", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Review submitted! 🎉" });
+      toast({ title: "রিভিউ জমা হয়েছে! 🎉" });
       setReviewForm({ rating: 5, comment: "" });
       // Refresh reviews
       const { data } = await supabase.from("reviews").select("id, reviewer_name, rating, comment, created_at").eq("course_id", course.id).eq("is_active", true).order("created_at", { ascending: false });
@@ -253,7 +253,7 @@ const CourseDetail = () => {
     <div className="py-10 lg:py-16">
       <div className="container mx-auto px-4">
         <Link to="/courses" className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary">
-          <ArrowLeft className="h-4 w-4" /> Back to Courses
+          <ArrowLeft className="h-4 w-4" /> কোর্সের তালিকায় ফিরে যান
         </Link>
 
         <div className="mt-4 grid gap-10 lg:grid-cols-3">
@@ -268,13 +268,12 @@ const CourseDetail = () => {
               <span className="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2.5 py-1 text-xs font-medium text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">🎓 অনলাইন কোর্স</span>
             </div>
             <h1 className="mt-3 text-3xl font-bold text-foreground lg:text-4xl">{course.title}</h1>
-            <p className="mt-2 text-muted-foreground">Instructor: {course.instructor}</p>
+            <p className="mt-2 text-muted-foreground">ইন্সট্রাক্টর: {course.instructor}</p>
             <div className="mt-4 flex flex-wrap gap-4 text-sm text-muted-foreground">
               <span className="flex items-center gap-1"><Clock className="h-4 w-4" /> {course.duration}</span>
-              <span className="flex items-center gap-1"><Users className="h-4 w-4" /> 500+ Students</span>
             </div>
             <div className="mt-8">
-              <h2 className="text-2xl font-bold text-foreground">Course Overview</h2>
+              <h2 className="text-2xl font-bold text-foreground">কোর্স বিবরণ</h2>
               <p className="mt-4 leading-relaxed text-muted-foreground">{course.description}</p>
             </div>
 
@@ -387,7 +386,7 @@ const CourseDetail = () => {
                     className="mt-3"
                   />
                   <Button onClick={handleSubmitReview} disabled={submittingReview} size="sm" className="mt-3">
-                    <Send className="mr-2 h-4 w-4" /> {submittingReview ? "Submitting..." : "Submit Review"}
+                    <Send className="mr-2 h-4 w-4" /> {submittingReview ? "জমা হচ্ছে..." : "রিভিউ দিন"}
                   </Button>
                 </div>
               )}
@@ -431,7 +430,7 @@ const CourseDetail = () => {
               </div>
               {course.original_price && course.price > 0 && (
                 <p className="mt-1 text-sm text-success font-medium">
-                  {Math.round(((course.original_price - course.price) / course.original_price) * 100)}% off
+                  {Math.round(((course.original_price - course.price) / course.original_price) * 100)}% ছাড়
                 </p>
               )}
 
@@ -474,7 +473,7 @@ const CourseDetail = () => {
                     }).select("order_id").single();
                     setSubmitting(false);
                     if (error) {
-                      toast({ title: "Failed", description: error.message, variant: "destructive" });
+                      toast({ title: "ব্যর্থ হয়েছে", description: error.message, variant: "destructive" });
                     } else {
                       trackEvent("Purchase", {
                         content_name: course.title,
@@ -489,12 +488,12 @@ const CourseDetail = () => {
                     }
                   }}
                 >
-                  {submitting ? "Processing..." : "ফ্রিতে এনরোল করুন"}
+                  {submitting ? "প্রসেস হচ্ছে..." : "ফ্রিতে এনরোল করুন"}
                 </Button>
               ) : (
                 <>
                   <div className="mt-6">
-                    <p className="text-sm font-medium text-foreground">Payment Method</p>
+                    <p className="text-sm font-medium text-foreground">পেমেন্ট পদ্ধতি</p>
                     <div className="mt-3 grid grid-cols-2 gap-3">
                       {mfsMethods.length > 0 ? mfsMethods.map((m) => (
                         <button
@@ -546,19 +545,19 @@ const CourseDetail = () => {
 
                   {/* Transaction ID field */}
                   <div className="mt-4">
-                    <Label htmlFor="courseTxnId" className="text-sm font-medium">Transaction ID *</Label>
+                    <Label htmlFor="courseTxnId" className="text-sm font-medium">ট্রানজেকশন আইডি *</Label>
                     <Input id="courseTxnId" value={transactionId} onChange={(e) => setTransactionId(e.target.value)} className="mt-1" placeholder="যেমন: TXN1234ABCD" />
                   </div>
 
                   <Button onClick={handlePurchase} size="lg" className="mt-4 w-full" disabled={submitting}>
-                    {submitting ? "Processing..." : "Purchase Course"}
+                    {submitting ? "প্রসেস হচ্ছে..." : "কোর্স কিনুন"}
                   </Button>
                 </>
               )}
               <ul className="mt-6 space-y-2 text-xs text-muted-foreground">
-                <li className="flex items-center gap-2"><PlayCircle className="h-3.5 w-3.5 text-primary" /> Lifetime access</li>
-                <li className="flex items-center gap-2"><BookOpen className="h-3.5 w-3.5 text-primary" /> {lessons.length} lessons</li>
-                <li className="flex items-center gap-2"><Clock className="h-3.5 w-3.5 text-primary" /> {course.duration} of content</li>
+                <li className="flex items-center gap-2"><PlayCircle className="h-3.5 w-3.5 text-primary" /> আজীবন অ্যাক্সেস</li>
+                <li className="flex items-center gap-2"><BookOpen className="h-3.5 w-3.5 text-primary" /> {lessons.length} টি লেসন</li>
+                <li className="flex items-center gap-2"><Clock className="h-3.5 w-3.5 text-primary" /> {course.duration} কন্টেন্ট</li>
               </ul>
             </div>
           </div>
