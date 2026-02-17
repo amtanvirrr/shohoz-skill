@@ -229,12 +229,25 @@ const AdminSettings = () => {
                 </SelectTrigger>
                 <SelectContent>
                   {FONT_OPTIONS.map((f) => (
-                    <SelectItem key={f.value} value={f.value} style={{ fontFamily: f.family }}>
-                      {f.label}
+                    <SelectItem key={f.value} value={f.value}>
+                      <div>
+                        <span className="text-sm font-medium">{f.label}</span>
+                        <p className="text-base text-muted-foreground mt-0.5" style={{ fontFamily: f.family }}>
+                          আমি বাংলায় গান গাই — Preview Text
+                        </p>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {fields.site_font && fields.site_font !== "default" && (
+                <div className="mt-3 rounded-lg border border-border bg-muted/50 p-4">
+                  <p className="text-xs text-muted-foreground mb-1">প্রিভিউ:</p>
+                  <p className="text-lg" style={{ fontFamily: FONT_OPTIONS.find(f => f.value === fields.site_font)?.family }}>
+                    আমি বাংলায় গান গাই, বাংলা আমার প্রাণ।
+                  </p>
+                </div>
+              )}
               <p className="mt-1 text-xs text-muted-foreground">পুরো ওয়েবসাইটের ফন্ট পরিবর্তন করুন।</p>
             </div>
           </div>
