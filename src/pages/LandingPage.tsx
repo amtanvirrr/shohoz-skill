@@ -35,6 +35,7 @@ interface LandingPageData {
   show_stock_badge: boolean;
   stock_limit: number;
   stock_sold: number;
+  section_order: string[];
 }
 
 interface ProductInfo {
@@ -202,279 +203,290 @@ const LandingPage = () => {
     minimal: { bg: "bg-background", hero: "bg-muted/30", card: "bg-card" },
   }[page.theme] || { bg: "bg-background", hero: "bg-primary/5", card: "bg-card" };
 
-  return (
-    <div className={`min-h-screen ${themeClasses.bg}`}>
-      {/* Hero Section */}
-      <section className={`${themeClasses.hero} py-12 md:py-20`}>
-        <div className="container mx-auto px-4">
-          <div className="grid gap-8 md:grid-cols-2 items-center">
-            <div className={page.theme === "bold" ? "order-1" : ""}>
-              <h1 className={`font-display font-bold text-foreground leading-tight ${page.theme === "bold" ? "text-4xl md:text-5xl lg:text-6xl" : "text-3xl md:text-4xl lg:text-5xl"}`}>
-                {page.headline}
-              </h1>
-              {page.subheadline && (
-                <p className={`mt-4 text-muted-foreground ${page.theme === "bold" ? "text-lg md:text-xl" : "text-base md:text-lg"}`}>
-                  {page.subheadline}
-                </p>
-              )}
-              <div className="mt-6 flex flex-wrap gap-3 items-center">
-                <div className="flex items-baseline gap-3">
-                  {product.price === 0 ? (
-                    <span className="text-3xl font-bold text-green-600">ফ্রি</span>
-                  ) : (
-                    <>
-                      <span className="text-3xl font-bold text-foreground">৳{product.price}</span>
-                      {product.original_price && <span className="text-lg text-muted-foreground line-through">৳{product.original_price}</span>}
-                    </>
+  const sectionOrder: string[] = (page.section_order as any as string[])?.length
+    ? (page.section_order as any as string[])
+    : ["hero", "benefits", "media_gallery", "reviews", "order_form", "faqs", "final_cta"];
+
+  const renderSection = (sectionId: string) => {
+    switch (sectionId) {
+      case "hero":
+        return (
+          <section key="hero" className={`${themeClasses.hero} py-12 md:py-20`}>
+            <div className="container mx-auto px-4">
+              <div className="grid gap-8 md:grid-cols-2 items-center">
+                <div className={page.theme === "bold" ? "order-1" : ""}>
+                  <h1 className={`font-display font-bold text-foreground leading-tight ${page.theme === "bold" ? "text-4xl md:text-5xl lg:text-6xl" : "text-3xl md:text-4xl lg:text-5xl"}`}>
+                    {page.headline}
+                  </h1>
+                  {page.subheadline && (
+                    <p className={`mt-4 text-muted-foreground ${page.theme === "bold" ? "text-lg md:text-xl" : "text-base md:text-lg"}`}>
+                      {page.subheadline}
+                    </p>
                   )}
+                  <div className="mt-6 flex flex-wrap gap-3 items-center">
+                    <div className="flex items-baseline gap-3">
+                      {product.price === 0 ? (
+                        <span className="text-3xl font-bold text-green-600">ফ্রি</span>
+                      ) : (
+                        <>
+                          <span className="text-3xl font-bold text-foreground">৳{product.price}</span>
+                          {product.original_price && <span className="text-lg text-muted-foreground line-through">৳{product.original_price}</span>}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  {page.show_countdown && !countdown.expired && (
+                    <div className="mt-4 inline-flex items-center gap-2 rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-2.5 text-destructive">
+                      <Clock className="h-5 w-5 animate-pulse" />
+                      <span className="font-bold text-sm">
+                        অফার শেষ হবে: {countdown.days > 0 && `${countdown.days}দিন `}{String(countdown.hours).padStart(2, '0')}:{String(countdown.minutes).padStart(2, '0')}:{String(countdown.seconds).padStart(2, '0')}
+                      </span>
+                    </div>
+                  )}
+                  {page.show_stock_badge && stockRemaining > 0 && (
+                    <div className="mt-3 inline-flex items-center gap-2 rounded-lg bg-orange-500/10 border border-orange-500/20 px-4 py-2">
+                      <Flame className="h-4 w-4 text-orange-500" />
+                      <span className="text-sm font-semibold text-orange-600 dark:text-orange-400">
+                        মাত্র {stockRemaining}টি বাকি আছে!
+                      </span>
+                      <div className="w-20 h-1.5 rounded-full bg-orange-200 dark:bg-orange-900 overflow-hidden">
+                        <div className="h-full rounded-full bg-orange-500 transition-all" style={{ width: `${stockPercent}%` }} />
+                      </div>
+                    </div>
+                  )}
+                  {page.show_stock_badge && stockRemaining <= 0 && (
+                    <div className="mt-3 inline-flex items-center gap-2 rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-2">
+                      <AlertTriangle className="h-4 w-4 text-destructive" />
+                      <span className="text-sm font-bold text-destructive">স্টক শেষ!</span>
+                    </div>
+                  )}
+                  <Button size="lg" className="mt-6 text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all" style={ctaStyle} onClick={scrollToOrder}>
+                    {page.cta_text} →
+                  </Button>
+                </div>
+                <div className={page.theme === "bold" ? "order-0" : ""}>
+                  {page.hero_video_url ? (
+                    <div className="aspect-video rounded-2xl overflow-hidden shadow-2xl">
+                      <iframe src={page.hero_video_url} className="w-full h-full" allowFullScreen allow="autoplay; encrypted-media" />
+                    </div>
+                  ) : page.hero_image_url ? (
+                    <img src={page.hero_image_url} alt={page.headline} className="rounded-2xl shadow-2xl w-full object-cover max-h-[500px]" />
+                  ) : null}
                 </div>
               </div>
-              {/* Urgency badges */}
-              {page.show_countdown && !countdown.expired && (
-                <div className="mt-4 inline-flex items-center gap-2 rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-2.5 text-destructive">
-                  <Clock className="h-5 w-5 animate-pulse" />
-                  <span className="font-bold text-sm">
-                    অফার শেষ হবে: {countdown.days > 0 && `${countdown.days}দিন `}{String(countdown.hours).padStart(2, '0')}:{String(countdown.minutes).padStart(2, '0')}:{String(countdown.seconds).padStart(2, '0')}
-                  </span>
-                </div>
-              )}
-              {page.show_stock_badge && stockRemaining > 0 && (
-                <div className="mt-3 inline-flex items-center gap-2 rounded-lg bg-orange-500/10 border border-orange-500/20 px-4 py-2">
-                  <Flame className="h-4 w-4 text-orange-500" />
-                  <span className="text-sm font-semibold text-orange-600 dark:text-orange-400">
-                    মাত্র {stockRemaining}টি বাকি আছে!
-                  </span>
-                  <div className="w-20 h-1.5 rounded-full bg-orange-200 dark:bg-orange-900 overflow-hidden">
-                    <div className="h-full rounded-full bg-orange-500 transition-all" style={{ width: `${stockPercent}%` }} />
-                  </div>
-                </div>
-              )}
-              {page.show_stock_badge && stockRemaining <= 0 && (
-                <div className="mt-3 inline-flex items-center gap-2 rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-2">
-                  <AlertTriangle className="h-4 w-4 text-destructive" />
-                  <span className="text-sm font-bold text-destructive">স্টক শেষ!</span>
-                </div>
-              )}
+            </div>
+          </section>
+        );
 
-              <Button size="lg" className="mt-6 text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all" style={ctaStyle} onClick={scrollToOrder}>
+      case "benefits":
+        if (benefits.length === 0 || !benefits[0].title) return null;
+        return (
+          <section key="benefits" className="py-12 md:py-16">
+            <div className="container mx-auto px-4">
+              <h2 className="text-center font-display text-2xl md:text-3xl font-bold text-foreground mb-10">কেন এটি আপনার জন্য?</h2>
+              <div className={`grid gap-6 ${page.theme === "minimal" ? "md:grid-cols-2" : "md:grid-cols-3"}`}>
+                {benefits.filter(b => b.title).map((b, i) => (
+                  <div key={i} className={`rounded-xl border border-border p-6 ${themeClasses.card} ${page.theme === "bold" ? "shadow-lg hover:shadow-xl transition-shadow" : "shadow-sm"}`}>
+                    <div className="flex items-start gap-3">
+                      <CheckCircle className="h-6 w-6 text-green-500 shrink-0 mt-0.5" />
+                      <div>
+                        <h3 className="font-semibold text-foreground text-lg">{b.title}</h3>
+                        {b.description && <p className="mt-1 text-sm text-muted-foreground">{b.description}</p>}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-10 text-center">
+                <Button size="lg" style={ctaStyle} onClick={scrollToOrder}>{page.cta_text}</Button>
+              </div>
+            </div>
+          </section>
+        );
+
+      case "media_gallery":
+        if (mediaItems.length === 0) return null;
+        return (
+          <section key="media_gallery" className="py-12 md:py-16 bg-muted/30">
+            <div className="container mx-auto px-4">
+              <div className={`grid gap-4 ${mediaItems.length === 1 ? "max-w-2xl mx-auto" : "md:grid-cols-2"}`}>
+                {mediaItems.map((m, i) => (
+                  <div key={i} className="rounded-xl overflow-hidden shadow-md">
+                    {m.type === "video" ? (
+                      <div className="aspect-video"><iframe src={m.url} className="w-full h-full" allowFullScreen /></div>
+                    ) : (
+                      <img src={m.url} alt={m.caption || ""} className="w-full object-cover" />
+                    )}
+                    {m.caption && <p className="p-3 text-sm text-center text-muted-foreground bg-card">{m.caption}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        );
+
+      case "reviews":
+        if (reviews.length === 0) return null;
+        return (
+          <section key="reviews" className="py-12 md:py-16">
+            <div className="container mx-auto px-4">
+              <h2 className="text-center font-display text-2xl md:text-3xl font-bold text-foreground mb-10">গ্রাহকরা কী বলছেন</h2>
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {reviews.map((r, i) => (
+                  <div key={i} className={`rounded-xl border border-border p-6 ${themeClasses.card} shadow-sm`}>
+                    <div className="flex items-center gap-3 mb-3">
+                      {r.image_url ? (
+                        <img src={r.image_url} alt={r.name} className="h-10 w-10 rounded-full object-cover" />
+                      ) : (
+                        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">{r.name.charAt(0)}</div>
+                      )}
+                      <div>
+                        <p className="font-semibold text-foreground">{r.name}</p>
+                        <div className="flex">{Array.from({ length: r.rating }).map((_, j) => <Star key={j} className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />)}</div>
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{r.comment}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-10 text-center">
+                <Button size="lg" style={ctaStyle} onClick={scrollToOrder}>{page.cta_text}</Button>
+              </div>
+            </div>
+          </section>
+        );
+
+      case "order_form":
+        return (
+          <section key="order_form" id="lp-order-form" className={`py-12 md:py-16 ${page.theme === "bold" ? "bg-gradient-to-br from-primary/5 to-accent/5" : "bg-muted/30"}`}>
+            <div className="container mx-auto px-4 max-w-xl">
+              <div className={`rounded-2xl border-2 border-primary/20 p-6 md:p-8 ${themeClasses.card} shadow-xl`}>
+                <h2 className="text-center font-display text-2xl font-bold text-foreground mb-2">
+                  <ShoppingBag className="inline h-6 w-6 mr-2" />{page.cta_text}
+                </h2>
+                <p className="text-center text-sm text-muted-foreground mb-6">
+                  {isPhysical ? "ক্যাশ অন ডেলিভারি — সারা বাংলাদেশে" : "পেমেন্ট করে এখনই পান"}
+                </p>
+                {isPhysical && page.show_quantity && (
+                  <div className="flex items-center justify-center gap-4 mb-6 p-3 rounded-lg bg-muted/50">
+                    <Label className="text-sm font-medium">পরিমাণ:</Label>
+                    <div className="flex items-center gap-2">
+                      <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setQuantity(q => Math.max(1, q - 1))}><Minus className="h-4 w-4" /></Button>
+                      <span className="w-10 text-center font-bold text-lg">{quantity}</span>
+                      <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setQuantity(q => q + 1)}><Plus className="h-4 w-4" /></Button>
+                    </div>
+                    <span className="text-sm font-medium text-foreground">৳{unitPrice * quantity}</span>
+                  </div>
+                )}
+                <form onSubmit={handleOrder} className="space-y-4">
+                  <div>
+                    <Label>আপনার নাম *</Label>
+                    <Input className="mt-1" value={order.name} onChange={e => setOrder(o => ({ ...o, name: e.target.value }))} placeholder="পূর্ণ নাম" />
+                  </div>
+                  <div>
+                    <Label>মোবাইল নম্বর *</Label>
+                    <Input className="mt-1" value={order.phone} onChange={e => setOrder(o => ({ ...o, phone: e.target.value }))} placeholder="01XXXXXXXXX" />
+                  </div>
+                  {isPhysical && (
+                    <div>
+                      <Label>ডেলিভারি ঠিকানা *</Label>
+                      <Textarea className="mt-1" rows={2} value={order.address} onChange={e => setOrder(o => ({ ...o, address: e.target.value }))} placeholder="সম্পূর্ণ ঠিকানা" />
+                    </div>
+                  )}
+                  {isPhysical && shippingZones.length > 0 && (
+                    <div>
+                      <Label>ডেলিভারি জোন *</Label>
+                      <Select value={selectedZone} onValueChange={setSelectedZone}>
+                        <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {shippingZones.map(z => (
+                            <SelectItem key={z.zone_name} value={z.zone_name}>
+                              {z.zone_label} — ৳{z.shipping_rate} ({z.delivery_time_min}-{z.delivery_time_max} {z.delivery_time_unit})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  {!isPhysical && mfsMethods.length > 0 && (
+                    <>
+                      <div>
+                        <Label>পেমেন্ট মেথড *</Label>
+                        <div className="mt-2 grid grid-cols-2 gap-2">
+                          {mfsMethods.map(m => (
+                            <button type="button" key={m.provider} onClick={() => setOrder(o => ({ ...o, paymentMethod: m.provider }))}
+                              className={`rounded-lg border-2 px-3 py-2 text-sm font-medium transition-all ${order.paymentMethod === m.provider ? "border-primary bg-primary/10 text-primary" : "border-border hover:border-primary/50"}`}>
+                              {m.display_name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      {selectedMfs && (
+                        <div className="rounded-lg bg-muted/50 p-3 text-sm space-y-1">
+                          <p className="font-medium">{selectedMfs.display_name} ({selectedMfs.mfs_type})</p>
+                          <p>নম্বর: <span className="font-mono font-bold">{selectedMfs.phone_number}</span></p>
+                          {selectedMfs.payment_instruction && <p className="text-muted-foreground">{selectedMfs.payment_instruction}</p>}
+                        </div>
+                      )}
+                      <div>
+                        <Label>Transaction ID *</Label>
+                        <Input className="mt-1" value={order.transactionId} onChange={e => setOrder(o => ({ ...o, transactionId: e.target.value }))} placeholder="পেমেন্টের Transaction ID" />
+                      </div>
+                    </>
+                  )}
+                  <div className="rounded-lg bg-muted/50 p-4 space-y-2">
+                    {quantity > 1 && <div className="flex justify-between text-sm"><span>মূল্য ({quantity}×৳{unitPrice})</span><span>৳{unitPrice * quantity}</span></div>}
+                    {isPhysical && shippingCost > 0 && <div className="flex justify-between text-sm"><span>শিপিং</span><span>৳{shippingCost}</span></div>}
+                    {isPhysical && shippingCost === 0 && activeZone && <div className="flex justify-between text-sm text-green-600"><span>শিপিং</span><span>ফ্রি!</span></div>}
+                    <div className="flex justify-between font-bold text-lg border-t pt-2"><span>সর্বমোট</span><span>৳{totalPrice}</span></div>
+                  </div>
+                  <Button type="submit" size="lg" className="w-full text-lg py-6 shadow-lg" style={ctaStyle} disabled={submitting}>
+                    {submitting ? "প্রসেস হচ্ছে..." : page.cta_text}
+                  </Button>
+                </form>
+              </div>
+            </div>
+          </section>
+        );
+
+      case "faqs":
+        if (faqs.length === 0 || !faqs[0].question) return null;
+        return (
+          <section key="faqs" className="py-12 md:py-16">
+            <div className="container mx-auto px-4 max-w-2xl">
+              <h2 className="text-center font-display text-2xl md:text-3xl font-bold text-foreground mb-8">সচরাচর জিজ্ঞাসা</h2>
+              <Accordion type="single" collapsible className="space-y-2">
+                {faqs.filter(f => f.question).map((f, i) => (
+                  <AccordionItem key={i} value={`faq-${i}`} className="border rounded-lg px-4">
+                    <AccordionTrigger className="text-left font-medium">{f.question}</AccordionTrigger>
+                    <AccordionContent className="text-muted-foreground">{f.answer}</AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </div>
+          </section>
+        );
+
+      case "final_cta":
+        return (
+          <section key="final_cta" className={`py-12 ${themeClasses.hero}`}>
+            <div className="container mx-auto px-4 text-center">
+              <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-4">{page.headline}</h2>
+              <Button size="lg" className="text-lg px-10 py-6 shadow-xl" style={ctaStyle} onClick={scrollToOrder}>
                 {page.cta_text} →
               </Button>
             </div>
-            <div className={page.theme === "bold" ? "order-0" : ""}>
-              {page.hero_video_url ? (
-                <div className="aspect-video rounded-2xl overflow-hidden shadow-2xl">
-                  <iframe src={page.hero_video_url} className="w-full h-full" allowFullScreen allow="autoplay; encrypted-media" />
-                </div>
-              ) : page.hero_image_url ? (
-                <img src={page.hero_image_url} alt={page.headline} className="rounded-2xl shadow-2xl w-full object-cover max-h-[500px]" />
-              ) : null}
-            </div>
-          </div>
-        </div>
-      </section>
+          </section>
+        );
 
-      {/* Benefits */}
-      {benefits.length > 0 && benefits[0].title && (
-        <section className="py-12 md:py-16">
-          <div className="container mx-auto px-4">
-            <h2 className="text-center font-display text-2xl md:text-3xl font-bold text-foreground mb-10">কেন এটি আপনার জন্য?</h2>
-            <div className={`grid gap-6 ${page.theme === "minimal" ? "md:grid-cols-2" : "md:grid-cols-3"}`}>
-              {benefits.filter(b => b.title).map((b, i) => (
-                <div key={i} className={`rounded-xl border border-border p-6 ${themeClasses.card} ${page.theme === "bold" ? "shadow-lg hover:shadow-xl transition-shadow" : "shadow-sm"}`}>
-                  <div className="flex items-start gap-3">
-                    <CheckCircle className="h-6 w-6 text-green-500 shrink-0 mt-0.5" />
-                    <div>
-                      <h3 className="font-semibold text-foreground text-lg">{b.title}</h3>
-                      {b.description && <p className="mt-1 text-sm text-muted-foreground">{b.description}</p>}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="mt-10 text-center">
-              <Button size="lg" style={ctaStyle} onClick={scrollToOrder}>{page.cta_text}</Button>
-            </div>
-          </div>
-        </section>
-      )}
+      default:
+        return null;
+    }
+  };
 
-      {/* Media Gallery */}
-      {mediaItems.length > 0 && (
-        <section className="py-12 md:py-16 bg-muted/30">
-          <div className="container mx-auto px-4">
-            <div className={`grid gap-4 ${mediaItems.length === 1 ? "max-w-2xl mx-auto" : "md:grid-cols-2"}`}>
-              {mediaItems.map((m, i) => (
-                <div key={i} className="rounded-xl overflow-hidden shadow-md">
-                  {m.type === "video" ? (
-                    <div className="aspect-video"><iframe src={m.url} className="w-full h-full" allowFullScreen /></div>
-                  ) : (
-                    <img src={m.url} alt={m.caption || ""} className="w-full object-cover" />
-                  )}
-                  {m.caption && <p className="p-3 text-sm text-center text-muted-foreground bg-card">{m.caption}</p>}
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Reviews */}
-      {reviews.length > 0 && (
-        <section className="py-12 md:py-16">
-          <div className="container mx-auto px-4">
-            <h2 className="text-center font-display text-2xl md:text-3xl font-bold text-foreground mb-10">গ্রাহকরা কী বলছেন</h2>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {reviews.map((r, i) => (
-                <div key={i} className={`rounded-xl border border-border p-6 ${themeClasses.card} shadow-sm`}>
-                  <div className="flex items-center gap-3 mb-3">
-                    {r.image_url ? (
-                      <img src={r.image_url} alt={r.name} className="h-10 w-10 rounded-full object-cover" />
-                    ) : (
-                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">{r.name.charAt(0)}</div>
-                    )}
-                    <div>
-                      <p className="font-semibold text-foreground">{r.name}</p>
-                      <div className="flex">{Array.from({ length: r.rating }).map((_, j) => <Star key={j} className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />)}</div>
-                    </div>
-                  </div>
-                  <p className="text-sm text-muted-foreground">{r.comment}</p>
-                </div>
-              ))}
-            </div>
-            <div className="mt-10 text-center">
-              <Button size="lg" style={ctaStyle} onClick={scrollToOrder}>{page.cta_text}</Button>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Order Form */}
-      <section id="lp-order-form" className={`py-12 md:py-16 ${page.theme === "bold" ? "bg-gradient-to-br from-primary/5 to-accent/5" : "bg-muted/30"}`}>
-        <div className="container mx-auto px-4 max-w-xl">
-          <div className={`rounded-2xl border-2 border-primary/20 p-6 md:p-8 ${themeClasses.card} shadow-xl`}>
-            <h2 className="text-center font-display text-2xl font-bold text-foreground mb-2">
-              <ShoppingBag className="inline h-6 w-6 mr-2" />{page.cta_text}
-            </h2>
-            <p className="text-center text-sm text-muted-foreground mb-6">
-              {isPhysical ? "ক্যাশ অন ডেলিভারি — সারা বাংলাদেশে" : "পেমেন্ট করে এখনই পান"}
-            </p>
-
-            {/* Quantity for physical */}
-            {isPhysical && page.show_quantity && (
-              <div className="flex items-center justify-center gap-4 mb-6 p-3 rounded-lg bg-muted/50">
-                <Label className="text-sm font-medium">পরিমাণ:</Label>
-                <div className="flex items-center gap-2">
-                  <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setQuantity(q => Math.max(1, q - 1))}><Minus className="h-4 w-4" /></Button>
-                  <span className="w-10 text-center font-bold text-lg">{quantity}</span>
-                  <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setQuantity(q => q + 1)}><Plus className="h-4 w-4" /></Button>
-                </div>
-                <span className="text-sm font-medium text-foreground">৳{unitPrice * quantity}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleOrder} className="space-y-4">
-              <div>
-                <Label>আপনার নাম *</Label>
-                <Input className="mt-1" value={order.name} onChange={e => setOrder(o => ({ ...o, name: e.target.value }))} placeholder="পূর্ণ নাম" />
-              </div>
-              <div>
-                <Label>মোবাইল নম্বর *</Label>
-                <Input className="mt-1" value={order.phone} onChange={e => setOrder(o => ({ ...o, phone: e.target.value }))} placeholder="01XXXXXXXXX" />
-              </div>
-              {isPhysical && (
-                <div>
-                  <Label>ডেলিভারি ঠিকানা *</Label>
-                  <Textarea className="mt-1" rows={2} value={order.address} onChange={e => setOrder(o => ({ ...o, address: e.target.value }))} placeholder="সম্পূর্ণ ঠিকানা" />
-                </div>
-              )}
-
-              {/* Shipping zone for physical */}
-              {isPhysical && shippingZones.length > 0 && (
-                <div>
-                  <Label>ডেলিভারি জোন *</Label>
-                  <Select value={selectedZone} onValueChange={setSelectedZone}>
-                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {shippingZones.map(z => (
-                        <SelectItem key={z.zone_name} value={z.zone_name}>
-                          {z.zone_label} — ৳{z.shipping_rate} ({z.delivery_time_min}-{z.delivery_time_max} {z.delivery_time_unit})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              {/* MFS payment for digital */}
-              {!isPhysical && mfsMethods.length > 0 && (
-                <>
-                  <div>
-                    <Label>পেমেন্ট মেথড *</Label>
-                    <div className="mt-2 grid grid-cols-2 gap-2">
-                      {mfsMethods.map(m => (
-                        <button type="button" key={m.provider} onClick={() => setOrder(o => ({ ...o, paymentMethod: m.provider }))}
-                          className={`rounded-lg border-2 px-3 py-2 text-sm font-medium transition-all ${order.paymentMethod === m.provider ? "border-primary bg-primary/10 text-primary" : "border-border hover:border-primary/50"}`}>
-                          {m.display_name}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  {selectedMfs && (
-                    <div className="rounded-lg bg-muted/50 p-3 text-sm space-y-1">
-                      <p className="font-medium">{selectedMfs.display_name} ({selectedMfs.mfs_type})</p>
-                      <p>নম্বর: <span className="font-mono font-bold">{selectedMfs.phone_number}</span></p>
-                      {selectedMfs.payment_instruction && <p className="text-muted-foreground">{selectedMfs.payment_instruction}</p>}
-                    </div>
-                  )}
-                  <div>
-                    <Label>Transaction ID *</Label>
-                    <Input className="mt-1" value={order.transactionId} onChange={e => setOrder(o => ({ ...o, transactionId: e.target.value }))} placeholder="পেমেন্টের Transaction ID" />
-                  </div>
-                </>
-              )}
-
-              {/* Price summary */}
-              <div className="rounded-lg bg-muted/50 p-4 space-y-2">
-                {quantity > 1 && <div className="flex justify-between text-sm"><span>মূল্য ({quantity}×৳{unitPrice})</span><span>৳{unitPrice * quantity}</span></div>}
-                {isPhysical && shippingCost > 0 && <div className="flex justify-between text-sm"><span>শিপিং</span><span>৳{shippingCost}</span></div>}
-                {isPhysical && shippingCost === 0 && activeZone && <div className="flex justify-between text-sm text-green-600"><span>শিপিং</span><span>ফ্রি!</span></div>}
-                <div className="flex justify-between font-bold text-lg border-t pt-2"><span>সর্বমোট</span><span>৳{totalPrice}</span></div>
-              </div>
-
-              <Button type="submit" size="lg" className="w-full text-lg py-6 shadow-lg" style={ctaStyle} disabled={submitting}>
-                {submitting ? "প্রসেস হচ্ছে..." : page.cta_text}
-              </Button>
-            </form>
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      {faqs.length > 0 && faqs[0].question && (
-        <section className="py-12 md:py-16">
-          <div className="container mx-auto px-4 max-w-2xl">
-            <h2 className="text-center font-display text-2xl md:text-3xl font-bold text-foreground mb-8">সচরাচর জিজ্ঞাসা</h2>
-            <Accordion type="single" collapsible className="space-y-2">
-              {faqs.filter(f => f.question).map((f, i) => (
-                <AccordionItem key={i} value={`faq-${i}`} className="border rounded-lg px-4">
-                  <AccordionTrigger className="text-left font-medium">{f.question}</AccordionTrigger>
-                  <AccordionContent className="text-muted-foreground">{f.answer}</AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </div>
-        </section>
-      )}
-
-      {/* Final CTA */}
-      <section className={`py-12 ${themeClasses.hero}`}>
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-4">{page.headline}</h2>
-          <Button size="lg" className="text-lg px-10 py-6 shadow-xl" style={ctaStyle} onClick={scrollToOrder}>
-            {page.cta_text} →
-          </Button>
-        </div>
-      </section>
+  return (
+    <div className={`min-h-screen ${themeClasses.bg}`}>
+      {sectionOrder.map(id => renderSection(id))}
 
       {/* Footer */}
       <footer className="py-6 text-center text-sm text-muted-foreground border-t">

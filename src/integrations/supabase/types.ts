@@ -293,6 +293,7 @@ export type Database = {
           product_id: string
           product_type: string
           reviews: Json
+          section_order: Json
           show_countdown: boolean
           show_quantity: boolean
           show_stock_badge: boolean
@@ -319,6 +320,7 @@ export type Database = {
           product_id: string
           product_type?: string
           reviews?: Json
+          section_order?: Json
           show_countdown?: boolean
           show_quantity?: boolean
           show_stock_badge?: boolean
@@ -345,6 +347,7 @@ export type Database = {
           product_id?: string
           product_type?: string
           reviews?: Json
+          section_order?: Json
           show_countdown?: boolean
           show_quantity?: boolean
           show_stock_badge?: boolean

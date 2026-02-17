@@ -8,9 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, Edit, Eye, Upload, Loader2, X as XIcon } from "lucide-react";
+import { Plus, Trash2, Edit, Eye, Upload, Loader2, X as XIcon, GripVertical } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { generateSlug } from "@/lib/slugify";
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
+import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable, arrayMove } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 const BUCKET = "landing-page-images";
 
@@ -84,6 +87,7 @@ interface LandingPage {
   show_stock_badge: boolean;
   stock_limit: number;
   stock_sold: number;
+  section_order: string[];
 }
 
 interface Product {
@@ -99,6 +103,32 @@ const THEMES = [
   { value: "bold", label: "বোল্ড", description: "উজ্জ্বল রং ও বড় টাইপোগ্রাফি" },
   { value: "minimal", label: "মিনিমাল", description: "সাদামাটা, ফোকাসড লেআউট" },
 ];
+
+const DEFAULT_SECTION_ORDER = ["hero", "benefits", "media_gallery", "reviews", "order_form", "faqs", "final_cta"];
+
+const SECTION_LABELS: Record<string, string> = {
+  hero: "🎯 হিরো সেকশন",
+  benefits: "✅ বেনিফিট",
+  media_gallery: "🖼️ মিডিয়া গ্যালারি",
+  reviews: "⭐ রিভিউ",
+  order_form: "🛒 অর্ডার ফর্ম",
+  faqs: "❓ FAQ",
+  final_cta: "📢 ফাইনাল CTA",
+};
+
+// Sortable section item
+const SortableSectionItem = ({ id }: { id: string }) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
+  return (
+    <div ref={setNodeRef} style={style} className={`flex items-center gap-3 rounded-lg border px-4 py-3 bg-card ${isDragging ? "shadow-lg" : ""}`}>
+      <button type="button" className="cursor-grab text-muted-foreground hover:text-foreground" {...attributes} {...listeners}>
+        <GripVertical className="h-5 w-5" />
+      </button>
+      <span className="text-sm font-medium">{SECTION_LABELS[id] || id}</span>
+    </div>
+  );
+};
 
 const AdminLandingPages = () => {
   const { toast } = useToast();
@@ -130,6 +160,7 @@ const AdminLandingPages = () => {
     show_stock_badge: false,
     stock_limit: 100,
     stock_sold: 0,
+    section_order: DEFAULT_SECTION_ORDER,
   };
 
   const [form, setForm] = useState<Omit<LandingPage, "id" | "created_at">>(emptyPage);
@@ -232,6 +263,7 @@ const AdminLandingPages = () => {
       show_stock_badge: page.show_stock_badge || false,
       stock_limit: page.stock_limit || 100,
       stock_sold: page.stock_sold || 0,
+      section_order: (page.section_order as any as string[])?.length ? (page.section_order as any as string[]) : DEFAULT_SECTION_ORDER,
     });
     setDialogOpen(true);
   };
@@ -530,6 +562,35 @@ const AdminLandingPages = () => {
                     </div>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+
+            {/* Section Order */}
+            <Card>
+              <CardHeader><CardTitle className="text-base">📐 সেকশন ক্রম (ড্র্যাগ করে সাজান)</CardTitle></CardHeader>
+              <CardContent>
+                <DndContext
+                  sensors={useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }))}
+                  collisionDetection={closestCenter}
+                  onDragEnd={(event: DragEndEvent) => {
+                    const { active, over } = event;
+                    if (over && active.id !== over.id) {
+                      setForm(f => {
+                        const oldIdx = f.section_order.indexOf(active.id as string);
+                        const newIdx = f.section_order.indexOf(over.id as string);
+                        return { ...f, section_order: arrayMove(f.section_order, oldIdx, newIdx) };
+                      });
+                    }
+                  }}
+                >
+                  <SortableContext items={form.section_order} strategy={verticalListSortingStrategy}>
+                    <div className="space-y-2">
+                      {form.section_order.map(id => (
+                        <SortableSectionItem key={id} id={id} />
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
               </CardContent>
             </Card>
 
