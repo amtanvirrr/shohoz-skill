@@ -288,7 +288,8 @@ const LandingPage = () => {
         ) : (
           <div className="mt-1 flex gap-2">
             <Input value={couponCode} onChange={e => { setCouponCode(e.target.value.toUpperCase()); setCouponError(""); }} placeholder="কুপন কোড লিখুন" className={`font-mono uppercase flex-1 ${inputClass}`} />
-            <Button type="button" variant="outline" size="sm" onClick={applyCoupon} disabled={couponLoading || !couponCode.trim()}>
+            <Button type="button" variant="outline" size="sm" onClick={applyCoupon} disabled={couponLoading || !couponCode.trim()}
+              className={isDark ? "border-amber-500 text-amber-400 hover:bg-amber-500/10 hover:text-amber-300" : ""}>
               {couponLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "প্রয়োগ"}
             </Button>
           </div>
@@ -307,9 +308,9 @@ const LandingPage = () => {
         <div className={`flex items-center justify-center gap-4 p-3 rounded-lg ${isDark ? "bg-zinc-800/50" : "bg-muted/50"}`}>
           <Label className="text-sm font-medium">পরিমাণ:</Label>
           <div className="flex items-center gap-2">
-            <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setQuantity(q => Math.max(1, q - 1))}><Minus className="h-4 w-4" /></Button>
+            <Button size="icon" variant="outline" className={`h-8 w-8 ${isDark ? "border-amber-500 text-amber-400 hover:bg-amber-500/10" : ""}`} onClick={() => setQuantity(q => Math.max(1, q - 1))}><Minus className="h-4 w-4" /></Button>
             <span className="w-10 text-center font-bold text-lg">{quantity}</span>
-            <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setQuantity(q => q + 1)}><Plus className="h-4 w-4" /></Button>
+            <Button size="icon" variant="outline" className={`h-8 w-8 ${isDark ? "border-amber-500 text-amber-400 hover:bg-amber-500/10" : ""}`} onClick={() => setQuantity(q => q + 1)}><Plus className="h-4 w-4" /></Button>
           </div>
         </div>
       )}
