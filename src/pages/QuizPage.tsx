@@ -611,8 +611,8 @@ const QuizPage = () => {
                           </div>
                         )}
                         <div>
-                          <Label className="text-xs">Transaction ID *</Label>
-                          <Input value={transactionId} onChange={(e) => setTransactionId(e.target.value)} placeholder="Transaction ID" className="mt-1" />
+                          <Label className="text-xs">ট্রানজেকশন আইডি *</Label>
+                          <Input value={transactionId} onChange={(e) => setTransactionId(e.target.value)} placeholder="ট্রানজেকশন আইডি" className="mt-1" />
                         </div>
                         <div className="flex gap-2">
                           <Button size="sm" variant="outline" onClick={() => setPurchasingQuiz(null)} className="flex-1">বাতিল</Button>
