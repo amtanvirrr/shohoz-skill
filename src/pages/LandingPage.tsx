@@ -237,7 +237,7 @@ const LandingPage = () => {
   const theme = page.theme;
 
   // ==================== SHARED: Order Form Inner Content ====================
-  const renderOrderFormContent = (inputClass = "", labelClass = "") => (
+  const renderOrderFormContent = (inputClass = "", labelClass = "", isDark = false) => (
     <form onSubmit={handleOrder} className="space-y-4">
       <div><Label className={labelClass}>আপনার নাম *</Label><Input className={`mt-1 ${inputClass}`} value={order.name} onChange={e => setOrder(o => ({ ...o, name: e.target.value }))} placeholder="পূর্ণ নাম" /></div>
       <div><Label className={labelClass}>মোবাইল নম্বর *</Label><Input className={`mt-1 ${inputClass}`} value={order.phone} onChange={e => setOrder(o => ({ ...o, phone: e.target.value }))} placeholder="01XXXXXXXXX" /></div>
@@ -255,14 +255,18 @@ const LandingPage = () => {
             <div className="mt-2 grid grid-cols-2 gap-2">
               {mfsMethods.map(m => (
                 <button type="button" key={m.provider} onClick={() => setOrder(o => ({ ...o, paymentMethod: m.provider }))}
-                  className={`rounded-lg border-2 px-3 py-2 text-sm font-medium transition-all ${order.paymentMethod === m.provider ? "border-primary bg-primary/10 text-primary" : "border-border hover:border-primary/50"}`}>
+                  className={`rounded-lg border-2 px-3 py-2 text-sm font-medium transition-all ${
+                    isDark
+                      ? (order.paymentMethod === m.provider ? "border-amber-500 bg-amber-500/10 text-amber-400" : "border-zinc-700 hover:border-amber-500/50 text-zinc-300")
+                      : (order.paymentMethod === m.provider ? "border-primary bg-primary/10 text-primary" : "border-border hover:border-primary/50")
+                  }`}>
                   {m.display_name}
                 </button>
               ))}
             </div>
           </div>
           {selectedMfs && (
-            <div className="rounded-lg bg-muted/50 p-3 text-sm space-y-1">
+            <div className={`rounded-lg p-3 text-sm space-y-1 ${isDark ? "bg-zinc-800/50" : "bg-muted/50"}`}>
               <p className="font-medium">{selectedMfs.display_name} ({selectedMfs.mfs_type})</p>
               <p>নম্বর: <span className="font-mono font-bold">{selectedMfs.phone_number}</span></p>
               {selectedMfs.payment_instruction && <p className="opacity-70">{selectedMfs.payment_instruction}</p>}
@@ -275,10 +279,10 @@ const LandingPage = () => {
       <div>
         <Label className={labelClass}>কুপন কোড (ঐচ্ছিক)</Label>
         {appliedCoupon ? (
-          <div className="mt-1 flex items-center gap-2 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 px-3 py-2">
-            <Tag className="h-4 w-4 text-green-600" />
-            <span className="text-sm font-medium text-green-700 dark:text-green-400">{appliedCoupon.code} প্রয়োগ হয়েছে</span>
-            <span className="text-sm text-green-600 dark:text-green-400">(-৳{discountAmount})</span>
+          <div className={`mt-1 flex items-center gap-2 rounded-lg border px-3 py-2 ${isDark ? "bg-green-900/20 border-green-800" : "bg-green-50 border-green-200"}`}>
+            <Tag className={`h-4 w-4 ${isDark ? "text-green-400" : "text-green-600"}`} />
+            <span className={`text-sm font-medium ${isDark ? "text-green-400" : "text-green-700"}`}>{appliedCoupon.code} প্রয়োগ হয়েছে</span>
+            <span className={`text-sm ${isDark ? "text-green-400" : "text-green-600"}`}>(-৳{discountAmount})</span>
             <button type="button" onClick={removeCoupon} className="ml-auto text-muted-foreground hover:text-destructive"><XIcon className="h-4 w-4" /></button>
           </div>
         ) : (
@@ -292,15 +296,15 @@ const LandingPage = () => {
         {couponError && <p className="text-xs text-destructive mt-1">{couponError}</p>}
       </div>
       {/* Price Summary */}
-      <div className="rounded-lg bg-muted/50 p-4 space-y-2">
+      <div className={`rounded-lg p-4 space-y-2 ${isDark ? "bg-zinc-800/50" : "bg-muted/50"}`}>
         {quantity > 1 && <div className="flex justify-between text-sm"><span>মূল্য ({quantity}×৳{unitPrice})</span><span>৳{subtotal}</span></div>}
-        {appliedCoupon && <div className="flex justify-between text-sm text-green-600"><span>ডিসকাউন্ট ({appliedCoupon.code})</span><span>-৳{discountAmount}</span></div>}
+        {appliedCoupon && <div className={`flex justify-between text-sm ${isDark ? "text-green-400" : "text-green-600"}`}><span>ডিসকাউন্ট ({appliedCoupon.code})</span><span>-৳{discountAmount}</span></div>}
         {isPhysical && shippingCost > 0 && <div className="flex justify-between text-sm"><span>শিপিং</span><span>৳{shippingCost}</span></div>}
-        {isPhysical && shippingCost === 0 && activeZone && <div className="flex justify-between text-sm text-green-600"><span>শিপিং</span><span>ফ্রি!</span></div>}
-        <div className="flex justify-between font-bold text-lg border-t pt-2"><span>সর্বমোট</span><span>৳{totalPrice}</span></div>
+        {isPhysical && shippingCost === 0 && activeZone && <div className={`flex justify-between text-sm ${isDark ? "text-green-400" : "text-green-600"}`}><span>শিপিং</span><span>ফ্রি!</span></div>}
+        <div className={`flex justify-between font-bold text-lg border-t pt-2 ${isDark ? "border-zinc-700" : ""}`}><span>সর্বমোট</span><span>৳{totalPrice}</span></div>
       </div>
       {isPhysical && page.show_quantity && (
-        <div className="flex items-center justify-center gap-4 p-3 rounded-lg bg-muted/50">
+        <div className={`flex items-center justify-center gap-4 p-3 rounded-lg ${isDark ? "bg-zinc-800/50" : "bg-muted/50"}`}>
           <Label className="text-sm font-medium">পরিমাণ:</Label>
           <div className="flex items-center gap-2">
             <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setQuantity(q => Math.max(1, q - 1))}><Minus className="h-4 w-4" /></Button>
@@ -864,7 +868,7 @@ const LandingPage = () => {
       {benefits.length > 0 && benefits[0].title && (
         <section className="py-20 border-t border-zinc-800">
           <div className="container mx-auto px-4 max-w-4xl">
-            <h2 className="text-center text-sm font-semibold tracking-[0.3em] uppercase text-amber-400 mb-4">একচেটিয়া সুবিধা</h2>
+            <h2 className="text-center text-sm font-semibold tracking-wide text-amber-400 mb-4">একচেটিয়া সুবিধা</h2>
             <p className="text-center text-zinc-500 mb-16 text-sm">শুধুমাত্র এক্সক্লুসিভ গ্রাহকদের জন্য</p>
             <div className="space-y-0">
               {benefits.filter(b => b.title).map((b, i) => (
@@ -891,7 +895,7 @@ const LandingPage = () => {
       {/* Mid-CTA: Exclusive style */}
       <section className="py-14 bg-gradient-to-r from-zinc-900 via-zinc-800/50 to-zinc-900 border-y border-zinc-800">
         <div className="container mx-auto px-4 text-center">
-          <p className="text-amber-400 text-sm tracking-widest uppercase font-semibold mb-4">সীমিত সময়ের অফার</p>
+          <p className="text-amber-400 text-sm tracking-wide font-semibold mb-4">সীমিত সময়ের অফার</p>
           <Button size="lg" className="px-12 py-7 rounded-none bg-amber-500 hover:bg-amber-400 text-zinc-950 font-extrabold tracking-wide shadow-[0_0_40px_rgba(245,158,11,0.3)]" onClick={scrollToOrder}>
             {page.cta_text} →
           </Button>
@@ -922,7 +926,7 @@ const LandingPage = () => {
       {reviews.length > 0 && (
         <section className="py-20 border-t border-zinc-800">
           <div className="container mx-auto px-4">
-            <h2 className="text-center text-sm font-semibold tracking-[0.3em] uppercase text-amber-400 mb-4">VIP গ্রাহকদের অভিজ্ঞতা</h2>
+            <h2 className="text-center text-sm font-semibold tracking-wide text-amber-400 mb-4">VIP গ্রাহকদের অভিজ্ঞতা</h2>
             <p className="text-center text-zinc-500 mb-16 text-sm">যারা ইতিমধ্যে এক্সক্লুসিভ অভিজ্ঞতা নিয়েছেন</p>
             <div className="grid gap-8 md:grid-cols-2 max-w-4xl mx-auto">
               {reviews.map((r, i) => (
@@ -984,7 +988,8 @@ const LandingPage = () => {
               </p>
               {renderOrderFormContent(
                 "bg-zinc-800 border-zinc-700 text-zinc-100 placeholder:text-zinc-500",
-                "text-zinc-300"
+                "text-zinc-300",
+                true
               )}
               <Button type="submit" size="lg" className="w-full text-lg py-6 mt-6 rounded-none bg-amber-500 hover:bg-amber-400 text-zinc-950 font-extrabold tracking-wide shadow-[0_0_30px_rgba(245,158,11,0.3)]" disabled={submitting} onClick={handleOrder}>
                 {submitting ? "প্রসেস হচ্ছে..." : `${page.cta_text} →`}
@@ -998,7 +1003,7 @@ const LandingPage = () => {
       {faqs.length > 0 && faqs[0].question && (
         <section className="py-20 border-t border-zinc-800">
           <div className="container mx-auto px-4 max-w-2xl">
-            <h2 className="text-center text-sm font-semibold tracking-[0.3em] uppercase text-amber-400 mb-12">সচরাচর জিজ্ঞাসা</h2>
+            <h2 className="text-center text-sm font-semibold tracking-wide text-amber-400 mb-12">সচরাচর জিজ্ঞাসা</h2>
             <Accordion type="single" collapsible className="space-y-3">
               {faqs.filter(f => f.question).map((f, i) => (
                 <AccordionItem key={i} value={`faq-${i}`} className="border border-zinc-800 rounded-lg px-5 bg-zinc-900/50">
@@ -1014,7 +1019,7 @@ const LandingPage = () => {
       {/* Final CTA */}
       <section className="py-20 border-t border-zinc-800 bg-gradient-to-t from-zinc-900 to-zinc-950">
         <div className="container mx-auto px-4 text-center">
-          <p className="text-amber-400 text-sm tracking-widest uppercase font-semibold mb-6">এখনই সিদ্ধান্ত নিন</p>
+          <p className="text-amber-400 text-sm tracking-wide font-semibold mb-6">এখনই সিদ্ধান্ত নিন</p>
           <h2 className="font-display text-3xl md:text-4xl font-extrabold text-white mb-8">{page.headline}</h2>
           <Button size="lg" className="text-lg px-14 py-7 rounded-none bg-amber-500 hover:bg-amber-400 text-zinc-950 font-extrabold tracking-wide shadow-[0_0_40px_rgba(245,158,11,0.3)]" onClick={scrollToOrder}>
             {page.cta_text} →
