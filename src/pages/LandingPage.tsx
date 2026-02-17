@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Star, CheckCircle, Minus, Plus, ShoppingBag, ChevronDown, Clock, Flame, AlertTriangle, Tag, Loader2, X as XIcon } from "lucide-react";
+import { Star, CheckCircle, Minus, Plus, ShoppingBag, Clock, Flame, AlertTriangle, Tag, Loader2, X as XIcon, Shield, Truck, Award, Users, ThumbsUp, Zap, Crown, Gem } from "lucide-react";
 import OrderSuccessDialog from "@/components/OrderSuccessDialog";
 
 interface LandingPageData {
@@ -120,8 +120,6 @@ const LandingPage = () => {
         if (!data) { setLoading(false); return; }
         const lp = data as any;
         setPage(lp);
-
-        // Fetch product, mfs, shipping
         const table = lp.product_type === "course" ? "courses" : lp.product_type === "quiz" ? "quizzes" : "books";
         const [prodRes, mfsRes, szRes] = await Promise.all([
           supabase.from(table).select("*").eq("id", lp.product_id).maybeSingle(),
@@ -147,8 +145,6 @@ const LandingPage = () => {
   const unitPrice = product.price;
   const subtotal = unitPrice * quantity;
   const shippingCost = isPhysical && activeZone ? (activeZone.free_shipping_minimum && subtotal >= activeZone.free_shipping_minimum ? 0 : activeZone.shipping_rate) : 0;
-  
-  // Calculate discount
   const discountAmount = appliedCoupon
     ? appliedCoupon.discount_type === "percentage"
       ? Math.round(subtotal * appliedCoupon.discount_value / 100)
@@ -167,13 +163,11 @@ const LandingPage = () => {
       .eq("is_active", true)
       .maybeSingle();
     setCouponLoading(false);
-
     if (error || !data) { setCouponError("কুপন কোডটি সঠিক নয়"); return; }
     const c = data as any;
     if (c.expires_at && new Date(c.expires_at) < new Date()) { setCouponError("এই কুপনের মেয়াদ শেষ হয়ে গেছে"); return; }
     if (c.max_uses !== null && c.used_count >= c.max_uses) { setCouponError("এই কুপন আর ব্যবহার করা যাবে না"); return; }
     if (c.min_order_amount > 0 && subtotal < c.min_order_amount) { setCouponError(`সর্বনিম্ন ৳${c.min_order_amount} অর্ডারে প্রযোজ্য`); return; }
-
     setAppliedCoupon({ id: c.id, code: c.code, discount_type: c.discount_type, discount_value: c.discount_value });
     setCouponCode("");
   };
@@ -188,7 +182,6 @@ const LandingPage = () => {
     if (!order.name || !order.phone) { toast({ title: "নাম ও ফোন আবশ্যক", variant: "destructive" }); return; }
     if (isPhysical && !order.address) { toast({ title: "ঠিকানা আবশ্যক", variant: "destructive" }); return; }
     if (!isPhysical && !order.transactionId.trim()) { toast({ title: "Transaction ID দিন", variant: "destructive" }); return; }
-
     setSubmitting(true);
     const paymentMethod = isPhysical ? "cod" : order.paymentMethod;
     const notes = [
@@ -197,7 +190,6 @@ const LandingPage = () => {
       appliedCoupon ? `Coupon: ${appliedCoupon.code} (-৳${discountAmount})` : null,
       `Landing Page: ${page.slug}`,
     ].filter(Boolean).join(" | ");
-
     const { data, error } = await supabase.from("orders").insert({
       customer_name: order.name,
       customer_phone: order.phone,
@@ -212,10 +204,8 @@ const LandingPage = () => {
       notes,
     }).select("order_id").single();
     setSubmitting(false);
-
     if (error) { toast({ title: "অর্ডার ব্যর্থ", description: error.message, variant: "destructive" }); }
     else {
-      // Increment coupon used_count
       if (appliedCoupon) {
         supabase.from("coupons").select("used_count").eq("id", appliedCoupon.id).single().then(({ data: cd }) => {
           if (cd) supabase.from("coupons").update({ used_count: ((cd as any).used_count || 0) + 1 } as any).eq("id", appliedCoupon.id).then(() => {});
@@ -231,6 +221,7 @@ const LandingPage = () => {
 
   const stockRemaining = page.stock_limit - page.stock_sold;
   const stockPercent = page.stock_limit > 0 ? Math.round((page.stock_sold / page.stock_limit) * 100) : 0;
+  const discountPercent = product.original_price ? Math.round(((product.original_price - product.price) / product.original_price) * 100) : 0;
 
   const ctaStyle = { backgroundColor: page.cta_color, color: "#fff" };
   const benefits = (page.benefits as any[]) || [];
@@ -239,142 +230,98 @@ const LandingPage = () => {
   const mediaItems = (page.media_items as any[]) || [];
   const selectedMfs = mfsMethods.find(m => m.provider === order.paymentMethod);
 
-  // Scroll to order form
   const scrollToOrder = () => {
     document.getElementById("lp-order-form")?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // ==================== THEME-SPECIFIC RENDERING ====================
   const theme = page.theme;
 
-  // ---- Shared: Order Form (used by all themes) ----
-  const renderOrderForm = (wrapperClass: string, cardClass: string) => (
-    <section key="order_form" id="lp-order-form" className={wrapperClass}>
-      <div className="container mx-auto px-4 max-w-xl">
-        <div className={cardClass}>
-          <h2 className="text-center font-display text-2xl font-bold mb-2">
-            <ShoppingBag className="inline h-6 w-6 mr-2" />{page.cta_text}
-          </h2>
-          <p className="text-center text-sm opacity-70 mb-6">
-            {isPhysical ? "ক্যাশ অন ডেলিভারি — সারা বাংলাদেশে" : "পেমেন্ট করে এখনই পান"}
-          </p>
-          {isPhysical && page.show_quantity && (
-            <div className="flex items-center justify-center gap-4 mb-6 p-3 rounded-lg bg-muted/50">
-              <Label className="text-sm font-medium">পরিমাণ:</Label>
-              <div className="flex items-center gap-2">
-                <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setQuantity(q => Math.max(1, q - 1))}><Minus className="h-4 w-4" /></Button>
-                <span className="w-10 text-center font-bold text-lg">{quantity}</span>
-                <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setQuantity(q => q + 1)}><Plus className="h-4 w-4" /></Button>
-              </div>
-              <span className="text-sm font-medium">৳{unitPrice * quantity}</span>
-            </div>
-          )}
-          <form onSubmit={handleOrder} className="space-y-4">
-            <div><Label>আপনার নাম *</Label><Input className="mt-1" value={order.name} onChange={e => setOrder(o => ({ ...o, name: e.target.value }))} placeholder="পূর্ণ নাম" /></div>
-            <div><Label>মোবাইল নম্বর *</Label><Input className="mt-1" value={order.phone} onChange={e => setOrder(o => ({ ...o, phone: e.target.value }))} placeholder="01XXXXXXXXX" /></div>
-            {isPhysical && <div><Label>ডেলিভারি ঠিকানা *</Label><Textarea className="mt-1" rows={2} value={order.address} onChange={e => setOrder(o => ({ ...o, address: e.target.value }))} placeholder="সম্পূর্ণ ঠিকানা" /></div>}
-            {isPhysical && shippingZones.length > 0 && (
-              <div><Label>ডেলিভারি জোন *</Label>
-                <Select value={selectedZone} onValueChange={setSelectedZone}><SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                  <SelectContent>{shippingZones.map(z => <SelectItem key={z.zone_name} value={z.zone_name}>{z.zone_label} — ৳{z.shipping_rate} ({z.delivery_time_min}-{z.delivery_time_max} {z.delivery_time_unit})</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-            )}
-            {!isPhysical && mfsMethods.length > 0 && (
-              <>
-                <div><Label>পেমেন্ট মেথড *</Label>
-                  <div className="mt-2 grid grid-cols-2 gap-2">
-                    {mfsMethods.map(m => (
-                      <button type="button" key={m.provider} onClick={() => setOrder(o => ({ ...o, paymentMethod: m.provider }))}
-                        className={`rounded-lg border-2 px-3 py-2 text-sm font-medium transition-all ${order.paymentMethod === m.provider ? "border-primary bg-primary/10 text-primary" : "border-border hover:border-primary/50"}`}>
-                        {m.display_name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                {selectedMfs && (
-                  <div className="rounded-lg bg-muted/50 p-3 text-sm space-y-1">
-                    <p className="font-medium">{selectedMfs.display_name} ({selectedMfs.mfs_type})</p>
-                    <p>নম্বর: <span className="font-mono font-bold">{selectedMfs.phone_number}</span></p>
-                    {selectedMfs.payment_instruction && <p className="opacity-70">{selectedMfs.payment_instruction}</p>}
-                  </div>
-                )}
-                <div><Label>Transaction ID *</Label><Input className="mt-1" value={order.transactionId} onChange={e => setOrder(o => ({ ...o, transactionId: e.target.value }))} placeholder="পেমেন্টের Transaction ID" /></div>
-              </>
-            )}
-            {/* Coupon Code */}
-            <div>
-              <Label>কুপন কোড (ঐচ্ছিক)</Label>
-              {appliedCoupon ? (
-                <div className="mt-1 flex items-center gap-2 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 px-3 py-2">
-                  <Tag className="h-4 w-4 text-green-600" />
-                  <span className="text-sm font-medium text-green-700 dark:text-green-400">{appliedCoupon.code} প্রয়োগ হয়েছে</span>
-                  <span className="text-sm text-green-600 dark:text-green-400">(-৳{discountAmount})</span>
-                  <button type="button" onClick={removeCoupon} className="ml-auto text-muted-foreground hover:text-destructive"><XIcon className="h-4 w-4" /></button>
-                </div>
-              ) : (
-                <div className="mt-1 flex gap-2">
-                  <Input value={couponCode} onChange={e => { setCouponCode(e.target.value.toUpperCase()); setCouponError(""); }} placeholder="কুপন কোড লিখুন" className="font-mono uppercase flex-1" />
-                  <Button type="button" variant="outline" size="sm" onClick={applyCoupon} disabled={couponLoading || !couponCode.trim()}>
-                    {couponLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "প্রয়োগ"}
-                  </Button>
-                </div>
-              )}
-              {couponError && <p className="text-xs text-destructive mt-1">{couponError}</p>}
-            </div>
-
-            <div className="rounded-lg bg-muted/50 p-4 space-y-2">
-              {quantity > 1 && <div className="flex justify-between text-sm"><span>মূল্য ({quantity}×৳{unitPrice})</span><span>৳{subtotal}</span></div>}
-              {appliedCoupon && <div className="flex justify-between text-sm text-green-600"><span>ডিসকাউন্ট ({appliedCoupon.code})</span><span>-৳{discountAmount}</span></div>}
-              {isPhysical && shippingCost > 0 && <div className="flex justify-between text-sm"><span>শিপিং</span><span>৳{shippingCost}</span></div>}
-              {isPhysical && shippingCost === 0 && activeZone && <div className="flex justify-between text-sm text-green-600"><span>শিপিং</span><span>ফ্রি!</span></div>}
-              <div className="flex justify-between font-bold text-lg border-t pt-2"><span>সর্বমোট</span><span>৳{totalPrice}</span></div>
-            </div>
-            <Button type="submit" size="lg" className="w-full text-lg py-6 shadow-lg" style={ctaStyle} disabled={submitting}>
-              {submitting ? "প্রসেস হচ্ছে..." : page.cta_text}
-            </Button>
-          </form>
-        </div>
-      </div>
-    </section>
-  );
-
-  // ---- Shared: Countdown + Stock badge ----
-  const renderUrgency = (containerClass = "") => (
-    <div className={containerClass}>
-      {page.show_countdown && !countdown.expired && (
-        <div className="inline-flex items-center gap-2 rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-2.5 text-destructive">
-          <Clock className="h-5 w-5 animate-pulse" />
-          <span className="font-bold text-sm">
-            অফার শেষ হবে: {countdown.days > 0 && `${countdown.days}দিন `}{String(countdown.hours).padStart(2, '0')}:{String(countdown.minutes).padStart(2, '0')}:{String(countdown.seconds).padStart(2, '0')}
-          </span>
+  // ==================== SHARED: Order Form Inner Content ====================
+  const renderOrderFormContent = (inputClass = "", labelClass = "") => (
+    <form onSubmit={handleOrder} className="space-y-4">
+      <div><Label className={labelClass}>আপনার নাম *</Label><Input className={`mt-1 ${inputClass}`} value={order.name} onChange={e => setOrder(o => ({ ...o, name: e.target.value }))} placeholder="পূর্ণ নাম" /></div>
+      <div><Label className={labelClass}>মোবাইল নম্বর *</Label><Input className={`mt-1 ${inputClass}`} value={order.phone} onChange={e => setOrder(o => ({ ...o, phone: e.target.value }))} placeholder="01XXXXXXXXX" /></div>
+      {isPhysical && <div><Label className={labelClass}>ডেলিভারি ঠিকানা *</Label><Textarea className={`mt-1 ${inputClass}`} rows={2} value={order.address} onChange={e => setOrder(o => ({ ...o, address: e.target.value }))} placeholder="সম্পূর্ণ ঠিকানা" /></div>}
+      {isPhysical && shippingZones.length > 0 && (
+        <div><Label className={labelClass}>ডেলিভারি জোন *</Label>
+          <Select value={selectedZone} onValueChange={setSelectedZone}><SelectTrigger className={`mt-1 ${inputClass}`}><SelectValue /></SelectTrigger>
+            <SelectContent>{shippingZones.map(z => <SelectItem key={z.zone_name} value={z.zone_name}>{z.zone_label} — ৳{z.shipping_rate} ({z.delivery_time_min}-{z.delivery_time_max} {z.delivery_time_unit})</SelectItem>)}</SelectContent>
+          </Select>
         </div>
       )}
-      {page.show_stock_badge && stockRemaining > 0 && (
-        <div className="inline-flex items-center gap-2 rounded-lg bg-orange-500/10 border border-orange-500/20 px-4 py-2 mt-2">
-          <Flame className="h-4 w-4 text-orange-500" />
-          <span className="text-sm font-semibold text-orange-600 dark:text-orange-400">মাত্র {stockRemaining}টি বাকি আছে!</span>
-          <div className="w-20 h-1.5 rounded-full bg-orange-200 dark:bg-orange-900 overflow-hidden">
-            <div className="h-full rounded-full bg-orange-500 transition-all" style={{ width: `${stockPercent}%` }} />
+      {!isPhysical && mfsMethods.length > 0 && (
+        <>
+          <div><Label className={labelClass}>পেমেন্ট মেথড *</Label>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              {mfsMethods.map(m => (
+                <button type="button" key={m.provider} onClick={() => setOrder(o => ({ ...o, paymentMethod: m.provider }))}
+                  className={`rounded-lg border-2 px-3 py-2 text-sm font-medium transition-all ${order.paymentMethod === m.provider ? "border-primary bg-primary/10 text-primary" : "border-border hover:border-primary/50"}`}>
+                  {m.display_name}
+                </button>
+              ))}
+            </div>
+          </div>
+          {selectedMfs && (
+            <div className="rounded-lg bg-muted/50 p-3 text-sm space-y-1">
+              <p className="font-medium">{selectedMfs.display_name} ({selectedMfs.mfs_type})</p>
+              <p>নম্বর: <span className="font-mono font-bold">{selectedMfs.phone_number}</span></p>
+              {selectedMfs.payment_instruction && <p className="opacity-70">{selectedMfs.payment_instruction}</p>}
+            </div>
+          )}
+          <div><Label className={labelClass}>Transaction ID *</Label><Input className={`mt-1 ${inputClass}`} value={order.transactionId} onChange={e => setOrder(o => ({ ...o, transactionId: e.target.value }))} placeholder="পেমেন্টের Transaction ID" /></div>
+        </>
+      )}
+      {/* Coupon */}
+      <div>
+        <Label className={labelClass}>কুপন কোড (ঐচ্ছিক)</Label>
+        {appliedCoupon ? (
+          <div className="mt-1 flex items-center gap-2 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 px-3 py-2">
+            <Tag className="h-4 w-4 text-green-600" />
+            <span className="text-sm font-medium text-green-700 dark:text-green-400">{appliedCoupon.code} প্রয়োগ হয়েছে</span>
+            <span className="text-sm text-green-600 dark:text-green-400">(-৳{discountAmount})</span>
+            <button type="button" onClick={removeCoupon} className="ml-auto text-muted-foreground hover:text-destructive"><XIcon className="h-4 w-4" /></button>
+          </div>
+        ) : (
+          <div className="mt-1 flex gap-2">
+            <Input value={couponCode} onChange={e => { setCouponCode(e.target.value.toUpperCase()); setCouponError(""); }} placeholder="কুপন কোড লিখুন" className={`font-mono uppercase flex-1 ${inputClass}`} />
+            <Button type="button" variant="outline" size="sm" onClick={applyCoupon} disabled={couponLoading || !couponCode.trim()}>
+              {couponLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "প্রয়োগ"}
+            </Button>
+          </div>
+        )}
+        {couponError && <p className="text-xs text-destructive mt-1">{couponError}</p>}
+      </div>
+      {/* Price Summary */}
+      <div className="rounded-lg bg-muted/50 p-4 space-y-2">
+        {quantity > 1 && <div className="flex justify-between text-sm"><span>মূল্য ({quantity}×৳{unitPrice})</span><span>৳{subtotal}</span></div>}
+        {appliedCoupon && <div className="flex justify-between text-sm text-green-600"><span>ডিসকাউন্ট ({appliedCoupon.code})</span><span>-৳{discountAmount}</span></div>}
+        {isPhysical && shippingCost > 0 && <div className="flex justify-between text-sm"><span>শিপিং</span><span>৳{shippingCost}</span></div>}
+        {isPhysical && shippingCost === 0 && activeZone && <div className="flex justify-between text-sm text-green-600"><span>শিপিং</span><span>ফ্রি!</span></div>}
+        <div className="flex justify-between font-bold text-lg border-t pt-2"><span>সর্বমোট</span><span>৳{totalPrice}</span></div>
+      </div>
+      {isPhysical && page.show_quantity && (
+        <div className="flex items-center justify-center gap-4 p-3 rounded-lg bg-muted/50">
+          <Label className="text-sm font-medium">পরিমাণ:</Label>
+          <div className="flex items-center gap-2">
+            <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setQuantity(q => Math.max(1, q - 1))}><Minus className="h-4 w-4" /></Button>
+            <span className="w-10 text-center font-bold text-lg">{quantity}</span>
+            <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setQuantity(q => q + 1)}><Plus className="h-4 w-4" /></Button>
           </div>
         </div>
       )}
-      {page.show_stock_badge && stockRemaining <= 0 && (
-        <div className="inline-flex items-center gap-2 rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-2 mt-2">
-          <AlertTriangle className="h-4 w-4 text-destructive" /><span className="text-sm font-bold text-destructive">স্টক শেষ!</span>
-        </div>
-      )}
-    </div>
+    </form>
   );
 
   // ==================== MINIMALIST THEME ====================
+  // Color Psychology: White/off-white + deep charcoal + single emerald accent = Trust & Focus
+  // Funnel: AIDA with maximum whitespace, single-column, text-focused
   if (theme === "minimalist") {
     return (
-      <div className="min-h-screen bg-background">
-        {/* Hero: Clean, centered, lots of whitespace */}
-        <section className="py-20 md:py-32">
-          <div className="container mx-auto px-4 max-w-3xl text-center">
-            <h1 className="font-display text-3xl md:text-5xl font-bold text-foreground leading-tight tracking-tight">
+      <div className="min-h-screen bg-background text-foreground">
+        {/* ═══ STAGE 1: ATTENTION ═══ Hero: Ultra-clean, centered, generous whitespace */}
+        <section className="py-24 md:py-36">
+          <div className="container mx-auto px-4 max-w-2xl text-center">
+            <h1 className="font-display text-3xl md:text-5xl font-bold leading-tight tracking-tight">
               {page.headline}
             </h1>
             {page.subheadline && (
@@ -385,46 +332,64 @@ const LandingPage = () => {
                 <span className="text-3xl font-bold text-primary">ফ্রি</span>
               ) : (
                 <>
-                  <span className="text-4xl font-bold text-foreground">৳{product.price}</span>
+                  <span className="text-4xl font-bold">৳{product.price}</span>
                   {product.original_price && <span className="text-xl text-muted-foreground line-through">৳{product.original_price}</span>}
                 </>
               )}
             </div>
-            {renderUrgency("mt-6")}
-            <Button size="lg" className="mt-8 text-base px-10 py-6 rounded-full" style={ctaStyle} onClick={scrollToOrder}>
+            {/* Subtle urgency - borderless, minimal */}
+            {page.show_countdown && !countdown.expired && (
+              <p className="mt-4 text-sm text-muted-foreground">
+                <Clock className="inline h-4 w-4 mr-1 opacity-60" />
+                অফার শেষ হবে: {countdown.days > 0 && `${countdown.days}দিন `}{String(countdown.hours).padStart(2, '0')}:{String(countdown.minutes).padStart(2, '0')}:{String(countdown.seconds).padStart(2, '0')}
+              </p>
+            )}
+            {page.show_stock_badge && stockRemaining > 0 && (
+              <p className="mt-2 text-sm text-muted-foreground">মাত্র {stockRemaining}টি বাকি আছে</p>
+            )}
+            <Button size="lg" className="mt-10 text-base px-12 py-6 rounded-full shadow-md hover:shadow-lg transition-all bg-[hsl(152,60%,38%)] hover:bg-[hsl(152,60%,33%)] text-white" onClick={scrollToOrder}>
               {page.cta_text}
             </Button>
           </div>
         </section>
 
-        {/* Single product image, full width with max constraint */}
+        {/* Hero media */}
         {(page.hero_video_url || page.hero_image_url) && (
-          <section className="pb-16">
-            <div className="container mx-auto px-4 max-w-4xl">
+          <section className="pb-20">
+            <div className="container mx-auto px-4 max-w-3xl">
               {page.hero_video_url ? (
-                <div className="aspect-video rounded-xl overflow-hidden border border-border">
+                <div className="aspect-video rounded-2xl overflow-hidden border border-border shadow-sm">
                   <iframe src={page.hero_video_url} className="w-full h-full" allowFullScreen allow="autoplay; encrypted-media" />
                 </div>
               ) : (
-                <img src={page.hero_image_url} alt={page.headline} className="rounded-xl w-full object-cover max-h-[500px] border border-border" />
+                <img src={page.hero_image_url} alt={page.headline} className="rounded-2xl w-full object-cover max-h-[480px] border border-border shadow-sm" />
               )}
             </div>
           </section>
         )}
 
-        {/* Benefits: Simple list, no cards */}
+        {/* ═══ STAGE 2: INTEREST ═══ Social Proof Badge + Benefits */}
+        {/* Trust Badge: Simple text style */}
+        <section className="py-6">
+          <div className="container mx-auto px-4 max-w-2xl">
+            <div className="flex items-center justify-center gap-8 text-sm text-muted-foreground">
+              <span className="flex items-center gap-1.5"><Users className="h-4 w-4 text-primary" /> ৫০০+ সন্তুষ্ট গ্রাহক</span>
+              <span className="flex items-center gap-1.5"><ThumbsUp className="h-4 w-4 text-primary" /> ৪.৮/৫ রেটিং</span>
+            </div>
+          </div>
+        </section>
+
+        {/* Benefits: Checkmark + text only, no cards */}
         {benefits.length > 0 && benefits[0].title && (
-          <section className="py-16 border-t border-border">
+          <section className="py-16 md:py-24">
             <div className="container mx-auto px-4 max-w-2xl">
-              <div className="space-y-6">
+              <div className="space-y-8">
                 {benefits.filter(b => b.title).map((b, i) => (
                   <div key={i} className="flex items-start gap-4">
-                    <div className="mt-1 h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                      <CheckCircle className="h-4 w-4 text-primary" />
-                    </div>
+                    <CheckCircle className="h-5 w-5 text-[hsl(152,60%,38%)] mt-0.5 shrink-0" />
                     <div>
-                      <h3 className="font-semibold text-foreground">{b.title}</h3>
-                      {b.description && <p className="mt-1 text-sm text-muted-foreground">{b.description}</p>}
+                      <h3 className="font-semibold">{b.title}</h3>
+                      {b.description && <p className="mt-1 text-sm text-muted-foreground leading-relaxed">{b.description}</p>}
                     </div>
                   </div>
                 ))}
@@ -433,12 +398,12 @@ const LandingPage = () => {
           </section>
         )}
 
-        {/* Media: Simple stack */}
+        {/* ═══ STAGE 3: DESIRE ═══ Media + Reviews + Mid-CTA */}
         {mediaItems.length > 0 && (
           <section className="py-16">
-            <div className="container mx-auto px-4 max-w-3xl space-y-6">
+            <div className="container mx-auto px-4 max-w-3xl space-y-8">
               {mediaItems.map((m, i) => (
-                <div key={i} className="rounded-xl overflow-hidden border border-border">
+                <div key={i} className="rounded-2xl overflow-hidden border border-border">
                   {m.type === "video" ? (
                     <div className="aspect-video"><iframe src={m.url} className="w-full h-full" allowFullScreen /></div>
                   ) : (
@@ -451,29 +416,67 @@ const LandingPage = () => {
           </section>
         )}
 
-        {/* Reviews: Simple quotes */}
+        {/* Reviews: Simple blockquotes with horizontal dividers */}
         {reviews.length > 0 && (
-          <section className="py-16 border-t border-border">
-            <div className="container mx-auto px-4 max-w-2xl space-y-8">
-              <h2 className="text-center text-xl font-medium text-muted-foreground">গ্রাহকদের মতামত</h2>
-              {reviews.map((r, i) => (
-                <blockquote key={i} className="text-center">
-                  <p className="text-lg text-foreground italic leading-relaxed">"{r.comment}"</p>
-                  <footer className="mt-3 text-sm text-muted-foreground">— {r.name}</footer>
-                </blockquote>
-              ))}
+          <section className="py-16 md:py-24">
+            <div className="container mx-auto px-4 max-w-2xl">
+              <h2 className="text-center text-lg font-medium text-muted-foreground mb-12">বিশ্বস্ত গ্রাহকদের মতামত</h2>
+              <div className="space-y-10 divide-y divide-border">
+                {reviews.map((r, i) => (
+                  <blockquote key={i} className={`text-center ${i > 0 ? 'pt-10' : ''}`}>
+                    <p className="text-lg italic leading-relaxed">"{r.comment}"</p>
+                    <footer className="mt-4 text-sm text-muted-foreground">— {r.name}</footer>
+                  </blockquote>
+                ))}
+              </div>
             </div>
           </section>
         )}
 
-        {/* Order Form */}
-        {renderOrderForm("py-16 border-t border-border", "rounded-xl border border-border p-6 md:p-8 bg-card")}
+        {/* Mid-CTA: Minimal */}
+        <section className="py-12">
+          <div className="container mx-auto px-4 max-w-xl text-center">
+            <p className="text-muted-foreground mb-4">আর দেরি না করে সিদ্ধান্ত নিন</p>
+            <Button size="lg" className="px-10 py-6 rounded-full bg-[hsl(152,60%,38%)] hover:bg-[hsl(152,60%,33%)] text-white" onClick={scrollToOrder}>
+              {page.cta_text}
+            </Button>
+          </div>
+        </section>
+
+        {/* ═══ STAGE 4: ACTION ═══ Trust Signal + Order Form */}
+        {/* Trust Signal: Simple guarantee text */}
+        <section className="py-8">
+          <div className="container mx-auto px-4 max-w-xl text-center">
+            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+              <Shield className="h-4 w-4 text-[hsl(152,60%,38%)]" />
+              <span>১০০% সন্তুষ্টির নিশ্চয়তা — নিরাপদ অর্ডার প্রক্রিয়া</span>
+            </div>
+          </div>
+        </section>
+
+        {/* Order Form: Clean, minimal shadow */}
+        <section id="lp-order-form" className="py-16 md:py-24">
+          <div className="container mx-auto px-4 max-w-xl">
+            <div className="rounded-2xl border border-border p-8 md:p-10 bg-card shadow-sm">
+              <h2 className="text-center font-display text-2xl font-bold mb-2">
+                <ShoppingBag className="inline h-5 w-5 mr-2 opacity-60" />{page.cta_text}
+              </h2>
+              <p className="text-center text-sm text-muted-foreground mb-8">
+                {isPhysical ? "ক্যাশ অন ডেলিভারি — সারা বাংলাদেশে" : "পেমেন্ট করে এখনই পান"}
+              </p>
+              {renderOrderFormContent()}
+              <Button type="submit" size="lg" className="w-full text-lg py-6 mt-6 rounded-full shadow-md bg-[hsl(152,60%,38%)] hover:bg-[hsl(152,60%,33%)] text-white" disabled={submitting} onClick={handleOrder}>
+                {submitting ? "প্রসেস হচ্ছে..." : page.cta_text}
+              </Button>
+            </div>
+          </div>
+        </section>
 
         {/* FAQs */}
         {faqs.length > 0 && faqs[0].question && (
-          <section className="py-16 border-t border-border">
+          <section className="py-16 md:py-24 border-t border-border">
             <div className="container mx-auto px-4 max-w-2xl">
-              <h2 className="text-center text-xl font-medium text-muted-foreground mb-8">সচরাচর জিজ্ঞাসা</h2>
+              <h2 className="text-center text-lg font-medium text-muted-foreground mb-10">সচরাচর জিজ্ঞাসা</h2>
               <Accordion type="single" collapsible className="space-y-2">
                 {faqs.filter(f => f.question).map((f, i) => (
                   <AccordionItem key={i} value={`faq-${i}`} className="border-b border-border px-0">
@@ -486,7 +489,7 @@ const LandingPage = () => {
           </section>
         )}
 
-        <footer className="py-6 text-center text-sm text-muted-foreground border-t">
+        <footer className="py-8 text-center text-sm text-muted-foreground border-t border-border">
           {settings.copyright_text || `© ${new Date().getFullYear()} ${settings.site_name}`}
         </footer>
         {successDialog && <OrderSuccessDialog open={successDialog.open} orderId={successDialog.orderId} productTitle={product.title} message={successDialog.message} onClose={() => setSuccessDialog(null)} />}
@@ -495,19 +498,30 @@ const LandingPage = () => {
   }
 
   // ==================== PREMIUM THEME ====================
+  // Color Psychology: Rich gradients (primary->accent) + deep shadows = High perceived value + Urgency
+  // Funnel: AIDA with split hero, numbered benefits, prominent discount badges, verified reviews
   if (theme === "premium") {
     return (
       <div className="min-h-screen bg-gradient-to-b from-primary/5 via-background to-background">
-        {/* Hero: Full-width gradient bg with image overlay */}
+        {/* ═══ STAGE 1: ATTENTION ═══ Split hero with gradient bg, discount badge, countdown */}
         <section className="relative py-16 md:py-24 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-accent/10" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-accent/5 to-transparent" />
+          {/* Animated gradient orbs */}
+          <div className="absolute top-10 right-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-10 left-10 w-56 h-56 bg-accent/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
           <div className="container mx-auto px-4 relative z-10">
             <div className="grid gap-10 md:grid-cols-2 items-center">
               <div>
-                <div className="inline-block rounded-full bg-primary/10 px-4 py-1.5 text-sm font-semibold text-primary mb-6">
+                <div className="inline-block rounded-full bg-primary/10 px-4 py-1.5 text-sm font-semibold text-primary mb-4">
                   ⭐ প্রিমিয়াম কালেকশন
                 </div>
-                <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-extrabold text-foreground leading-[1.1]">
+                {/* Prominent discount badge */}
+                {product.original_price && discountPercent > 0 && (
+                  <div className="inline-flex items-center gap-2 ml-3 rounded-full bg-destructive text-white text-sm font-extrabold px-4 py-1.5 animate-bounce shadow-lg">
+                    🔥 {discountPercent}% ছাড়!
+                  </div>
+                )}
+                <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-extrabold leading-[1.1] mt-4">
                   {page.headline}
                 </h1>
                 {page.subheadline && (
@@ -518,21 +532,33 @@ const LandingPage = () => {
                     <span className="text-4xl font-extrabold text-primary">ফ্রি</span>
                   ) : (
                     <>
-                      <span className="text-5xl font-extrabold text-foreground">৳{product.price}</span>
+                      <span className="text-5xl font-extrabold">৳{product.price}</span>
                       {product.original_price && (
                         <span className="text-2xl text-muted-foreground line-through">৳{product.original_price}</span>
-                      )}
-                      {product.original_price && (
-                        <span className="rounded-full bg-destructive/10 text-destructive text-sm font-bold px-3 py-1">
-                          {Math.round(((product.original_price - product.price) / product.original_price) * 100)}% ছাড়
-                        </span>
                       )}
                     </>
                   )}
                 </div>
-                {renderUrgency("mt-5")}
-                <div className="mt-8 flex flex-wrap gap-4">
-                  <Button size="lg" className="text-lg px-10 py-7 rounded-xl shadow-2xl hover:shadow-xl transition-all text-lg font-bold" style={ctaStyle} onClick={scrollToOrder}>
+                {/* Countdown: Prominent card style with shadow */}
+                {page.show_countdown && !countdown.expired && (
+                  <div className="mt-5 inline-flex items-center gap-3 rounded-xl bg-destructive/10 border border-destructive/20 px-5 py-3 shadow-lg">
+                    <Clock className="h-5 w-5 text-destructive animate-pulse" />
+                    <span className="font-extrabold text-destructive">
+                      {countdown.days > 0 && `${countdown.days}দিন `}{String(countdown.hours).padStart(2, '0')}:{String(countdown.minutes).padStart(2, '0')}:{String(countdown.seconds).padStart(2, '0')}
+                    </span>
+                  </div>
+                )}
+                {page.show_stock_badge && stockRemaining > 0 && (
+                  <div className="mt-3 inline-flex items-center gap-2 rounded-xl bg-accent/10 border border-accent/20 px-4 py-2 shadow-md">
+                    <Flame className="h-4 w-4 text-accent" />
+                    <span className="text-sm font-bold text-accent">মাত্র {stockRemaining}টি বাকি!</span>
+                    <div className="w-24 h-2 rounded-full bg-accent/20 overflow-hidden">
+                      <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${stockPercent}%` }} />
+                    </div>
+                  </div>
+                )}
+                <div className="mt-8">
+                  <Button size="lg" className="text-lg px-10 py-7 rounded-xl shadow-2xl hover:shadow-xl transition-all font-bold bg-gradient-to-r from-primary to-accent text-white hover:opacity-90" onClick={scrollToOrder}>
                     {page.cta_text} →
                   </Button>
                 </div>
@@ -553,31 +579,63 @@ const LandingPage = () => {
           </div>
         </section>
 
-        {/* Benefits: Gradient cards with numbers */}
+        {/* ═══ STAGE 2: INTEREST ═══ Social Proof Icons + Numbered Benefits */}
+        {/* Social Proof: Icon + number badge cards */}
+        <section className="py-10">
+          <div className="container mx-auto px-4">
+            <div className="flex flex-wrap items-center justify-center gap-6">
+              <div className="flex items-center gap-2 rounded-xl bg-card border border-border px-5 py-3 shadow-md">
+                <Users className="h-5 w-5 text-primary" />
+                <div><span className="font-extrabold text-lg">৫০০+</span><span className="text-xs text-muted-foreground ml-1">সন্তুষ্ট গ্রাহক</span></div>
+              </div>
+              <div className="flex items-center gap-2 rounded-xl bg-card border border-border px-5 py-3 shadow-md">
+                <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                <div><span className="font-extrabold text-lg">৪.৮</span><span className="text-xs text-muted-foreground ml-1">রেটিং</span></div>
+              </div>
+              <div className="flex items-center gap-2 rounded-xl bg-card border border-border px-5 py-3 shadow-md">
+                <Award className="h-5 w-5 text-accent" />
+                <div><span className="font-extrabold text-lg">#১</span><span className="text-xs text-muted-foreground ml-1">বেস্টসেলার</span></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Benefits: Gradient border cards with numbers + hover effect */}
         {benefits.length > 0 && benefits[0].title && (
           <section className="py-16 md:py-20">
             <div className="container mx-auto px-4">
-              <h2 className="text-center font-display text-3xl md:text-4xl font-extrabold text-foreground mb-4">কেন এটি আপনার জন্য?</h2>
+              <h2 className="text-center font-display text-3xl md:text-4xl font-extrabold mb-4">কেন এটি আপনার জন্য?</h2>
               <p className="text-center text-muted-foreground mb-12 max-w-lg mx-auto">এই প্রোডাক্টটি আপনার জীবনে যে পরিবর্তন আনবে</p>
-              <div className="grid gap-6 md:grid-cols-3">
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {benefits.filter(b => b.title).map((b, i) => (
-                  <div key={i} className="group relative rounded-2xl border border-border bg-card p-8 shadow-lg hover:shadow-2xl transition-all hover:-translate-y-1">
-                    <div className="absolute -top-4 -left-2 h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-extrabold text-lg shadow-lg">
-                      {i + 1}
+                  <div key={i} className="group relative rounded-2xl p-[2px] bg-gradient-to-br from-primary/40 to-accent/40 hover:from-primary hover:to-accent transition-all shadow-lg hover:shadow-2xl hover:-translate-y-1">
+                    <div className="rounded-2xl bg-card p-7 h-full">
+                      <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-accent text-white flex items-center justify-center font-extrabold text-lg shadow-md mb-4">
+                        {i + 1}
+                      </div>
+                      <h3 className="font-bold text-xl">{b.title}</h3>
+                      {b.description && <p className="mt-3 text-muted-foreground leading-relaxed">{b.description}</p>}
                     </div>
-                    <h3 className="font-bold text-foreground text-xl mt-2">{b.title}</h3>
-                    {b.description && <p className="mt-3 text-muted-foreground leading-relaxed">{b.description}</p>}
                   </div>
                 ))}
-              </div>
-              <div className="mt-12 text-center">
-                <Button size="lg" className="px-10 py-6 rounded-xl shadow-lg text-lg" style={ctaStyle} onClick={scrollToOrder}>{page.cta_text}</Button>
               </div>
             </div>
           </section>
         )}
 
-        {/* Media Gallery: Masonry-like */}
+        {/* Mid-CTA: "আজই অর্ডার করুন" banner */}
+        <section className="py-12 bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10">
+          <div className="container mx-auto px-4 text-center">
+            <p className="text-lg font-semibold mb-4">
+              <Zap className="inline h-5 w-5 text-accent mr-1" /> আজই অর্ডার করুন এবং বিশেষ ছাড় পান
+            </p>
+            <Button size="lg" className="px-10 py-6 rounded-xl shadow-xl font-bold bg-gradient-to-r from-primary to-accent text-white hover:opacity-90" onClick={scrollToOrder}>
+              {page.cta_text} →
+            </Button>
+          </div>
+        </section>
+
+        {/* ═══ STAGE 3: DESIRE ═══ Media Gallery + Verified Reviews */}
         {mediaItems.length > 0 && (
           <section className="py-16 md:py-20 bg-muted/30">
             <div className="container mx-auto px-4">
@@ -597,25 +655,30 @@ const LandingPage = () => {
           </section>
         )}
 
-        {/* Reviews: Cards with gradient top border */}
+        {/* Reviews: Cards with gradient top border + "ভেরিফাইড" badge */}
         {reviews.length > 0 && (
           <section className="py-16 md:py-20">
             <div className="container mx-auto px-4">
-              <h2 className="text-center font-display text-3xl md:text-4xl font-extrabold text-foreground mb-12">গ্রাহকরা কী বলছেন</h2>
+              <h2 className="text-center font-display text-3xl md:text-4xl font-extrabold mb-12">গ্রাহকরা কী বলছেন</h2>
               <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
                 {reviews.map((r, i) => (
-                  <div key={i} className="rounded-2xl border border-border bg-card overflow-hidden shadow-lg">
+                  <div key={i} className="rounded-2xl border border-border bg-card overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
                     <div className="h-1.5 bg-gradient-to-r from-primary to-accent" />
                     <div className="p-6">
-                      <div className="flex mb-3">{Array.from({ length: r.rating }).map((_, j) => <Star key={j} className="h-5 w-5 fill-yellow-400 text-yellow-400" />)}</div>
-                      <p className="text-foreground leading-relaxed mb-4">"{r.comment}"</p>
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex">{Array.from({ length: r.rating }).map((_, j) => <Star key={j} className="h-5 w-5 fill-yellow-400 text-yellow-400" />)}</div>
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary bg-primary/10 rounded-full px-2 py-0.5">
+                          <CheckCircle className="h-3 w-3" /> ভেরিফাইড
+                        </span>
+                      </div>
+                      <p className="leading-relaxed mb-4">"{r.comment}"</p>
                       <div className="flex items-center gap-3">
                         {r.image_url ? (
                           <img src={r.image_url} alt={r.name} className="h-12 w-12 rounded-full object-cover ring-2 ring-primary/20" />
                         ) : (
-                          <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-bold text-lg">{r.name.charAt(0)}</div>
+                          <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-bold text-lg">{r.name.charAt(0)}</div>
                         )}
-                        <span className="font-semibold text-foreground">{r.name}</span>
+                        <span className="font-semibold">{r.name}</span>
                       </div>
                     </div>
                   </div>
@@ -625,17 +688,58 @@ const LandingPage = () => {
           </section>
         )}
 
-        {/* Order Form */}
-        {renderOrderForm(
-          "py-16 md:py-20",
-          "rounded-2xl border-2 border-primary/20 p-6 md:p-10 bg-card shadow-2xl"
-        )}
+        {/* ═══ STAGE 4: ACTION ═══ Trust Signals + "Bestseller" ribbon + Order Form */}
+        {/* Trust Signals: Shield + Truck + Award */}
+        <section className="py-10">
+          <div className="container mx-auto px-4 max-w-2xl">
+            <div className="grid grid-cols-3 gap-4">
+              <div className="flex flex-col items-center gap-2 rounded-xl bg-card border border-border p-4 shadow-sm text-center">
+                <Shield className="h-6 w-6 text-primary" />
+                <span className="text-xs font-semibold">নিরাপদ পেমেন্ট</span>
+              </div>
+              <div className="flex flex-col items-center gap-2 rounded-xl bg-card border border-border p-4 shadow-sm text-center">
+                <Truck className="h-6 w-6 text-primary" />
+                <span className="text-xs font-semibold">দ্রুত ডেলিভারি</span>
+              </div>
+              <div className="flex flex-col items-center gap-2 rounded-xl bg-card border border-border p-4 shadow-sm text-center">
+                <Award className="h-6 w-6 text-accent" />
+                <span className="text-xs font-semibold">১০০% গ্যারান্টি</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Order Form with Bestseller ribbon */}
+        <section id="lp-order-form" className="py-16 md:py-20">
+          <div className="container mx-auto px-4 max-w-xl">
+            <div className="relative">
+              {/* Bestseller ribbon */}
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10 rounded-full bg-gradient-to-r from-primary to-accent text-white text-sm font-extrabold px-6 py-1.5 shadow-xl">
+                🏆 সর্বাধিক বিক্রিত
+              </div>
+              <div className="rounded-2xl p-[2px] bg-gradient-to-br from-primary/40 to-accent/40 shadow-2xl">
+                <div className="rounded-2xl bg-card p-8 md:p-10">
+                  <h2 className="text-center font-display text-2xl font-extrabold mb-2 mt-2">
+                    <ShoppingBag className="inline h-6 w-6 mr-2" />{page.cta_text}
+                  </h2>
+                  <p className="text-center text-sm text-muted-foreground mb-6">
+                    {isPhysical ? "ক্যাশ অন ডেলিভারি — সারা বাংলাদেশে" : "পেমেন্ট করে এখনই পান"}
+                  </p>
+                  {renderOrderFormContent()}
+                  <Button type="submit" size="lg" className="w-full text-lg py-6 mt-6 rounded-xl shadow-xl font-bold bg-gradient-to-r from-primary to-accent text-white hover:opacity-90" disabled={submitting} onClick={handleOrder}>
+                    {submitting ? "প্রসেস হচ্ছে..." : `${page.cta_text} →`}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
         {/* FAQs */}
         {faqs.length > 0 && faqs[0].question && (
           <section className="py-16 md:py-20">
             <div className="container mx-auto px-4 max-w-2xl">
-              <h2 className="text-center font-display text-3xl font-extrabold text-foreground mb-10">সচরাচর জিজ্ঞাসা</h2>
+              <h2 className="text-center font-display text-3xl font-extrabold mb-10">সচরাচর জিজ্ঞাসা</h2>
               <Accordion type="single" collapsible className="space-y-3">
                 {faqs.filter(f => f.question).map((f, i) => (
                   <AccordionItem key={i} value={`faq-${i}`} className="border rounded-xl px-5 shadow-sm bg-card">
@@ -648,11 +752,11 @@ const LandingPage = () => {
           </section>
         )}
 
-        {/* Final CTA: Gradient banner */}
+        {/* Final CTA */}
         <section className="py-16 bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10">
           <div className="container mx-auto px-4 text-center">
-            <h2 className="font-display text-3xl md:text-4xl font-extrabold text-foreground mb-6">{page.headline}</h2>
-            <Button size="lg" className="text-lg px-12 py-7 rounded-xl shadow-2xl font-bold" style={ctaStyle} onClick={scrollToOrder}>
+            <h2 className="font-display text-3xl md:text-4xl font-extrabold mb-6">{page.headline}</h2>
+            <Button size="lg" className="text-lg px-12 py-7 rounded-xl shadow-2xl font-bold bg-gradient-to-r from-primary to-accent text-white hover:opacity-90" onClick={scrollToOrder}>
               {page.cta_text} →
             </Button>
           </div>
@@ -667,21 +771,25 @@ const LandingPage = () => {
   }
 
   // ==================== EXCLUSIVE THEME (Dark Luxury) ====================
+  // Color Psychology: Zinc-950 bg + Amber/Gold accents = Luxury, Exclusivity, FOMO
+  // Funnel: AIDA with full-bleed hero, scarcity-driven urgency, VIP reviews, dramatic order form
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
-      {/* Hero: Full-bleed dark with dramatic typography */}
-      <section className="relative min-h-[80vh] flex items-center overflow-hidden">
-        {/* Background image with overlay */}
+      {/* ═══ STAGE 1: ATTENTION ═══ Full-bleed hero with vignette + animated "Limited Edition" badge */}
+      <section className="relative min-h-[85vh] flex items-center overflow-hidden">
         {page.hero_image_url && !page.hero_video_url && (
           <div className="absolute inset-0">
-            <img src={page.hero_image_url} alt="" className="w-full h-full object-cover opacity-30" />
-            <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/80 to-zinc-950/40" />
+            <img src={page.hero_image_url} alt="" className="w-full h-full object-cover opacity-25" />
+            {/* Strong vignette */}
+            <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/70 to-zinc-950/30" />
+            <div className="absolute inset-0 bg-gradient-to-r from-zinc-950/60 via-transparent to-zinc-950/60" />
           </div>
         )}
         <div className="container mx-auto px-4 relative z-10 py-20">
           <div className="max-w-3xl">
-            <div className="inline-block border border-amber-500/30 bg-amber-500/10 rounded-full px-5 py-1.5 text-sm font-semibold text-amber-400 mb-8 tracking-wider uppercase">
-              ✦ Exclusive Edition
+            {/* Animated Limited Edition badge */}
+            <div className="inline-flex items-center gap-2 border border-amber-500/40 bg-amber-500/10 rounded-full px-5 py-2 text-sm font-semibold text-amber-400 mb-8 tracking-wider uppercase animate-pulse">
+              <Gem className="h-4 w-4" /> সীমিত সংস্করণ
             </div>
             <h1 className="font-display text-4xl md:text-6xl lg:text-7xl font-extrabold text-white leading-[1.05] tracking-tight">
               {page.headline}
@@ -699,23 +807,29 @@ const LandingPage = () => {
                 </>
               )}
             </div>
-            <div className="mt-6">
+            {/* Exclusive urgency: Amber glow countdown + Dramatic stock counter with red glow */}
+            <div className="mt-6 space-y-3">
               {page.show_countdown && !countdown.expired && (
-                <div className="inline-flex items-center gap-3 rounded-lg bg-amber-500/10 border border-amber-500/20 px-5 py-3">
+                <div className="inline-flex items-center gap-3 rounded-lg bg-amber-500/10 border border-amber-500/30 px-5 py-3 shadow-[0_0_20px_rgba(245,158,11,0.15)]">
                   <Clock className="h-5 w-5 text-amber-400 animate-pulse" />
-                  <span className="font-bold text-amber-300 tracking-wide">
+                  <span className="font-extrabold text-amber-300 tracking-wide text-lg">
                     {countdown.days > 0 && `${countdown.days}দিন `}{String(countdown.hours).padStart(2, '0')}:{String(countdown.minutes).padStart(2, '0')}:{String(countdown.seconds).padStart(2, '0')}
                   </span>
                 </div>
               )}
               {page.show_stock_badge && stockRemaining > 0 && (
-                <div className="inline-flex items-center gap-3 rounded-lg bg-red-500/10 border border-red-500/20 px-5 py-3 mt-3">
-                  <Flame className="h-5 w-5 text-red-400" />
-                  <span className="text-sm font-semibold text-red-300">মাত্র {stockRemaining}টি বাকি</span>
+                <div className="flex items-center gap-3 rounded-lg bg-red-500/10 border border-red-500/30 px-5 py-3 shadow-[0_0_20px_rgba(239,68,68,0.15)] max-w-xs">
+                  <Flame className="h-5 w-5 text-red-400 animate-pulse" />
+                  <div className="flex-1">
+                    <span className="text-sm font-bold text-red-300">মাত্র {stockRemaining}টি বাকি!</span>
+                    <div className="w-full h-2 rounded-full bg-red-900/50 overflow-hidden mt-1">
+                      <div className="h-full rounded-full bg-gradient-to-r from-red-500 to-red-400 transition-all shadow-[0_0_8px_rgba(239,68,68,0.5)]" style={{ width: `${stockPercent}%` }} />
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
-            <Button size="lg" className="mt-10 text-lg px-12 py-7 rounded-none bg-amber-500 hover:bg-amber-400 text-zinc-950 font-extrabold tracking-wide shadow-[0_0_40px_rgba(245,158,11,0.3)] transition-all" onClick={scrollToOrder}>
+            <Button size="lg" className="mt-10 text-lg px-14 py-7 rounded-none bg-amber-500 hover:bg-amber-400 text-zinc-950 font-extrabold tracking-wide shadow-[0_0_40px_rgba(245,158,11,0.3)] transition-all hover:shadow-[0_0_60px_rgba(245,158,11,0.4)]" onClick={scrollToOrder}>
               {page.cta_text} →
             </Button>
           </div>
@@ -729,35 +843,68 @@ const LandingPage = () => {
         )}
       </section>
 
-      {/* Benefits: Horizontal divider style */}
+      {/* ═══ STAGE 2: INTEREST ═══ Gold border social proof + Benefits with gold dividers */}
+      {/* Social Proof: Gold border badges */}
+      <section className="py-10 border-t border-zinc-800">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-wrap items-center justify-center gap-6">
+            <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-5 py-3">
+              <Crown className="h-5 w-5 text-amber-400" />
+              <span className="text-sm font-semibold text-amber-300">৫০০+ এক্সক্লুসিভ গ্রাহক</span>
+            </div>
+            <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-5 py-3">
+              <Star className="h-5 w-5 fill-amber-400 text-amber-400" />
+              <span className="text-sm font-semibold text-amber-300">৪.৯/৫ রেটিং</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Benefits: Gold divider lines, numbered, hover amber */}
       {benefits.length > 0 && benefits[0].title && (
         <section className="py-20 border-t border-zinc-800">
           <div className="container mx-auto px-4 max-w-4xl">
-            <h2 className="text-center text-sm font-semibold tracking-[0.3em] uppercase text-amber-400 mb-16">বৈশিষ্ট্য সমূহ</h2>
-            <div className="space-y-0 divide-y divide-zinc-800">
+            <h2 className="text-center text-sm font-semibold tracking-[0.3em] uppercase text-amber-400 mb-4">একচেটিয়া সুবিধা</h2>
+            <p className="text-center text-zinc-500 mb-16 text-sm">শুধুমাত্র এক্সক্লুসিভ গ্রাহকদের জন্য</p>
+            <div className="space-y-0">
               {benefits.filter(b => b.title).map((b, i) => (
-                <div key={i} className="flex items-start gap-6 py-8 group">
-                  <span className="text-3xl font-extrabold text-zinc-700 group-hover:text-amber-500 transition-colors w-12 shrink-0">
-                    {String(i + 1).padStart(2, '0')}
-                  </span>
-                  <div>
-                    <h3 className="font-bold text-white text-xl group-hover:text-amber-300 transition-colors">{b.title}</h3>
-                    {b.description && <p className="mt-2 text-zinc-400 leading-relaxed">{b.description}</p>}
+                <div key={i} className="group">
+                  {/* Gold divider */}
+                  <div className="h-px bg-gradient-to-r from-transparent via-amber-500/30 to-transparent" />
+                  <div className="flex items-start gap-6 py-8">
+                    <span className="text-3xl font-extrabold text-zinc-700 group-hover:text-amber-500 transition-colors w-12 shrink-0">
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
+                    <div>
+                      <h3 className="font-bold text-white text-xl group-hover:text-amber-300 transition-colors">{b.title}</h3>
+                      {b.description && <p className="mt-2 text-zinc-400 leading-relaxed">{b.description}</p>}
+                    </div>
                   </div>
                 </div>
               ))}
+              <div className="h-px bg-gradient-to-r from-transparent via-amber-500/30 to-transparent" />
             </div>
           </div>
         </section>
       )}
 
-      {/* Media Gallery: Cinematic */}
+      {/* Mid-CTA: Exclusive style */}
+      <section className="py-14 bg-gradient-to-r from-zinc-900 via-zinc-800/50 to-zinc-900 border-y border-zinc-800">
+        <div className="container mx-auto px-4 text-center">
+          <p className="text-amber-400 text-sm tracking-widest uppercase font-semibold mb-4">সীমিত সময়ের অফার</p>
+          <Button size="lg" className="px-12 py-7 rounded-none bg-amber-500 hover:bg-amber-400 text-zinc-950 font-extrabold tracking-wide shadow-[0_0_40px_rgba(245,158,11,0.3)]" onClick={scrollToOrder}>
+            {page.cta_text} →
+          </Button>
+        </div>
+      </section>
+
+      {/* ═══ STAGE 3: DESIRE ═══ Cinematic media + VIP Reviews */}
       {mediaItems.length > 0 && (
         <section className="py-20 bg-zinc-900/50">
           <div className="container mx-auto px-4">
             <div className={`grid gap-4 ${mediaItems.length === 1 ? "max-w-3xl mx-auto" : "md:grid-cols-2"}`}>
               {mediaItems.map((m, i) => (
-                <div key={i} className="rounded-lg overflow-hidden ring-1 ring-zinc-800 shadow-xl">
+                <div key={i} className="rounded-lg overflow-hidden ring-1 ring-zinc-800 shadow-xl hover:ring-amber-500/30 transition-all">
                   {m.type === "video" ? (
                     <div className="aspect-video"><iframe src={m.url} className="w-full h-full" allowFullScreen /></div>
                   ) : (
@@ -771,16 +918,20 @@ const LandingPage = () => {
         </section>
       )}
 
-      {/* Reviews: Testimonial cards with gold accent */}
+      {/* Reviews: VIP style with gold bar */}
       {reviews.length > 0 && (
         <section className="py-20 border-t border-zinc-800">
           <div className="container mx-auto px-4">
-            <h2 className="text-center text-sm font-semibold tracking-[0.3em] uppercase text-amber-400 mb-16">গ্রাহকদের অভিজ্ঞতা</h2>
+            <h2 className="text-center text-sm font-semibold tracking-[0.3em] uppercase text-amber-400 mb-4">VIP গ্রাহকদের অভিজ্ঞতা</h2>
+            <p className="text-center text-zinc-500 mb-16 text-sm">যারা ইতিমধ্যে এক্সক্লুসিভ অভিজ্ঞতা নিয়েছেন</p>
             <div className="grid gap-8 md:grid-cols-2 max-w-4xl mx-auto">
               {reviews.map((r, i) => (
-                <div key={i} className="border border-zinc-800 rounded-lg p-8 bg-zinc-900/50 relative">
-                  <div className="absolute top-0 left-8 h-1 w-12 bg-amber-500" />
-                  <div className="flex mb-4">{Array.from({ length: r.rating }).map((_, j) => <Star key={j} className="h-4 w-4 fill-amber-400 text-amber-400" />)}</div>
+                <div key={i} className="border border-zinc-800 rounded-lg p-8 bg-zinc-900/50 relative hover:border-amber-500/30 transition-all">
+                  <div className="absolute top-0 left-8 h-1 w-16 bg-gradient-to-r from-amber-500 to-amber-300" />
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex">{Array.from({ length: r.rating }).map((_, j) => <Star key={j} className="h-4 w-4 fill-amber-400 text-amber-400" />)}</div>
+                    <span className="text-xs font-semibold text-amber-500/80 border border-amber-500/20 rounded-full px-2 py-0.5">VIP</span>
+                  </div>
                   <p className="text-zinc-300 leading-relaxed italic">"{r.comment}"</p>
                   <div className="mt-6 flex items-center gap-3">
                     {r.image_url ? (
@@ -797,11 +948,51 @@ const LandingPage = () => {
         </section>
       )}
 
-      {/* Order Form: Dark card with gold accents */}
-      {renderOrderForm(
-        "py-20 border-t border-zinc-800",
-        "rounded-lg border border-zinc-700 bg-zinc-900 p-6 md:p-10 shadow-[0_0_60px_rgba(0,0,0,0.5)] text-zinc-100"
-      )}
+      {/* ═══ STAGE 4: ACTION ═══ "Last Chance" banner + Gold glow Order Form */}
+      {/* Last Chance pulsing banner */}
+      <section className="py-8 border-t border-zinc-800">
+        <div className="container mx-auto px-4 max-w-xl text-center">
+          <div className="inline-flex items-center gap-2 rounded-lg bg-red-500/10 border border-red-500/30 px-6 py-3 animate-pulse shadow-[0_0_20px_rgba(239,68,68,0.1)]">
+            <AlertTriangle className="h-5 w-5 text-red-400" />
+            <span className="font-bold text-red-300">শেষ সুযোগ — এই অফার আর নাও থাকতে পারে!</span>
+          </div>
+        </div>
+      </section>
+
+      {/* Exclusive guarantee */}
+      <section className="py-6">
+        <div className="container mx-auto px-4 max-w-xl text-center">
+          <div className="inline-flex items-center gap-2 border border-amber-500/20 bg-amber-500/5 rounded-lg px-5 py-3">
+            <Shield className="h-5 w-5 text-amber-400" />
+            <span className="text-sm font-semibold text-amber-300">এক্সক্লুসিভ গ্যারান্টি — ১০০% সন্তুষ্টি নিশ্চিত</span>
+          </div>
+        </div>
+      </section>
+
+      {/* Order Form: Dark card with gold border glow */}
+      <section id="lp-order-form" className="py-20">
+        <div className="container mx-auto px-4 max-w-xl">
+          <div className="rounded-lg border border-amber-500/20 bg-zinc-900 p-8 md:p-10 shadow-[0_0_60px_rgba(245,158,11,0.08)] relative">
+            {/* Gold glow effect */}
+            <div className="absolute -inset-px rounded-lg bg-gradient-to-br from-amber-500/20 via-transparent to-amber-500/10 pointer-events-none" />
+            <div className="relative z-10">
+              <h2 className="text-center font-display text-2xl font-extrabold text-white mb-2">
+                <ShoppingBag className="inline h-6 w-6 mr-2 text-amber-400" />{page.cta_text}
+              </h2>
+              <p className="text-center text-sm text-zinc-500 mb-6">
+                {isPhysical ? "ক্যাশ অন ডেলিভারি — সারা বাংলাদেশে" : "পেমেন্ট করে এখনই পান"}
+              </p>
+              {renderOrderFormContent(
+                "bg-zinc-800 border-zinc-700 text-zinc-100 placeholder:text-zinc-500",
+                "text-zinc-300"
+              )}
+              <Button type="submit" size="lg" className="w-full text-lg py-6 mt-6 rounded-none bg-amber-500 hover:bg-amber-400 text-zinc-950 font-extrabold tracking-wide shadow-[0_0_30px_rgba(245,158,11,0.3)]" disabled={submitting} onClick={handleOrder}>
+                {submitting ? "প্রসেস হচ্ছে..." : `${page.cta_text} →`}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* FAQs */}
       {faqs.length > 0 && faqs[0].question && (
@@ -823,6 +1014,7 @@ const LandingPage = () => {
       {/* Final CTA */}
       <section className="py-20 border-t border-zinc-800 bg-gradient-to-t from-zinc-900 to-zinc-950">
         <div className="container mx-auto px-4 text-center">
+          <p className="text-amber-400 text-sm tracking-widest uppercase font-semibold mb-6">এখনই সিদ্ধান্ত নিন</p>
           <h2 className="font-display text-3xl md:text-4xl font-extrabold text-white mb-8">{page.headline}</h2>
           <Button size="lg" className="text-lg px-14 py-7 rounded-none bg-amber-500 hover:bg-amber-400 text-zinc-950 font-extrabold tracking-wide shadow-[0_0_40px_rgba(245,158,11,0.3)]" onClick={scrollToOrder}>
             {page.cta_text} →
