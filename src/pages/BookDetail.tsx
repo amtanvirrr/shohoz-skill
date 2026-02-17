@@ -21,6 +21,7 @@ interface DbBook {
   description: string;
   category: string;
   book_type: string;
+  demo_pdf_url: string | null;
 }
 
 interface MfsMethod {
@@ -212,6 +213,21 @@ const BookDetail = () => {
           <div className="overflow-hidden rounded-xl border border-border bg-card">
             {book.image_url && <img src={book.image_url} alt={book.title} className="h-full max-h-[500px] w-full object-cover" />}
           </div>
+
+          {/* Demo PDF Preview */}
+          {book.demo_pdf_url && (
+            <div className="lg:col-span-2 mt-2">
+              <h3 className="mb-3 text-lg font-semibold text-foreground">📖 ডেমো প্রিভিউ</h3>
+              <div className="overflow-hidden rounded-xl border border-border bg-card">
+                <iframe
+                  src={book.demo_pdf_url}
+                  title={`${book.title} - Demo Preview`}
+                  className="h-[600px] w-full"
+                  style={{ border: "none" }}
+                />
+              </div>
+            </div>
+          )}
 
           <div>
             <div className="flex flex-wrap gap-2">
