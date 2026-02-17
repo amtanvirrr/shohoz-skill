@@ -145,7 +145,7 @@ const AdminSettings = () => {
 
           <div>
             <Label htmlFor="site_name">সাইট নাম</Label>
-            <Input id="site_name" value={fields.site_name} onChange={(e) => handleChange("site_name", e.target.value)} className="mt-1" placeholder="ShikhonHub" />
+            <Input id="site_name" value={fields.site_name} onChange={(e) => handleChange("site_name", e.target.value)} className="mt-1" placeholder="আপনার সাইটের নাম" />
           </div>
           <div>
             <Label htmlFor="site_description">ফুটার বর্ণনা</Label>
@@ -153,7 +153,7 @@ const AdminSettings = () => {
           </div>
           <div>
             <Label htmlFor="copyright_text">কপিরাইট টেক্সট</Label>
-            <Input id="copyright_text" value={fields.copyright_text} onChange={(e) => handleChange("copyright_text", e.target.value)} className="mt-1" placeholder="© 2026 ShikhonHub. All rights reserved." />
+            <Input id="copyright_text" value={fields.copyright_text} onChange={(e) => handleChange("copyright_text", e.target.value)} className="mt-1" placeholder="© 2026 Your Site. All rights reserved." />
           </div>
         </div>
 
@@ -222,7 +222,7 @@ const AdminSettings = () => {
           <p className="text-sm text-muted-foreground">কন্টাক্ট পেজ এবং ফুটারে প্রদর্শিত যোগাযোগের তথ্য পরিবর্তন করুন।</p>
           <div>
             <Label htmlFor="contact_email">ইমেইল</Label>
-            <Input id="contact_email" value={fields.contact_email} onChange={(e) => handleChange("contact_email", e.target.value)} className="mt-1" placeholder="info@shikhonhub.com" />
+            <Input id="contact_email" value={fields.contact_email} onChange={(e) => handleChange("contact_email", e.target.value)} className="mt-1" placeholder="info@example.com" />
           </div>
           <div>
             <Label htmlFor="contact_phone">ফোন নম্বর</Label>
