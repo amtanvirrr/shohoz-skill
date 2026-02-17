@@ -191,7 +191,7 @@ const AdminSettings = () => {
 
       <div className="mt-8 max-w-2xl space-y-8">
         {/* Site Branding */}
-        <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+        <div id="branding" className="rounded-xl border border-border bg-card p-6 space-y-4 scroll-mt-20">
           <h3 className="font-display text-lg font-semibold text-foreground">সাইট ব্র্যান্ডিং</h3>
           <p className="text-sm text-muted-foreground">সাইটের নাম, বর্ণনা এবং কপিরাইট টেক্সট পরিবর্তন করুন।</p>
 
@@ -210,7 +210,7 @@ const AdminSettings = () => {
         </div>
 
         {/* Homepage Sections */}
-        <div className="rounded-xl border border-border bg-card p-6 space-y-6">
+        <div id="homepage" className="rounded-xl border border-border bg-card p-6 space-y-6 scroll-mt-20">
           <h3 className="font-display text-lg font-semibold text-foreground">হোমপেজ সেকশন</h3>
           <p className="text-sm text-muted-foreground">হোমপেজের প্রতিটি সেকশনের টাইটেল, সাবটাইটেল এবং ফিচার্ড প্রোডাক্ট নির্বাচন করুন।</p>
 
@@ -300,7 +300,7 @@ const AdminSettings = () => {
         </div>
 
         {/* Logos */}
-        <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+        <div id="logos" className="rounded-xl border border-border bg-card p-6 space-y-4 scroll-mt-20">
           <h3 className="font-display text-lg font-semibold text-foreground">লোগো ও আইকন</h3>
           <p className="text-sm text-muted-foreground">ইমেজ URL দিন। Supabase Storage বা যেকোনো CDN URL ব্যবহার করতে পারেন।</p>
 
@@ -327,7 +327,7 @@ const AdminSettings = () => {
         </div>
 
         {/* Meta Pixel & Conversions API */}
-        <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+        <div id="pixel" className="rounded-xl border border-border bg-card p-6 space-y-4 scroll-mt-20">
           <h3 className="font-display text-lg font-semibold text-foreground">Meta Pixel & Conversions API</h3>
           <p className="text-sm text-muted-foreground">
             ক্লায়েন্ট-সাইড Pixel এবং সার্ভার-সাইড Conversions API এর মাধ্যমে ইভেন্ট ট্র্যাকিং করুন। PageView, Purchase ইত্যাদি ইভেন্ট অটোমেটিকভাবে ট্র্যাক হবে।
@@ -359,7 +359,7 @@ const AdminSettings = () => {
         </div>
 
         {/* Contact Information */}
-        <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+        <div id="contact" className="rounded-xl border border-border bg-card p-6 space-y-4 scroll-mt-20">
           <h3 className="font-display text-lg font-semibold text-foreground">যোগাযোগ তথ্য</h3>
           <p className="text-sm text-muted-foreground">কন্টাক্ট পেজ এবং ফুটারে প্রদর্শিত যোগাযোগের তথ্য পরিবর্তন করুন।</p>
           <div>
@@ -377,7 +377,7 @@ const AdminSettings = () => {
         </div>
 
         {/* Contact Page Text */}
-        <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+        <div id="contact-page" className="rounded-xl border border-border bg-card p-6 space-y-4 scroll-mt-20">
           <h3 className="font-display text-lg font-semibold text-foreground">কন্টাক্ট পেজ</h3>
           <p className="text-sm text-muted-foreground">কন্টাক্ট পেজের টাইটেল ও সাবটাইটেল পরিবর্তন করুন।</p>
           <div>
@@ -391,7 +391,7 @@ const AdminSettings = () => {
         </div>
 
         {/* Newsletter */}
-        <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+        <div id="newsletter-settings" className="rounded-xl border border-border bg-card p-6 space-y-4 scroll-mt-20">
           <h3 className="font-display text-lg font-semibold text-foreground">নিউজলেটার</h3>
           <p className="text-sm text-muted-foreground">ফুটারে প্রদর্শিত নিউজলেটার সেকশনের টাইটেল পরিবর্তন করুন।</p>
           <div>
@@ -400,7 +400,7 @@ const AdminSettings = () => {
           </div>
         </div>
         {/* About Page */}
-        <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+        <div id="about" className="rounded-xl border border-border bg-card p-6 space-y-4 scroll-mt-20">
           <h3 className="font-display text-lg font-semibold text-foreground">About পেজ</h3>
           <p className="text-sm text-muted-foreground">About পেজে প্রদর্শিত কন্টেন্ট পরিবর্তন করুন।</p>
           <div>
@@ -412,7 +412,7 @@ const AdminSettings = () => {
         </div>
 
         {/* Courier Integration - Steadfast */}
-        <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+        <div id="courier" className="rounded-xl border border-border bg-card p-6 space-y-4 scroll-mt-20">
           <h3 className="font-display text-lg font-semibold text-foreground">Steadfast Courier</h3>
           <p className="text-sm text-muted-foreground">Steadfast Portal থেকে API Key এবং Secret Key সংগ্রহ করুন।</p>
           <div>
@@ -466,7 +466,7 @@ const AdminSettings = () => {
         </div>
 
         {/* SMTP Email Notifications */}
-        <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+        <div id="smtp" className="rounded-xl border border-border bg-card p-6 space-y-4 scroll-mt-20">
           <h3 className="font-display text-lg font-semibold text-foreground">Email Notifications (SMTP)</h3>
           <p className="text-sm text-muted-foreground">
             নতুন অর্ডার আসলে অ্যাডমিনকে ইমেইলে নোটিফিকেশন পাঠাতে SMTP কনফিগার করুন।
