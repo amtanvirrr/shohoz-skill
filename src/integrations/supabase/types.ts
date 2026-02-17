@@ -276,6 +276,72 @@ export type Database = {
         }
         Relationships: []
       }
+      landing_pages: {
+        Row: {
+          benefits: Json
+          created_at: string
+          cta_color: string
+          cta_text: string
+          faqs: Json
+          headline: string
+          hero_image_url: string | null
+          hero_video_url: string | null
+          id: string
+          is_published: boolean
+          media_items: Json
+          product_id: string
+          product_type: string
+          reviews: Json
+          show_quantity: boolean
+          slug: string
+          subheadline: string
+          theme: string
+          updated_at: string
+        }
+        Insert: {
+          benefits?: Json
+          created_at?: string
+          cta_color?: string
+          cta_text?: string
+          faqs?: Json
+          headline?: string
+          hero_image_url?: string | null
+          hero_video_url?: string | null
+          id?: string
+          is_published?: boolean
+          media_items?: Json
+          product_id: string
+          product_type?: string
+          reviews?: Json
+          show_quantity?: boolean
+          slug: string
+          subheadline?: string
+          theme?: string
+          updated_at?: string
+        }
+        Update: {
+          benefits?: Json
+          created_at?: string
+          cta_color?: string
+          cta_text?: string
+          faqs?: Json
+          headline?: string
+          hero_image_url?: string | null
+          hero_video_url?: string | null
+          id?: string
+          is_published?: boolean
+          media_items?: Json
+          product_id?: string
+          product_type?: string
+          reviews?: Json
+          show_quantity?: boolean
+          slug?: string
+          subheadline?: string
+          theme?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       lesson_progress: {
         Row: {
           completed_at: string
