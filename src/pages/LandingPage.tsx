@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Star, CheckCircle, Minus, Plus, ShoppingBag, ChevronDown } from "lucide-react";
+import { Star, CheckCircle, Minus, Plus, ShoppingBag, ChevronDown, Clock, Flame, AlertTriangle } from "lucide-react";
 import OrderSuccessDialog from "@/components/OrderSuccessDialog";
 
 interface LandingPageData {
@@ -30,6 +30,11 @@ interface LandingPageData {
   cta_text: string;
   cta_color: string;
   show_quantity: boolean;
+  show_countdown: boolean;
+  countdown_end_time: string | null;
+  show_stock_badge: boolean;
+  stock_limit: number;
+  stock_sold: number;
 }
 
 interface ProductInfo {
@@ -62,6 +67,29 @@ interface ShippingZone {
   delivery_time_max: number;
   delivery_time_unit: string;
 }
+
+// Countdown hook
+const useCountdown = (endTime: string | null) => {
+  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0, expired: true });
+  useEffect(() => {
+    if (!endTime) return;
+    const calc = () => {
+      const diff = new Date(endTime).getTime() - Date.now();
+      if (diff <= 0) { setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0, expired: true }); return; }
+      setTimeLeft({
+        days: Math.floor(diff / 86400000),
+        hours: Math.floor((diff % 86400000) / 3600000),
+        minutes: Math.floor((diff % 3600000) / 60000),
+        seconds: Math.floor((diff % 60000) / 1000),
+        expired: false,
+      });
+    };
+    calc();
+    const id = setInterval(calc, 1000);
+    return () => clearInterval(id);
+  }, [endTime]);
+  return timeLeft;
+};
 
 const LandingPage = () => {
   const { slug } = useParams();
@@ -152,6 +180,10 @@ const LandingPage = () => {
     }
   };
 
+  const countdown = useCountdown(page.show_countdown ? page.countdown_end_time : null);
+  const stockRemaining = page.stock_limit - page.stock_sold;
+  const stockPercent = page.stock_limit > 0 ? Math.round((page.stock_sold / page.stock_limit) * 100) : 0;
+
   const ctaStyle = { backgroundColor: page.cta_color, color: "#fff" };
   const benefits = (page.benefits as any[]) || [];
   const reviews = (page.reviews as any[]) || [];
@@ -197,6 +229,33 @@ const LandingPage = () => {
                   )}
                 </div>
               </div>
+              {/* Urgency badges */}
+              {page.show_countdown && !countdown.expired && (
+                <div className="mt-4 inline-flex items-center gap-2 rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-2.5 text-destructive">
+                  <Clock className="h-5 w-5 animate-pulse" />
+                  <span className="font-bold text-sm">
+                    অফার শেষ হবে: {countdown.days > 0 && `${countdown.days}দিন `}{String(countdown.hours).padStart(2, '0')}:{String(countdown.minutes).padStart(2, '0')}:{String(countdown.seconds).padStart(2, '0')}
+                  </span>
+                </div>
+              )}
+              {page.show_stock_badge && stockRemaining > 0 && (
+                <div className="mt-3 inline-flex items-center gap-2 rounded-lg bg-orange-500/10 border border-orange-500/20 px-4 py-2">
+                  <Flame className="h-4 w-4 text-orange-500" />
+                  <span className="text-sm font-semibold text-orange-600 dark:text-orange-400">
+                    মাত্র {stockRemaining}টি বাকি আছে!
+                  </span>
+                  <div className="w-20 h-1.5 rounded-full bg-orange-200 dark:bg-orange-900 overflow-hidden">
+                    <div className="h-full rounded-full bg-orange-500 transition-all" style={{ width: `${stockPercent}%` }} />
+                  </div>
+                </div>
+              )}
+              {page.show_stock_badge && stockRemaining <= 0 && (
+                <div className="mt-3 inline-flex items-center gap-2 rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-2">
+                  <AlertTriangle className="h-4 w-4 text-destructive" />
+                  <span className="text-sm font-bold text-destructive">স্টক শেষ!</span>
+                </div>
+              )}
+
               <Button size="lg" className="mt-6 text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all" style={ctaStyle} onClick={scrollToOrder}>
                 {page.cta_text} →
               </Button>
