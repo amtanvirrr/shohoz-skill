@@ -1,4 +1,5 @@
 import { useParams, Link } from "react-router-dom";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -6,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, ShoppingBag, Smartphone, BookOpen, Clock } from "lucide-react";
+import { ArrowLeft, ShoppingBag, Smartphone, BookOpen, Clock, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { usePixel } from "@/components/MetaPixelProvider";
 import OrderSuccessDialog from "@/components/OrderSuccessDialog";
@@ -60,6 +61,7 @@ const BookDetail = () => {
   const [selectedZone, setSelectedZone] = useState<string>("");
   const [orderStatus, setOrderStatus] = useState<string | null>(null);
   const [successDialog, setSuccessDialog] = useState<{ open: boolean; orderId: string; message?: string; isFree?: boolean } | null>(null);
+  const [demoOpen, setDemoOpen] = useState(false);
   const isPhysical = book?.book_type === "physical";
   const isEbook = book?.book_type === "ebook";
 
@@ -214,18 +216,17 @@ const BookDetail = () => {
             {book.image_url && <img src={book.image_url} alt={book.title} className="h-full max-h-[500px] w-full object-cover" />}
           </div>
 
-          {/* Demo PDF Preview */}
+          {/* Demo Preview Button */}
           {book.demo_pdf_url && (
-            <div className="lg:col-span-2 mt-2">
-              <h3 className="mb-3 text-lg font-semibold text-foreground">📖 ডেমো প্রিভিউ</h3>
-              <div className="overflow-hidden rounded-xl border border-border bg-card">
-                <iframe
-                  src={book.demo_pdf_url}
-                  title={`${book.title} - Demo Preview`}
-                  className="h-[600px] w-full"
-                  style={{ border: "none" }}
-                />
-              </div>
+            <div className="mt-3 flex justify-center">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={() => setDemoOpen(true)}
+              >
+                <Eye className="h-4 w-4" /> ডেমো দেখুন
+              </Button>
             </div>
           )}
 
@@ -474,6 +475,25 @@ const BookDetail = () => {
           message={successDialog.message}
           isFree={successDialog.isFree}
         />
+      )}
+      {/* Demo PDF Modal */}
+      {book?.demo_pdf_url && (
+        <Dialog open={demoOpen} onOpenChange={setDemoOpen}>
+          <DialogContent className="max-w-4xl h-[85vh] p-0 gap-0">
+            <DialogHeader className="p-4 pb-2">
+              <DialogTitle>📖 ডেমো প্রিভিউ — {book.title}</DialogTitle>
+              <DialogDescription>অর্ডার করার আগে বইটির কিছু পৃষ্ঠা দেখে নিন।</DialogDescription>
+            </DialogHeader>
+            <div className="flex-1 overflow-hidden px-4 pb-4">
+              <iframe
+                src={book.demo_pdf_url}
+                title={`${book.title} - Demo Preview`}
+                className="h-full w-full rounded-lg border border-border"
+                style={{ border: "none", minHeight: "calc(85vh - 100px)" }}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );
