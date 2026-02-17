@@ -165,6 +165,11 @@ const AdminLandingPages = () => {
 
   const [form, setForm] = useState<Omit<LandingPage, "id" | "created_at">>(emptyPage);
 
+  const dndSensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
   useEffect(() => {
     fetchAll();
   }, []);
@@ -570,7 +575,7 @@ const AdminLandingPages = () => {
               <CardHeader><CardTitle className="text-base">📐 সেকশন ক্রম (ড্র্যাগ করে সাজান)</CardTitle></CardHeader>
               <CardContent>
                 <DndContext
-                  sensors={useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }))}
+                  sensors={dndSensors}
                   collisionDetection={closestCenter}
                   onDragEnd={(event: DragEndEvent) => {
                     const { active, over } = event;
