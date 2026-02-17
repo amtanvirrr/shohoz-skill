@@ -106,7 +106,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
               <div className="ml-4 mt-1 flex flex-col gap-0.5 border-l border-border pl-3">
                 {settingsSubLinks.map((sub) => {
                   const SubIcon = sub.icon;
-                  const isSubActive = location.hash === `#${sub.hash}`;
+                  const isSubActive = location.pathname === "/admin/settings" && (location.hash === `#${sub.hash}` || (!location.hash && sub.hash === "branding"));
                   return (
                     <Link
                       key={sub.hash}
