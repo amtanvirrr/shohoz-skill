@@ -212,8 +212,8 @@ const BookDetail = () => {
         </Link>
 
         <div className="mt-4 grid gap-10 lg:grid-cols-2">
-          <div className="overflow-hidden rounded-xl border border-border bg-card">
-            {book.image_url && <img src={book.image_url} alt={book.title} className="h-full max-h-[500px] w-full object-cover" />}
+          <div className="overflow-hidden rounded-xl border border-border bg-card flex items-center justify-center">
+            {book.image_url && <img src={book.image_url} alt={book.title} className="w-full object-contain" style={{ aspectRatio: '3/4' }} />}
           </div>
 
           <div>
@@ -241,7 +241,7 @@ const BookDetail = () => {
               )}
             </div>
 
-            <p className="mt-6 leading-relaxed text-muted-foreground">{book.description}</p>
+            <div className="mt-6 leading-relaxed text-muted-foreground prose prose-sm dark:prose-invert max-w-none prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground" dangerouslySetInnerHTML={{ __html: book.description }} />
 
             {/* Demo Preview Button */}
             {book.demo_pdf_url && (
