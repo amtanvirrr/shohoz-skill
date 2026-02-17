@@ -40,6 +40,8 @@ interface BrandingFields {
   contact_address: string;
   newsletter_title: string;
   about_content: string;
+  contact_page_title: string;
+  contact_page_subtitle: string;
 }
 
 const defaultBranding: BrandingFields = {
@@ -74,6 +76,8 @@ const defaultBranding: BrandingFields = {
   contact_address: "",
   newsletter_title: "",
   about_content: "",
+  contact_page_title: "",
+  contact_page_subtitle: "",
 };
 
 const PUBLIC_KEYS: (keyof BrandingFields)[] = [
@@ -81,6 +85,7 @@ const PUBLIC_KEYS: (keyof BrandingFields)[] = [
   "logo_url", "footer_logo_url", "admin_logo_url", "favicon_url",
   "facebook_pixel_id", "facebook_test_event_code",
   "contact_email", "contact_phone", "contact_address", "newsletter_title", "about_content",
+  "contact_page_title", "contact_page_subtitle",
 ];
 
 const ALL_KEYS = Object.keys(defaultBranding) as (keyof BrandingFields)[];
@@ -236,6 +241,20 @@ const AdminSettings = () => {
           <div>
             <Label htmlFor="contact_address">ঠিকানা</Label>
             <Input id="contact_address" value={fields.contact_address} onChange={(e) => handleChange("contact_address", e.target.value)} className="mt-1" placeholder="Dhaka, Bangladesh" />
+          </div>
+        </div>
+
+        {/* Contact Page Text */}
+        <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+          <h3 className="font-display text-lg font-semibold text-foreground">কন্টাক্ট পেজ</h3>
+          <p className="text-sm text-muted-foreground">কন্টাক্ট পেজের টাইটেল ও সাবটাইটেল পরিবর্তন করুন।</p>
+          <div>
+            <Label htmlFor="contact_page_title">পেজ টাইটেল</Label>
+            <Input id="contact_page_title" value={fields.contact_page_title} onChange={(e) => handleChange("contact_page_title", e.target.value)} className="mt-1" placeholder="যোগাযোগ করুন" />
+          </div>
+          <div>
+            <Label htmlFor="contact_page_subtitle">পেজ সাবটাইটেল</Label>
+            <Input id="contact_page_subtitle" value={fields.contact_page_subtitle} onChange={(e) => handleChange("contact_page_subtitle", e.target.value)} className="mt-1" placeholder="আমাদের সাথে যোগাযোগ করুন" />
           </div>
         </div>
 
