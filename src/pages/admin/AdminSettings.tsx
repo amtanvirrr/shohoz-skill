@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Save } from "lucide-react";
 import RichTextEditor from "@/components/RichTextEditor";
@@ -42,6 +43,16 @@ interface BrandingFields {
   about_content: string;
   contact_page_title: string;
   contact_page_subtitle: string;
+  homepage_courses_title: string;
+  homepage_courses_subtitle: string;
+  homepage_books_title: string;
+  homepage_books_subtitle: string;
+  homepage_reviews_title: string;
+  homepage_reviews_subtitle: string;
+  homepage_track_title: string;
+  homepage_track_subtitle: string;
+  featured_course_ids: string;
+  featured_book_ids: string;
 }
 
 const defaultBranding: BrandingFields = {
@@ -78,6 +89,16 @@ const defaultBranding: BrandingFields = {
   about_content: "",
   contact_page_title: "",
   contact_page_subtitle: "",
+  homepage_courses_title: "",
+  homepage_courses_subtitle: "",
+  homepage_books_title: "",
+  homepage_books_subtitle: "",
+  homepage_reviews_title: "",
+  homepage_reviews_subtitle: "",
+  homepage_track_title: "",
+  homepage_track_subtitle: "",
+  featured_course_ids: "",
+  featured_book_ids: "",
 };
 
 const PUBLIC_KEYS: (keyof BrandingFields)[] = [
@@ -86,6 +107,11 @@ const PUBLIC_KEYS: (keyof BrandingFields)[] = [
   "facebook_pixel_id", "facebook_test_event_code",
   "contact_email", "contact_phone", "contact_address", "newsletter_title", "about_content",
   "contact_page_title", "contact_page_subtitle",
+  "homepage_courses_title", "homepage_courses_subtitle",
+  "homepage_books_title", "homepage_books_subtitle",
+  "homepage_reviews_title", "homepage_reviews_subtitle",
+  "homepage_track_title", "homepage_track_subtitle",
+  "featured_course_ids", "featured_book_ids",
 ];
 
 const ALL_KEYS = Object.keys(defaultBranding) as (keyof BrandingFields)[];
@@ -95,19 +121,27 @@ const AdminSettings = () => {
   const [fields, setFields] = useState<BrandingFields>(defaultBranding);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [allCourses, setAllCourses] = useState<{ id: string; title: string }[]>([]);
+  const [allBooks, setAllBooks] = useState<{ id: string; title: string }[]>([]);
 
   useEffect(() => {
     const fetchAll = async () => {
-      const { data } = await supabase.from("site_settings").select("key, value").in("key", ALL_KEYS);
-      if (data) {
+      const [settingsRes, coursesRes, booksRes] = await Promise.all([
+        supabase.from("site_settings").select("key, value").in("key", ALL_KEYS),
+        supabase.from("courses").select("id, title").eq("is_published", true).order("title"),
+        supabase.from("books").select("id, title").eq("is_published", true).order("title"),
+      ]);
+      if (settingsRes.data) {
         const merged = { ...defaultBranding };
-        data.forEach((row) => {
+        settingsRes.data.forEach((row) => {
           if (row.key in merged) {
             (merged as any)[row.key] = row.value;
           }
         });
         setFields(merged);
       }
+      setAllCourses(coursesRes.data || []);
+      setAllBooks(booksRes.data || []);
       setLoading(false);
     };
     fetchAll();
@@ -115,6 +149,14 @@ const AdminSettings = () => {
 
   const handleChange = (key: keyof BrandingFields, value: string) => {
     setFields((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const toggleFeaturedId = (key: "featured_course_ids" | "featured_book_ids", id: string) => {
+    setFields((prev) => {
+      const ids = prev[key] ? prev[key].split(",").filter(Boolean) : [];
+      const updated = ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id];
+      return { ...prev, [key]: updated.join(",") };
+    });
   };
 
   const saveAll = async () => {
@@ -164,6 +206,96 @@ const AdminSettings = () => {
           <div>
             <Label htmlFor="copyright_text">কপিরাইট টেক্সট</Label>
             <Input id="copyright_text" value={fields.copyright_text} onChange={(e) => handleChange("copyright_text", e.target.value)} className="mt-1" placeholder="© 2026 Your Site. All rights reserved." />
+          </div>
+        </div>
+
+        {/* Homepage Sections */}
+        <div className="rounded-xl border border-border bg-card p-6 space-y-6">
+          <h3 className="font-display text-lg font-semibold text-foreground">হোমপেজ সেকশন</h3>
+          <p className="text-sm text-muted-foreground">হোমপেজের প্রতিটি সেকশনের টাইটেল, সাবটাইটেল এবং ফিচার্ড প্রোডাক্ট নির্বাচন করুন।</p>
+
+          {/* Courses Section */}
+          <div className="space-y-3 border-t border-border pt-4">
+            <h4 className="text-sm font-semibold text-foreground">কোর্স সেকশন</h4>
+            <div>
+              <Label>সেকশন টাইটেল</Label>
+              <Input value={fields.homepage_courses_title} onChange={(e) => handleChange("homepage_courses_title", e.target.value)} className="mt-1" placeholder="ফিচার্ড কোর্স" />
+            </div>
+            <div>
+              <Label>সেকশন সাবটাইটেল</Label>
+              <Input value={fields.homepage_courses_subtitle} onChange={(e) => handleChange("homepage_courses_subtitle", e.target.value)} className="mt-1" placeholder="ক্যারিয়ার গড়তে সেরা কোর্সগুলো" />
+            </div>
+            <div>
+              <Label className="mb-2 block">ফিচার্ড কোর্স সিলেক্ট করুন</Label>
+              <div className="max-h-48 space-y-2 overflow-y-auto rounded-md border border-border p-3">
+                {allCourses.map((c) => {
+                  const selected = fields.featured_course_ids.split(",").filter(Boolean).includes(c.id);
+                  return (
+                    <label key={c.id} className="flex items-center gap-2 cursor-pointer text-sm">
+                      <Checkbox checked={selected} onCheckedChange={() => toggleFeaturedId("featured_course_ids", c.id)} />
+                      <span className={selected ? "font-medium text-foreground" : "text-muted-foreground"}>{c.title}</span>
+                    </label>
+                  );
+                })}
+                {allCourses.length === 0 && <p className="text-xs text-muted-foreground">কোন কোর্স পাওয়া যায়নি।</p>}
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">সিলেক্ট না করলে সর্বশেষ ৩টি কোর্স দেখাবে।</p>
+            </div>
+          </div>
+
+          {/* Books Section */}
+          <div className="space-y-3 border-t border-border pt-4">
+            <h4 className="text-sm font-semibold text-foreground">বই সেকশন</h4>
+            <div>
+              <Label>সেকশন টাইটেল</Label>
+              <Input value={fields.homepage_books_title} onChange={(e) => handleChange("homepage_books_title", e.target.value)} className="mt-1" placeholder="ফিচার্ড বই" />
+            </div>
+            <div>
+              <Label>সেকশন সাবটাইটেল</Label>
+              <Input value={fields.homepage_books_subtitle} onChange={(e) => handleChange("homepage_books_subtitle", e.target.value)} className="mt-1" placeholder="নিজেকে এক ধাপ এগিয়ে নিন" />
+            </div>
+            <div>
+              <Label className="mb-2 block">ফিচার্ড বই সিলেক্ট করুন</Label>
+              <div className="max-h-48 space-y-2 overflow-y-auto rounded-md border border-border p-3">
+                {allBooks.map((b) => {
+                  const selected = fields.featured_book_ids.split(",").filter(Boolean).includes(b.id);
+                  return (
+                    <label key={b.id} className="flex items-center gap-2 cursor-pointer text-sm">
+                      <Checkbox checked={selected} onCheckedChange={() => toggleFeaturedId("featured_book_ids", b.id)} />
+                      <span className={selected ? "font-medium text-foreground" : "text-muted-foreground"}>{b.title}</span>
+                    </label>
+                  );
+                })}
+                {allBooks.length === 0 && <p className="text-xs text-muted-foreground">কোন বই পাওয়া যায়নি।</p>}
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">সিলেক্ট না করলে সর্বশেষ ৩টি বই দেখাবে।</p>
+            </div>
+          </div>
+
+          {/* Reviews Section */}
+          <div className="space-y-3 border-t border-border pt-4">
+            <h4 className="text-sm font-semibold text-foreground">রিভিউ সেকশন</h4>
+            <div>
+              <Label>সেকশন টাইটেল</Label>
+              <Input value={fields.homepage_reviews_title} onChange={(e) => handleChange("homepage_reviews_title", e.target.value)} className="mt-1" placeholder="আমাদের শিক্ষার্থীরা যা বলেন" />
+            </div>
+            <div>
+              <Label>সেকশন সাবটাইটেল</Label>
+              <Input value={fields.homepage_reviews_subtitle} onChange={(e) => handleChange("homepage_reviews_subtitle", e.target.value)} className="mt-1" placeholder="আমাদের শিক্ষার্থীদের মতামত" />
+            </div>
+          </div>
+
+          {/* Track Order Section */}
+          <div className="space-y-3 border-t border-border pt-4">
+            <h4 className="text-sm font-semibold text-foreground">অর্ডার ট্র্যাকিং সেকশন</h4>
+            <div>
+              <Label>সেকশন টাইটেল</Label>
+              <Input value={fields.homepage_track_title} onChange={(e) => handleChange("homepage_track_title", e.target.value)} className="mt-1" placeholder="আপনার অর্ডার ট্র্যাক করুন" />
+            </div>
+            <div>
+              <Label>সেকশন সাবটাইটেল</Label>
+              <Input value={fields.homepage_track_subtitle} onChange={(e) => handleChange("homepage_track_subtitle", e.target.value)} className="mt-1" placeholder="আপনার অর্ডারের বর্তমান অবস্থা জানুন" />
+            </div>
           </div>
         </div>
 
