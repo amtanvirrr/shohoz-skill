@@ -38,6 +38,7 @@ interface BrandingFields {
   contact_phone: string;
   contact_address: string;
   newsletter_title: string;
+  about_content: string;
 }
 
 const defaultBranding: BrandingFields = {
@@ -71,13 +72,14 @@ const defaultBranding: BrandingFields = {
   contact_phone: "",
   contact_address: "",
   newsletter_title: "",
+  about_content: "",
 };
 
 const PUBLIC_KEYS: (keyof BrandingFields)[] = [
   "site_name", "site_description", "copyright_text",
   "logo_url", "footer_logo_url", "admin_logo_url", "favicon_url",
   "facebook_pixel_id", "facebook_test_event_code",
-  "contact_email", "contact_phone", "contact_address", "newsletter_title",
+  "contact_email", "contact_phone", "contact_address", "newsletter_title", "about_content",
 ];
 
 const ALL_KEYS = Object.keys(defaultBranding) as (keyof BrandingFields)[];
@@ -245,6 +247,16 @@ const AdminSettings = () => {
             <Input id="newsletter_title" value={fields.newsletter_title} onChange={(e) => handleChange("newsletter_title", e.target.value)} className="mt-1" placeholder="আমাদের নিউজলেটার" />
           </div>
         </div>
+        {/* About Page */}
+        <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+          <h3 className="font-display text-lg font-semibold text-foreground">About পেজ</h3>
+          <p className="text-sm text-muted-foreground">About পেজে প্রদর্শিত কন্টেন্ট পরিবর্তন করুন। HTML সাপোর্টেড।</p>
+          <div>
+            <Label htmlFor="about_content">About কন্টেন্ট (HTML)</Label>
+            <Textarea id="about_content" value={fields.about_content} onChange={(e) => handleChange("about_content", e.target.value)} className="mt-1 font-mono text-sm" rows={12} placeholder="<p>আমাদের সম্পর্কে লিখুন...</p>" />
+          </div>
+        </div>
+
         {/* Courier Integration - Steadfast */}
         <div className="rounded-xl border border-border bg-card p-6 space-y-4">
           <h3 className="font-display text-lg font-semibold text-foreground">Steadfast Courier</h3>
