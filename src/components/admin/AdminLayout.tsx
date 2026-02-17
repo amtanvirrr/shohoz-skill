@@ -5,7 +5,7 @@ import { useSiteSettings } from "@/hooks/useSiteSettings";
 import {
   BookOpen, GraduationCap, Users, ShoppingCart, Settings,
   LayoutDashboard, HelpCircle, LogOut, Menu, X, ChevronRight, ChevronDown, Star, FileText, MessageCircle, Mail, CreditCard, Truck, Image,
-  Globe, Home, Phone, Megaphone, Package, MailCheck, Info, Layers
+  Globe, Home, Phone, Megaphone, Package, MailCheck, Info, Layers, Tag
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -24,6 +24,7 @@ const sidebarLinks = [
   { to: "/admin/payments", label: "Payments", icon: CreditCard },
   { to: "/admin/shipping", label: "Shipping", icon: Truck },
   { to: "/admin/landing-pages", label: "Landing Pages", icon: Layers },
+  { to: "/admin/coupons", label: "Coupons", icon: Tag },
 ];
 
 const settingsSubLinks = [

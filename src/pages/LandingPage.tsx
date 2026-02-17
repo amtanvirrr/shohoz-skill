@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Star, CheckCircle, Minus, Plus, ShoppingBag, ChevronDown, Clock, Flame, AlertTriangle } from "lucide-react";
+import { Star, CheckCircle, Minus, Plus, ShoppingBag, ChevronDown, Clock, Flame, AlertTriangle, Tag, Loader2, X as XIcon } from "lucide-react";
 import OrderSuccessDialog from "@/components/OrderSuccessDialog";
 
 interface LandingPageData {
@@ -107,6 +107,10 @@ const LandingPage = () => {
   const [order, setOrder] = useState({ name: "", phone: "", address: "", paymentMethod: "", transactionId: "" });
   const [submitting, setSubmitting] = useState(false);
   const [successDialog, setSuccessDialog] = useState<{ open: boolean; orderId: string; message?: string } | null>(null);
+  const [couponCode, setCouponCode] = useState("");
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState<{ id: string; code: string; discount_type: string; discount_value: number } | null>(null);
+  const [couponError, setCouponError] = useState("");
 
   useEffect(() => {
     if (!slug) return;
@@ -140,8 +144,43 @@ const LandingPage = () => {
   const isPhysical = page.product_type === "book" && (product as any).book_type === "physical";
   const activeZone = shippingZones.find(z => z.zone_name === selectedZone);
   const unitPrice = product.price;
-  const shippingCost = isPhysical && activeZone ? (activeZone.free_shipping_minimum && unitPrice * quantity >= activeZone.free_shipping_minimum ? 0 : activeZone.shipping_rate) : 0;
-  const totalPrice = unitPrice * quantity + shippingCost;
+  const subtotal = unitPrice * quantity;
+  const shippingCost = isPhysical && activeZone ? (activeZone.free_shipping_minimum && subtotal >= activeZone.free_shipping_minimum ? 0 : activeZone.shipping_rate) : 0;
+  
+  // Calculate discount
+  const discountAmount = appliedCoupon
+    ? appliedCoupon.discount_type === "percentage"
+      ? Math.round(subtotal * appliedCoupon.discount_value / 100)
+      : Math.min(appliedCoupon.discount_value, subtotal)
+    : 0;
+  const totalPrice = Math.max(0, subtotal - discountAmount) + shippingCost;
+
+  const applyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    setCouponLoading(true);
+    setCouponError("");
+    const { data, error } = await supabase
+      .from("coupons")
+      .select("*")
+      .eq("code", couponCode.toUpperCase().trim())
+      .eq("is_active", true)
+      .maybeSingle();
+    setCouponLoading(false);
+
+    if (error || !data) { setCouponError("কুপন কোডটি সঠিক নয়"); return; }
+    const c = data as any;
+    if (c.expires_at && new Date(c.expires_at) < new Date()) { setCouponError("এই কুপনের মেয়াদ শেষ হয়ে গেছে"); return; }
+    if (c.max_uses !== null && c.used_count >= c.max_uses) { setCouponError("এই কুপন আর ব্যবহার করা যাবে না"); return; }
+    if (c.min_order_amount > 0 && subtotal < c.min_order_amount) { setCouponError(`সর্বনিম্ন ৳${c.min_order_amount} অর্ডারে প্রযোজ্য`); return; }
+
+    setAppliedCoupon({ id: c.id, code: c.code, discount_type: c.discount_type, discount_value: c.discount_value });
+    setCouponCode("");
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponError("");
+  };
 
   const handleOrder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -154,6 +193,7 @@ const LandingPage = () => {
     const notes = [
       isPhysical && activeZone ? `Shipping: ${activeZone.zone_label} (৳${shippingCost})` : null,
       quantity > 1 ? `Quantity: ${quantity}` : null,
+      appliedCoupon ? `Coupon: ${appliedCoupon.code} (-৳${discountAmount})` : null,
       `Landing Page: ${page.slug}`,
     ].filter(Boolean).join(" | ");
 
@@ -174,10 +214,17 @@ const LandingPage = () => {
 
     if (error) { toast({ title: "অর্ডার ব্যর্থ", description: error.message, variant: "destructive" }); }
     else {
+      // Increment coupon used_count
+      if (appliedCoupon) {
+        supabase.from("coupons").select("used_count").eq("id", appliedCoupon.id).single().then(({ data: cd }) => {
+          if (cd) supabase.from("coupons").update({ used_count: ((cd as any).used_count || 0) + 1 } as any).eq("id", appliedCoupon.id).then(() => {});
+        });
+      }
       supabase.functions.invoke("notify-order", { body: { orderId: data.order_id, orderData: { order_id: data.order_id, customer_name: order.name, customer_phone: order.phone, product_title: product.title, price: totalPrice, payment_method: paymentMethod, transaction_id: !isPhysical ? order.transactionId.trim() : null } } }).catch(() => {});
       setSuccessDialog({ open: true, orderId: data.order_id, message: isPhysical ? "আপনার অর্ডারটি সফলভাবে গৃহীত হয়েছে।" : "পেমেন্ট যাচাইয়ের পর আপনি কন্টেন্ট অ্যাক্সেস করতে পারবেন।" });
       setOrder({ name: "", phone: "", address: "", paymentMethod: mfsMethods[0]?.provider || "", transactionId: "" });
       setQuantity(1);
+      setAppliedCoupon(null);
     }
   };
 
@@ -434,8 +481,30 @@ const LandingPage = () => {
                       </div>
                     </>
                   )}
+                  {/* Coupon Code */}
+                  <div>
+                    <Label>কুপন কোড (ঐচ্ছিক)</Label>
+                    {appliedCoupon ? (
+                      <div className="mt-1 flex items-center gap-2 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 px-3 py-2">
+                        <Tag className="h-4 w-4 text-green-600" />
+                        <span className="text-sm font-medium text-green-700 dark:text-green-400">{appliedCoupon.code} প্রয়োগ হয়েছে</span>
+                        <span className="text-sm text-green-600 dark:text-green-400">(-৳{discountAmount})</span>
+                        <button type="button" onClick={removeCoupon} className="ml-auto text-muted-foreground hover:text-destructive"><XIcon className="h-4 w-4" /></button>
+                      </div>
+                    ) : (
+                      <div className="mt-1 flex gap-2">
+                        <Input value={couponCode} onChange={e => { setCouponCode(e.target.value.toUpperCase()); setCouponError(""); }} placeholder="কুপন কোড লিখুন" className="font-mono uppercase flex-1" />
+                        <Button type="button" variant="outline" size="sm" onClick={applyCoupon} disabled={couponLoading || !couponCode.trim()}>
+                          {couponLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "প্রয়োগ"}
+                        </Button>
+                      </div>
+                    )}
+                    {couponError && <p className="text-xs text-destructive mt-1">{couponError}</p>}
+                  </div>
+
                   <div className="rounded-lg bg-muted/50 p-4 space-y-2">
-                    {quantity > 1 && <div className="flex justify-between text-sm"><span>মূল্য ({quantity}×৳{unitPrice})</span><span>৳{unitPrice * quantity}</span></div>}
+                    {quantity > 1 && <div className="flex justify-between text-sm"><span>মূল্য ({quantity}×৳{unitPrice})</span><span>৳{subtotal}</span></div>}
+                    {appliedCoupon && <div className="flex justify-between text-sm text-green-600"><span>ডিসকাউন্ট ({appliedCoupon.code})</span><span>-৳{discountAmount}</span></div>}
                     {isPhysical && shippingCost > 0 && <div className="flex justify-between text-sm"><span>শিপিং</span><span>৳{shippingCost}</span></div>}
                     {isPhysical && shippingCost === 0 && activeZone && <div className="flex justify-between text-sm text-green-600"><span>শিপিং</span><span>ফ্রি!</span></div>}
                     <div className="flex justify-between font-bold text-lg border-t pt-2"><span>সর্বমোট</span><span>৳{totalPrice}</span></div>
