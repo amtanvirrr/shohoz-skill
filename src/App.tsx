@@ -38,8 +38,10 @@ import AdminComments from "./pages/admin/AdminComments";
 import AdminPayments from "./pages/admin/AdminPayments";
 import AdminShipping from "./pages/admin/AdminShipping";
 import AdminHero from "./pages/admin/AdminHero";
+import AdminLandingPages from "./pages/admin/AdminLandingPages";
 import BlogPage from "./pages/BlogPage";
 import BlogDetailPage from "./pages/BlogDetailPage";
+import LandingPage from "./pages/LandingPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -88,6 +90,10 @@ const App = () => (
             <Route path="/admin/payments" element={<ProtectedRoute adminOnly><AdminLayout><AdminPayments /></AdminLayout></ProtectedRoute>} />
             <Route path="/admin/shipping" element={<ProtectedRoute adminOnly><AdminLayout><AdminShipping /></AdminLayout></ProtectedRoute>} />
             <Route path="/admin/hero" element={<ProtectedRoute adminOnly><AdminLayout><AdminHero /></AdminLayout></ProtectedRoute>} />
+            <Route path="/admin/landing-pages" element={<ProtectedRoute adminOnly><AdminLayout><AdminLandingPages /></AdminLayout></ProtectedRoute>} />
+
+            {/* Landing pages - no layout wrapper */}
+            <Route path="/lp/:slug" element={<LandingPage />} />
 
             <Route path="*" element={<Layout><NotFound /></Layout>} />
           </Routes>

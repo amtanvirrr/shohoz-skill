@@ -5,7 +5,7 @@ import { useSiteSettings } from "@/hooks/useSiteSettings";
 import {
   BookOpen, GraduationCap, Users, ShoppingCart, Settings,
   LayoutDashboard, HelpCircle, LogOut, Menu, X, ChevronRight, ChevronDown, Star, FileText, MessageCircle, Mail, CreditCard, Truck, Image,
-  Globe, Home, Phone, Megaphone, Package, MailCheck, Info
+  Globe, Home, Phone, Megaphone, Package, MailCheck, Info, Layers
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -23,6 +23,7 @@ const sidebarLinks = [
   { to: "/admin/newsletter", label: "Newsletter", icon: Mail },
   { to: "/admin/payments", label: "Payments", icon: CreditCard },
   { to: "/admin/shipping", label: "Shipping", icon: Truck },
+  { to: "/admin/landing-pages", label: "Landing Pages", icon: Layers },
 ];
 
 const settingsSubLinks = [
@@ -148,7 +149,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
             <Menu className="h-5 w-5" />
           </button>
           <h2 className="font-display text-lg font-semibold text-foreground">
-            {location.pathname === "/admin/settings" ? "Settings" : sidebarLinks.find((l) => l.to === location.pathname)?.label || "Admin"}
+            {location.pathname === "/admin/settings" ? "Settings" : location.pathname === "/admin/landing-pages" ? "Landing Pages" : sidebarLinks.find((l) => l.to === location.pathname)?.label || "Admin"}
           </h2>
         </header>
         <main className="p-4 lg:p-6">{children}</main>
