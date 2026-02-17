@@ -212,8 +212,8 @@ const BookDetail = () => {
         </Link>
 
         <div className="mt-4 grid gap-10 lg:grid-cols-2">
-          <div className="overflow-hidden rounded-xl border border-border bg-card flex items-center justify-center">
-            {book.image_url && <img src={book.image_url} alt={book.title} className="w-full object-contain" style={{ aspectRatio: '3/4' }} />}
+          <div className="overflow-hidden rounded-xl border border-border bg-card flex items-center justify-center lg:max-h-[75vh]">
+            {book.image_url && <img src={book.image_url} alt={book.title} className="w-full h-full object-contain" style={{ aspectRatio: '3/4' }} />}
           </div>
 
           <div>
