@@ -1,62 +1,23 @@
 
 
-## ফন্ট পরিবর্তন ফিচার - পরিকল্পনা
+# Fix: Landing Page Blank Screen
 
-অ্যাডমিন প্যানেলের সেটিংস থেকে পুরো সাইটের ফন্ট পরিবর্তন করার সুবিধা যোগ করা হবে। চারটি বাংলা ফন্ট অপশন থাকবে: **সিলেটি কেতেকি**, **জামি**, **মোহন**, এবং **রূপালি**।
+## Problem
+The `useCountdown` hook (line 231) is called **after** two early return statements (lines 141-142). When React renders the component and hits an early return, the hook doesn't get called. On the next render when data is loaded, the hook suddenly gets called, causing a "Rendered more hooks than during the previous render" error and a blank screen.
 
-### যা হবে
+## Solution
+Move the `useCountdown` hook call to **before** the early return statements, alongside the other hooks at the top of the component.
 
-1. অ্যাডমিন সেটিংসের "সাইট ব্র্যান্ডিং" সেকশনে একটি ড্রপডাউন যোগ হবে
-2. ড্রপডাউনে চারটি বাংলা ফন্ট থেকে একটি সিলেক্ট করা যাবে
-3. সিলেক্ট করার পর পুরো সাইটের ফন্ট সেই অনুযায়ী পরিবর্তন হবে
+## Technical Details
 
----
+**File: `src/pages/LandingPage.tsx`**
 
-### টেকনিক্যাল ডিটেইলস
+1. Move line 231 (`const countdown = useCountdown(...)`) to right after the state declarations (after line 113), before the `useEffect` on line 115.
+2. Similarly move the computed values on lines 232-233 (`stockRemaining`, `stockPercent`) to after the early returns where they currently are (these are fine since they're not hooks, but the countdown hook must move).
 
-**১. Google Fonts লোড করা (`index.html`)**
+Specifically:
+- Add `const countdown = useCountdown(page?.show_countdown ? page?.countdown_end_time : null);` after line 113 (before any early returns)
+- Remove the original line 231
 
-চারটি বাংলা ফন্টের Google Fonts লিংক যোগ করা হবে:
-- Galada (সিলেটি কেতেকি এর বিকল্প - Google Fonts এ সরাসরি "Sylheti Keteki" নেই, তাই সবচেয়ে কাছের Google Fonts হোস্টেড বাংলা ফন্ট ব্যবহার করা হবে)
-- Hind Siliguri (জামি এর বিকল্প)
-- Noto Sans Bengali (মোহন এর বিকল্প)
-- Tiro Bangla (রূপালি এর বিকল্প)
-
-> **গুরুত্বপূর্ণ নোট:** "সিলেটি কেতেকি", "জামি", "মোহন", "রূপালি" - এগুলো Google Fonts এ সরাসরি হোস্ট করা নেই। দুটি পদ্ধতি আছে:
-> - **পদ্ধতি ১:** এই ফন্টগুলোর `.woff2` ফাইল `public/fonts/` ফোল্ডারে রেখে `@font-face` দিয়ে লোড করা
-> - **পদ্ধতি ২:** Google Fonts এ থাকা কাছের বাংলা ফন্ট ব্যবহার করা
->
-> আমি **পদ্ধতি ১** ব্যবহার করব - ফন্ট ফাইলগুলো প্রজেক্টে যোগ করতে হবে, তবে যেহেতু ফন্ট ফাইল আপলোড সম্ভব নয়, তাই CDN লিংক ব্যবহার করা হবে যেখানে পাওয়া যায়, অন্যথায় Google Fonts এর বাংলা ফন্ট ব্যবহার হবে।
-
-**২. সেটিংস কী যোগ করা**
-
-- `site_font` নামে নতুন সেটিংস কী যোগ হবে
-- `BrandingFields` ইন্টারফেসে `site_font` ফিল্ড যোগ হবে
-- `SiteSettings` ইন্টারফেসেও `site_font` যোগ হবে
-- `PUBLIC_KEYS` তে এটি অন্তর্ভুক্ত হবে (ফ্রন্টেন্ডে প্রয়োজন)
-
-**৩. অ্যাডমিন সেটিংস UI (`AdminSettings.tsx`)**
-
-"সাইট ব্র্যান্ডিং" সেকশনে একটি `<Select>` ড্রপডাউন যোগ হবে:
-- ডিফল্ট (Inter/Playfair Display)
-- সিলেটি কেতেকি
-- জামি
-- মোহন
-- রূপালি
-
-**৪. ফন্ট প্রয়োগ (`src/index.css` ও `App.tsx`)**
-
-- `index.css` এ `@font-face` দিয়ে ফন্ট ডিফাইন করা হবে
-- `useSiteSettings` হুক থেকে `site_font` মান পড়ে `<body>` এ CSS variable সেট করা হবে
-- মূল লেআউট কম্পোনেন্টে (`Layout.tsx`) `useEffect` দিয়ে `document.documentElement.style.setProperty('--font-body', ...)` সেট হবে
-
-**৫. পরিবর্তিত ফাইলসমূহ:**
-
-| ফাইল | পরিবর্তন |
-|------|----------|
-| `index.html` | Google Fonts লিংক যোগ |
-| `src/index.css` | `@font-face` ডিক্লারেশন |
-| `src/hooks/useSiteSettings.tsx` | `site_font` ফিল্ড যোগ |
-| `src/pages/admin/AdminSettings.tsx` | ফন্ট সিলেক্ট ড্রপডাউন UI |
-| `src/components/layout/Layout.tsx` | ডাইনামিক ফন্ট প্রয়োগ |
+This is a one-line move that fixes the blank screen issue.
 
