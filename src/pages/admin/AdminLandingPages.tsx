@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,9 +8,57 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, Edit, Eye, Copy, ArrowLeft, GripVertical } from "lucide-react";
+import { Plus, Trash2, Edit, Eye, Upload, Loader2, X as XIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { generateSlug } from "@/lib/slugify";
+
+const BUCKET = "landing-page-images";
+
+const uploadImage = async (file: File, folder: string): Promise<string | null> => {
+  const ext = file.name.split(".").pop();
+  const path = `${folder}/${Date.now()}.${ext}`;
+  const { error } = await supabase.storage.from(BUCKET).upload(path, file);
+  if (error) return null;
+  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+  return data.publicUrl;
+};
+
+// Reusable image upload component
+const ImageUploadField = ({ label, value, onChange, folder }: { label: string; value: string; onChange: (url: string) => void; folder: string }) => {
+  const [uploading, setUploading] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const url = await uploadImage(file, folder);
+    if (url) onChange(url);
+    setUploading(false);
+    if (inputRef.current) inputRef.current.value = "";
+  };
+
+  return (
+    <div>
+      <Label>{label}</Label>
+      <div className="mt-1 space-y-2">
+        {value && (
+          <div className="relative inline-block">
+            <img src={value} alt="" className="h-20 w-20 rounded-lg object-cover border" />
+            <button type="button" onClick={() => onChange("")} className="absolute -top-1.5 -right-1.5 rounded-full bg-destructive p-0.5 text-destructive-foreground shadow"><XIcon className="h-3 w-3" /></button>
+          </div>
+        )}
+        <div className="flex gap-2">
+          <Input value={value} onChange={e => onChange(e.target.value)} placeholder="URL বা আপলোড করুন" className="flex-1" />
+          <Button type="button" variant="outline" size="sm" disabled={uploading} onClick={() => inputRef.current?.click()}>
+            {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+          </Button>
+        </div>
+        <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
+      </div>
+    </div>
+  );
+};
 
 interface LandingPage {
   id: string;
@@ -322,10 +370,7 @@ const AdminLandingPages = () => {
             <Card>
               <CardHeader><CardTitle className="text-base">৩. হিরো ভিজ্যুয়াল</CardTitle></CardHeader>
               <CardContent className="space-y-3">
-                <div>
-                  <Label>হিরো ইমেজ URL</Label>
-                  <Input className="mt-1" value={form.hero_image_url} onChange={e => setForm(f => ({ ...f, hero_image_url: e.target.value }))} placeholder="https://..." />
-                </div>
+                <ImageUploadField label="হিরো ইমেজ" value={form.hero_image_url} onChange={url => setForm(f => ({ ...f, hero_image_url: url }))} folder="hero" />
                 <div>
                   <Label>হিরো ভিডিও URL (YouTube/ভিমিও)</Label>
                   <Input className="mt-1" value={form.hero_video_url} onChange={e => setForm(f => ({ ...f, hero_video_url: e.target.value }))} placeholder="https://www.youtube.com/embed/..." />
@@ -372,7 +417,11 @@ const AdminLandingPages = () => {
                           <SelectItem value="video">ভিডিও</SelectItem>
                         </SelectContent>
                       </Select>
-                      <Input value={m.url} onChange={e => updateMedia(i, "url", e.target.value)} placeholder="URL" />
+                      {m.type === "image" ? (
+                        <ImageUploadField label="" value={m.url} onChange={url => updateMedia(i, "url", url)} folder="gallery" />
+                      ) : (
+                        <Input value={m.url} onChange={e => updateMedia(i, "url", e.target.value)} placeholder="ভিডিও URL" />
+                      )}
                       <Input value={m.caption} onChange={e => updateMedia(i, "caption", e.target.value)} placeholder="ক্যাপশন (ঐচ্ছিক)" />
                     </div>
                     <Button size="icon" variant="ghost" onClick={() => removeMedia(i)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
@@ -393,14 +442,16 @@ const AdminLandingPages = () => {
                   <div key={i} className="flex gap-2 items-start border rounded-lg p-3">
                     <div className="flex-1 space-y-2">
                       <Input value={r.name} onChange={e => updateReview(i, "name", e.target.value)} placeholder="গ্রাহকের নাম" />
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 items-end">
                         <Select value={String(r.rating)} onValueChange={v => updateReview(i, "rating", Number(v))}>
                           <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             {[5,4,3,2,1].map(n => <SelectItem key={n} value={String(n)}>{"⭐".repeat(n)}</SelectItem>)}
                           </SelectContent>
                         </Select>
-                        <Input className="flex-1" value={r.image_url || ""} onChange={e => updateReview(i, "image_url", e.target.value)} placeholder="ছবি URL (ঐচ্ছিক)" />
+                        <div className="flex-1">
+                          <ImageUploadField label="" value={r.image_url || ""} onChange={url => updateReview(i, "image_url", url)} folder="reviews" />
+                        </div>
                       </div>
                       <Textarea value={r.comment} onChange={e => updateReview(i, "comment", e.target.value)} placeholder="রিভিউ / সফলতার গল্প" rows={2} />
                     </div>
