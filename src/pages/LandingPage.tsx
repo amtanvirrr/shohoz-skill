@@ -484,12 +484,39 @@ const LandingPage = () => {
     );
   };
 
+  // ==================== SHARED: Logo Header ====================
+  const renderLogoHeader = (variant: "light" | "premium" | "dark") => {
+    const styles = {
+      light: "bg-background border-b border-border",
+      premium: "bg-gradient-to-r from-primary/5 via-background to-primary/5 border-b border-primary/10",
+      dark: "bg-zinc-950 border-b border-zinc-800/50",
+    };
+    const textStyles = {
+      light: "text-foreground",
+      premium: "text-foreground",
+      dark: "text-white",
+    };
+    return (
+      <header className={`py-3 md:py-4 sticky top-0 z-50 backdrop-blur-md ${styles[variant]}`}>
+        <div className="container mx-auto px-4 flex items-center justify-center gap-2.5 md:gap-3">
+          {settings.logo_url && (
+            <img src={settings.logo_url} alt={settings.site_name} className="h-8 w-8 md:h-9 md:w-9 rounded-lg object-contain" />
+          )}
+          <span className={`font-display text-lg md:text-xl font-bold tracking-tight ${textStyles[variant]}`}>
+            {settings.site_name}
+          </span>
+        </div>
+      </header>
+    );
+  };
+
   // ==================== MINIMALIST THEME ====================
   if (theme === "minimalist") {
     return (
       <div className="min-h-screen bg-background text-foreground">
+        {renderLogoHeader("light")}
         {/* ═══ STAGE 1: ATTENTION ═══ Hero: Ultra-clean, centered, generous whitespace */}
-        <section className="py-24 md:py-36">
+        <section className="py-20 md:py-32">
           <div className="container mx-auto px-4 max-w-2xl text-center">
             <h1 className="font-display text-3xl md:text-5xl font-bold leading-tight tracking-tight">
               {page.headline}
@@ -652,6 +679,7 @@ const LandingPage = () => {
   if (theme === "premium") {
     return (
       <div className="min-h-screen bg-gradient-to-b from-primary/5 via-background to-background">
+        {renderLogoHeader("premium")}
         {/* ═══ STAGE 1: ATTENTION ═══ Hero text + visuals below */}
         <section className="relative py-12 md:py-24 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-accent/5 to-transparent" />
@@ -914,6 +942,7 @@ const LandingPage = () => {
   // ==================== EXCLUSIVE THEME (Dark Luxury) ====================
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
+      {renderLogoHeader("dark")}
       {/* ═══ STAGE 1: ATTENTION ═══ Full-bleed hero with vignette */}
       <section className="relative overflow-hidden">
         {/* Background vignette from first hero image */}
