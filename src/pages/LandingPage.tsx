@@ -80,13 +80,13 @@ const toEmbedUrl = (url: string): string => {
     if (u.hostname === 'www.youtube.com' || u.hostname === 'youtube.com') {
       if (u.pathname === '/watch') {
         const v = u.searchParams.get('v');
-        if (v) return `https://www.youtube.com/embed/${v}`;
+        if (v) return `https://www.youtube-nocookie.com/embed/${v}`;
       }
-      if (u.pathname.startsWith('/embed/')) return url;
+      if (u.pathname.startsWith('/embed/')) return url.replace('youtube.com', 'youtube-nocookie.com');
     }
     if (u.hostname === 'youtu.be') {
       const v = u.pathname.slice(1);
-      if (v) return `https://www.youtube.com/embed/${v}`;
+      if (v) return `https://www.youtube-nocookie.com/embed/${v}`;
     }
   } catch {}
   return url;
@@ -459,7 +459,7 @@ const LandingPage = () => {
             items={heroVideos}
             renderItem={(url) => (
               <div className={`aspect-video ${videoClass}`}>
-                <iframe src={toEmbedUrl(url)} className="w-full h-full" allowFullScreen allow="autoplay; encrypted-media" />
+<iframe src={toEmbedUrl(url)} className="w-full h-full" allowFullScreen allow="autoplay; encrypted-media" loading="lazy" />
               </div>
             )}
           />
@@ -492,7 +492,7 @@ const LandingPage = () => {
                   const item = mediaVideos[i];
                   return (
                     <div className={videoFrameClass}>
-                      <div className="aspect-video"><iframe src={toEmbedUrl(url)} className="w-full h-full" allowFullScreen /></div>
+                      <div className="aspect-video"><iframe src={toEmbedUrl(url)} className="w-full h-full" allowFullScreen loading="lazy" /></div>
                       {item?.caption && <p className={captionClass}>{item.caption}</p>}
                     </div>
                   );
@@ -775,7 +775,7 @@ const LandingPage = () => {
                 items={heroVideos}
                 renderItem={(url) => (
                   <div className="aspect-video rounded-2xl overflow-hidden shadow-2xl ring-1 ring-primary/20">
-                    <iframe src={toEmbedUrl(url)} className="w-full h-full" allowFullScreen allow="autoplay; encrypted-media" />
+<iframe src={toEmbedUrl(url)} className="w-full h-full" allowFullScreen allow="autoplay; encrypted-media" loading="lazy" />
                   </div>
                 )}
               />
@@ -1057,7 +1057,7 @@ const LandingPage = () => {
               items={heroVideos}
               renderItem={(url) => (
                 <div className="aspect-video rounded-xl overflow-hidden ring-1 ring-zinc-800 shadow-2xl">
-                  <iframe src={toEmbedUrl(url)} className="w-full h-full" allowFullScreen allow="autoplay; encrypted-media" />
+                  <iframe src={toEmbedUrl(url)} className="w-full h-full" allowFullScreen allow="autoplay; encrypted-media" loading="lazy" />
                 </div>
               )}
             />
