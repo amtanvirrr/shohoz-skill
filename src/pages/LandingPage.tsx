@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Star, CheckCircle, Minus, Plus, ShoppingBag, Clock, Flame, AlertTriangle, Tag, Loader2, X as XIcon, Shield, Truck, Award, Users, ThumbsUp, Zap, Crown, Gem, ChevronLeft, ChevronRight } from "lucide-react";
 import OrderSuccessDialog from "@/components/OrderSuccessDialog";
+import { ScrollReveal } from "@/hooks/useScrollReveal";
 
 interface LandingPageData {
   id: string;
@@ -517,14 +518,14 @@ const LandingPage = () => {
         {renderLogoHeader("light")}
         {/* ═══ STAGE 1: ATTENTION ═══ Hero: Ultra-clean, centered, generous whitespace */}
         <section className="py-20 md:py-32">
-          <div className="container mx-auto px-4 max-w-2xl text-center">
-            <h1 className="font-display text-3xl md:text-5xl font-bold leading-tight tracking-tight">
+          <ScrollReveal className="container mx-auto px-4 max-w-2xl text-center">
+            <h1 className="font-display text-3xl md:text-5xl font-bold leading-tight tracking-tight animate-fade-in">
               {page.headline}
             </h1>
             {page.subheadline && (
-              <p className="mt-6 text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed">{page.subheadline}</p>
+              <p className="mt-6 text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed" style={{ animation: 'fade-in 0.8s ease-out 0.2s both' }}>{page.subheadline}</p>
             )}
-          </div>
+          </ScrollReveal>
         </section>
 
         {/* Hero media: Videos on top, Images below */}
@@ -535,6 +536,7 @@ const LandingPage = () => {
         )}
 
         {/* Pricing + Urgency + CTA below hero visuals */}
+        <ScrollReveal>
         <section className="pb-16">
           <div className="container mx-auto px-4 max-w-2xl text-center">
             <div className="flex items-center justify-center gap-3">
@@ -556,13 +558,15 @@ const LandingPage = () => {
             {page.show_stock_badge && stockRemaining > 0 && (
               <p className="mt-2 text-sm text-muted-foreground">মাত্র {stockRemaining}টি বাকি আছে</p>
             )}
-            <Button size="lg" className="mt-10 text-base px-12 py-6 rounded-full shadow-md hover:shadow-lg transition-all bg-[hsl(152,60%,38%)] hover:bg-[hsl(152,60%,33%)] text-white" onClick={scrollToOrder}>
+            <Button size="lg" className="mt-10 text-base px-12 py-6 rounded-full shadow-md hover:shadow-lg hover:scale-105 active:scale-95 transition-all bg-[hsl(152,60%,38%)] hover:bg-[hsl(152,60%,33%)] text-white" onClick={scrollToOrder}>
               {page.cta_text}
             </Button>
           </div>
         </section>
+        </ScrollReveal>
 
         {/* ═══ STAGE 2: INTEREST ═══ Social Proof Badge + Benefits */}
+        <ScrollReveal delay={100}>
         <section className="py-6">
           <div className="container mx-auto px-4 max-w-2xl">
             <div className="flex items-center justify-center gap-8 text-sm text-muted-foreground">
@@ -571,19 +575,22 @@ const LandingPage = () => {
             </div>
           </div>
         </section>
+        </ScrollReveal>
 
         {benefits.length > 0 && benefits[0].title && (
           <section className="py-16 md:py-24">
             <div className="container mx-auto px-4 max-w-2xl">
               <div className="space-y-8">
                 {benefits.filter(b => b.title).map((b, i) => (
-                  <div key={i} className="flex items-start gap-4">
+                  <ScrollReveal key={i} delay={i * 100} direction="left">
+                  <div className="flex items-start gap-4">
                     <CheckCircle className="h-5 w-5 text-[hsl(152,60%,38%)] mt-0.5 shrink-0" />
                     <div>
                       <h3 className="font-semibold">{b.title}</h3>
                       {b.description && <p className="mt-1 text-sm text-muted-foreground leading-relaxed">{b.description}</p>}
                     </div>
                   </div>
+                  </ScrollReveal>
                 ))}
               </div>
             </div>
@@ -600,31 +607,38 @@ const LandingPage = () => {
         )}
 
         {reviews.length > 0 && (
+          <ScrollReveal>
           <section className="py-16 md:py-24">
             <div className="container mx-auto px-4 max-w-2xl">
               <h2 className="text-center text-lg font-medium text-muted-foreground mb-12">বিশ্বস্ত গ্রাহকদের মতামত</h2>
               <div className="space-y-10 divide-y divide-border">
                 {reviews.map((r, i) => (
-                  <blockquote key={i} className={`text-center ${i > 0 ? 'pt-10' : ''}`}>
+                  <ScrollReveal key={i} delay={i * 150} direction="scale">
+                  <blockquote className={`text-center ${i > 0 ? 'pt-10' : ''}`}>
                     <p className="text-lg italic leading-relaxed">"{r.comment}"</p>
                     <footer className="mt-4 text-sm text-muted-foreground">— {r.name}</footer>
                   </blockquote>
+                  </ScrollReveal>
                 ))}
               </div>
             </div>
           </section>
+          </ScrollReveal>
         )}
 
+        <ScrollReveal direction="scale">
         <section className="py-12">
           <div className="container mx-auto px-4 max-w-xl text-center">
             <p className="text-muted-foreground mb-4">আর দেরি না করে সিদ্ধান্ত নিন</p>
-            <Button size="lg" className="px-10 py-6 rounded-full bg-[hsl(152,60%,38%)] hover:bg-[hsl(152,60%,33%)] text-white" onClick={scrollToOrder}>
+            <Button size="lg" className="px-10 py-6 rounded-full bg-[hsl(152,60%,38%)] hover:bg-[hsl(152,60%,33%)] text-white hover:scale-105 active:scale-95 transition-transform" onClick={scrollToOrder}>
               {page.cta_text}
             </Button>
           </div>
         </section>
+        </ScrollReveal>
 
         {/* ═══ STAGE 4: ACTION ═══ Trust Signal + Order Form */}
+        <ScrollReveal>
         <section className="py-8">
           <div className="container mx-auto px-4 max-w-xl text-center">
             <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
@@ -633,7 +647,9 @@ const LandingPage = () => {
             </div>
           </div>
         </section>
+        </ScrollReveal>
 
+        <ScrollReveal direction="scale">
         <section id="lp-order-form" className="py-16 md:py-24">
           <div className="container mx-auto px-4 max-w-xl">
             <div className="rounded-2xl border border-border p-8 md:p-10 bg-card shadow-sm">
@@ -644,14 +660,16 @@ const LandingPage = () => {
                 {isPhysical ? "ক্যাশ অন ডেলিভারি — সারা বাংলাদেশে" : "পেমেন্ট করে এখনই পান"}
               </p>
               {renderOrderFormContent()}
-              <Button type="submit" size="lg" className="w-full text-lg py-6 mt-6 rounded-full shadow-md bg-[hsl(152,60%,38%)] hover:bg-[hsl(152,60%,33%)] text-white" disabled={submitting} onClick={handleOrder}>
+              <Button type="submit" size="lg" className="w-full text-lg py-6 mt-6 rounded-full shadow-md bg-[hsl(152,60%,38%)] hover:bg-[hsl(152,60%,33%)] text-white hover:scale-[1.02] active:scale-95 transition-transform" disabled={submitting} onClick={handleOrder}>
                 {submitting ? "প্রসেস হচ্ছে..." : page.cta_text}
               </Button>
             </div>
           </div>
         </section>
+        </ScrollReveal>
 
         {faqs.length > 0 && faqs[0].question && (
+          <ScrollReveal>
           <section className="py-16 md:py-24 border-t border-border">
             <div className="container mx-auto px-4 max-w-2xl">
               <h2 className="text-center text-lg font-medium text-muted-foreground mb-10">সচরাচর জিজ্ঞাসা</h2>
@@ -665,6 +683,7 @@ const LandingPage = () => {
               </Accordion>
             </div>
           </section>
+          </ScrollReveal>
         )}
 
         <footer className="py-8 text-center text-sm text-muted-foreground border-t border-border">
@@ -685,8 +704,8 @@ const LandingPage = () => {
           <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-accent/5 to-transparent" />
           <div className="absolute top-10 right-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl animate-pulse" />
           <div className="absolute bottom-10 left-10 w-56 h-56 bg-accent/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-          <div className="container mx-auto px-4 relative z-10 max-w-3xl text-center">
-            <div className="inline-block rounded-full bg-primary/10 px-4 py-1.5 text-sm font-semibold text-primary mb-4">
+          <ScrollReveal className="container mx-auto px-4 relative z-10 max-w-3xl text-center">
+            <div className="inline-block rounded-full bg-primary/10 px-4 py-1.5 text-sm font-semibold text-primary mb-4 animate-fade-in">
               ⭐ প্রিমিয়াম কালেকশন
             </div>
             {product.original_price && discountPercent > 0 && (
@@ -694,13 +713,13 @@ const LandingPage = () => {
                 🔥 {discountPercent}% ছাড়!
               </div>
             )}
-            <h1 className="font-display text-3xl md:text-5xl lg:text-6xl font-extrabold leading-[1.1] mt-4">
+            <h1 className="font-display text-3xl md:text-5xl lg:text-6xl font-extrabold leading-[1.1] mt-4" style={{ animation: 'fade-in 0.8s ease-out 0.1s both' }}>
               {page.headline}
             </h1>
             {page.subheadline && (
-              <p className="mt-5 text-base md:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto">{page.subheadline}</p>
+              <p className="mt-5 text-base md:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto" style={{ animation: 'fade-in 0.8s ease-out 0.3s both' }}>{page.subheadline}</p>
             )}
-          </div>
+          </ScrollReveal>
         </section>
 
         {/* Hero media - centered, videos first, images below */}
@@ -760,7 +779,7 @@ const LandingPage = () => {
               </div>
             )}
             <div className="mt-6 md:mt-8">
-              <Button size="lg" className="text-base md:text-lg px-8 md:px-10 py-6 md:py-7 rounded-xl shadow-2xl hover:shadow-xl transition-all font-bold bg-gradient-to-r from-primary to-accent text-white hover:opacity-90" onClick={scrollToOrder}>
+              <Button size="lg" className="text-base md:text-lg px-8 md:px-10 py-6 md:py-7 rounded-xl shadow-2xl hover:shadow-xl hover:scale-105 active:scale-95 transition-all font-bold bg-gradient-to-r from-primary to-accent text-white hover:opacity-90" onClick={scrollToOrder}>
                 {page.cta_text} →
               </Button>
             </div>
@@ -768,33 +787,37 @@ const LandingPage = () => {
         </section>
 
         {/* ═══ STAGE 2: INTEREST ═══ Social Proof Icons + Numbered Benefits */}
+        <ScrollReveal>
         <section className="py-8 md:py-10">
           <div className="container mx-auto px-4">
             <div className="flex flex-wrap items-center justify-center gap-3 md:gap-6">
-              <div className="flex items-center gap-2 rounded-xl bg-card border border-border px-4 py-2.5 md:px-5 md:py-3 shadow-md">
+              <div className="flex items-center gap-2 rounded-xl bg-card border border-border px-4 py-2.5 md:px-5 md:py-3 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all">
                 <Users className="h-4 w-4 md:h-5 md:w-5 text-primary" />
                 <div><span className="font-extrabold text-sm md:text-lg">৫০০+</span><span className="text-[10px] md:text-xs text-muted-foreground ml-1">সন্তুষ্ট গ্রাহক</span></div>
               </div>
-              <div className="flex items-center gap-2 rounded-xl bg-card border border-border px-4 py-2.5 md:px-5 md:py-3 shadow-md">
+              <div className="flex items-center gap-2 rounded-xl bg-card border border-border px-4 py-2.5 md:px-5 md:py-3 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all">
                 <Star className="h-4 w-4 md:h-5 md:w-5 fill-yellow-400 text-yellow-400" />
                 <div><span className="font-extrabold text-sm md:text-lg">৪.৮</span><span className="text-[10px] md:text-xs text-muted-foreground ml-1">রেটিং</span></div>
               </div>
-              <div className="flex items-center gap-2 rounded-xl bg-card border border-border px-4 py-2.5 md:px-5 md:py-3 shadow-md">
+              <div className="flex items-center gap-2 rounded-xl bg-card border border-border px-4 py-2.5 md:px-5 md:py-3 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all">
                 <Award className="h-4 w-4 md:h-5 md:w-5 text-accent" />
                 <div><span className="font-extrabold text-sm md:text-lg">#১</span><span className="text-[10px] md:text-xs text-muted-foreground ml-1">বেস্টসেলার</span></div>
               </div>
             </div>
           </div>
         </section>
+        </ScrollReveal>
 
         {benefits.length > 0 && benefits[0].title && (
+        <ScrollReveal>
         <section className="py-12 md:py-20">
             <div className="container mx-auto px-4 max-w-4xl">
               <h2 className="text-center font-display text-2xl md:text-4xl font-extrabold mb-4">কেন এটি আপনার জন্য?</h2>
               <p className="text-center text-muted-foreground mb-8 md:mb-12 max-w-lg mx-auto text-sm md:text-base">এই প্রোডাক্টটি আপনার জীবনে যে পরিবর্তন আনবে</p>
               <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                 {benefits.filter(b => b.title).map((b, i) => (
-                  <div key={i} className="group relative rounded-2xl p-[2px] bg-gradient-to-br from-primary/40 to-accent/40 hover:from-primary hover:to-accent transition-all shadow-lg hover:shadow-2xl hover:-translate-y-1">
+                  <ScrollReveal key={i} delay={i * 120} direction="scale">
+                  <div className="group relative rounded-2xl p-[2px] bg-gradient-to-br from-primary/40 to-accent/40 hover:from-primary hover:to-accent transition-all shadow-lg hover:shadow-2xl hover:-translate-y-1">
                     <div className="rounded-2xl bg-card p-7 h-full">
                       <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-accent text-white flex items-center justify-center font-extrabold text-lg shadow-md mb-4">
                         {i + 1}
@@ -803,25 +826,28 @@ const LandingPage = () => {
                       {b.description && <p className="mt-3 text-muted-foreground leading-relaxed">{b.description}</p>}
                     </div>
                   </div>
+                  </ScrollReveal>
                 ))}
               </div>
             </div>
           </section>
+        </ScrollReveal>
         )}
 
-        {/* Mid-CTA */}
+        <ScrollReveal direction="scale">
         <section className="py-12 bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10">
           <div className="container mx-auto px-4 text-center">
             <p className="text-lg font-semibold mb-4">
               <Zap className="inline h-5 w-5 text-accent mr-1" /> আজই অর্ডার করুন এবং বিশেষ ছাড় পান
             </p>
-            <Button size="lg" className="px-10 py-6 rounded-xl shadow-xl font-bold bg-gradient-to-r from-primary to-accent text-white hover:opacity-90" onClick={scrollToOrder}>
+            <Button size="lg" className="px-10 py-6 rounded-xl shadow-xl font-bold bg-gradient-to-r from-primary to-accent text-white hover:opacity-90 hover:scale-105 active:scale-95 transition-transform" onClick={scrollToOrder}>
               {page.cta_text} →
             </Button>
           </div>
         </section>
+        </ScrollReveal>
 
-        {/* ═══ STAGE 3: DESIRE ═══ Media Gallery (separated) + Verified Reviews */}
+
         {renderMediaGallery(
           "py-16 md:py-20 bg-muted/30",
           "container mx-auto px-4 max-w-4xl",
@@ -833,10 +859,13 @@ const LandingPage = () => {
         {reviews.length > 0 && (
           <section className="py-12 md:py-20">
             <div className="container mx-auto px-4 max-w-4xl">
+              <ScrollReveal>
               <h2 className="text-center font-display text-2xl md:text-4xl font-extrabold mb-8 md:mb-12">গ্রাহকরা কী বলছেন</h2>
+              </ScrollReveal>
               <div className="grid gap-4 md:gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                 {reviews.map((r, i) => (
-                  <div key={i} className="rounded-2xl border border-border bg-card overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
+                  <ScrollReveal key={i} delay={i * 120} direction="scale">
+                  <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all">
                     <div className="h-1.5 bg-gradient-to-r from-primary to-accent" />
                     <div className="p-6">
                       <div className="flex items-center justify-between mb-3">
@@ -856,6 +885,7 @@ const LandingPage = () => {
                       </div>
                     </div>
                   </div>
+                  </ScrollReveal>
                 ))}
               </div>
             </div>
@@ -863,25 +893,28 @@ const LandingPage = () => {
         )}
 
         {/* ═══ STAGE 4: ACTION ═══ Trust Signals + Order Form */}
+        <ScrollReveal>
         <section className="py-10">
           <div className="container mx-auto px-4 max-w-2xl">
             <div className="grid grid-cols-3 gap-2 md:gap-4">
-              <div className="flex flex-col items-center gap-1.5 md:gap-2 rounded-xl bg-card border border-border p-3 md:p-4 shadow-sm text-center">
+              <div className="flex flex-col items-center gap-1.5 md:gap-2 rounded-xl bg-card border border-border p-3 md:p-4 shadow-sm text-center hover:shadow-md hover:-translate-y-0.5 transition-all">
                 <Shield className="h-5 w-5 md:h-6 md:w-6 text-primary" />
                 <span className="text-[10px] md:text-xs font-semibold">নিরাপদ পেমেন্ট</span>
               </div>
-              <div className="flex flex-col items-center gap-1.5 md:gap-2 rounded-xl bg-card border border-border p-3 md:p-4 shadow-sm text-center">
+              <div className="flex flex-col items-center gap-1.5 md:gap-2 rounded-xl bg-card border border-border p-3 md:p-4 shadow-sm text-center hover:shadow-md hover:-translate-y-0.5 transition-all">
                 <Truck className="h-5 w-5 md:h-6 md:w-6 text-primary" />
                 <span className="text-[10px] md:text-xs font-semibold">দ্রুত ডেলিভারি</span>
               </div>
-              <div className="flex flex-col items-center gap-1.5 md:gap-2 rounded-xl bg-card border border-border p-3 md:p-4 shadow-sm text-center">
+              <div className="flex flex-col items-center gap-1.5 md:gap-2 rounded-xl bg-card border border-border p-3 md:p-4 shadow-sm text-center hover:shadow-md hover:-translate-y-0.5 transition-all">
                 <Award className="h-5 w-5 md:h-6 md:w-6 text-accent" />
                 <span className="text-[10px] md:text-xs font-semibold">১০০% গ্যারান্টি</span>
               </div>
             </div>
           </div>
         </section>
+        </ScrollReveal>
 
+        <ScrollReveal direction="scale">
         <section id="lp-order-form" className="py-16 md:py-20">
           <div className="container mx-auto px-4 max-w-xl">
             <div className="relative">
@@ -897,7 +930,7 @@ const LandingPage = () => {
                     {isPhysical ? "ক্যাশ অন ডেলিভারি — সারা বাংলাদেশে" : "পেমেন্ট করে এখনই পান"}
                   </p>
                   {renderOrderFormContent()}
-                  <Button type="submit" size="lg" className="w-full text-lg py-6 mt-6 rounded-xl shadow-xl font-bold bg-gradient-to-r from-primary to-accent text-white hover:opacity-90" disabled={submitting} onClick={handleOrder}>
+                  <Button type="submit" size="lg" className="w-full text-lg py-6 mt-6 rounded-xl shadow-xl font-bold bg-gradient-to-r from-primary to-accent text-white hover:opacity-90 hover:scale-[1.02] active:scale-95 transition-transform" disabled={submitting} onClick={handleOrder}>
                     {submitting ? "প্রসেস হচ্ছে..." : `${page.cta_text} →`}
                   </Button>
                 </div>
@@ -905,8 +938,10 @@ const LandingPage = () => {
             </div>
           </div>
         </section>
+        </ScrollReveal>
 
         {faqs.length > 0 && faqs[0].question && (
+          <ScrollReveal>
           <section className="py-16 md:py-20">
             <div className="container mx-auto px-4 max-w-2xl">
               <h2 className="text-center font-display text-3xl font-extrabold mb-10">সচরাচর জিজ্ঞাসা</h2>
@@ -920,16 +955,19 @@ const LandingPage = () => {
               </Accordion>
             </div>
           </section>
+          </ScrollReveal>
         )}
 
+        <ScrollReveal direction="scale">
         <section className="py-16 bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10">
           <div className="container mx-auto px-4 text-center">
             <h2 className="font-display text-3xl md:text-4xl font-extrabold mb-6">{page.headline}</h2>
-            <Button size="lg" className="text-lg px-12 py-7 rounded-xl shadow-2xl font-bold bg-gradient-to-r from-primary to-accent text-white hover:opacity-90" onClick={scrollToOrder}>
+            <Button size="lg" className="text-lg px-12 py-7 rounded-xl shadow-2xl font-bold bg-gradient-to-r from-primary to-accent text-white hover:opacity-90 hover:scale-105 active:scale-95 transition-transform" onClick={scrollToOrder}>
               {page.cta_text} →
             </Button>
           </div>
         </section>
+        </ScrollReveal>
 
         <footer className="py-6 text-center text-sm text-muted-foreground border-t">
           {settings.copyright_text || `© ${new Date().getFullYear()} ${settings.site_name}`}
@@ -954,17 +992,17 @@ const LandingPage = () => {
           </div>
         )}
         <div className="container mx-auto px-4 relative z-10 py-12 md:py-20">
-          <div className="max-w-3xl mx-auto text-center">
+          <ScrollReveal className="max-w-3xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 border border-amber-500/40 bg-amber-500/10 rounded-full px-4 py-1.5 md:px-5 md:py-2 text-xs md:text-sm font-semibold text-amber-400 mb-6 md:mb-8 tracking-wider uppercase animate-pulse">
               <Gem className="h-3.5 w-3.5 md:h-4 md:w-4" /> সীমিত সংস্করণ
             </div>
-            <h1 className="font-display text-3xl md:text-5xl lg:text-7xl font-extrabold text-white leading-[1.05] tracking-tight">
+            <h1 className="font-display text-3xl md:text-5xl lg:text-7xl font-extrabold text-white leading-[1.05] tracking-tight" style={{ animation: 'fade-in 0.8s ease-out 0.1s both' }}>
               {page.headline}
             </h1>
             {page.subheadline && (
-              <p className="mt-4 md:mt-6 text-base md:text-xl text-zinc-400 max-w-2xl mx-auto leading-relaxed">{page.subheadline}</p>
+              <p className="mt-4 md:mt-6 text-base md:text-xl text-zinc-400 max-w-2xl mx-auto leading-relaxed" style={{ animation: 'fade-in 0.8s ease-out 0.3s both' }}>{page.subheadline}</p>
             )}
-          </div>
+          </ScrollReveal>
         </div>
 
         {/* Hero Videos (sliding) */}
@@ -1027,7 +1065,7 @@ const LandingPage = () => {
                 </div>
               )}
             </div>
-            <Button size="lg" className="mt-8 md:mt-10 text-base md:text-lg px-10 md:px-14 py-6 md:py-7 rounded-none bg-amber-500 hover:bg-amber-400 text-zinc-950 font-extrabold tracking-wide shadow-[0_0_40px_rgba(245,158,11,0.3)] transition-all hover:shadow-[0_0_60px_rgba(245,158,11,0.4)]" onClick={scrollToOrder}>
+            <Button size="lg" className="mt-8 md:mt-10 text-base md:text-lg px-10 md:px-14 py-6 md:py-7 rounded-none bg-amber-500 hover:bg-amber-400 text-zinc-950 font-extrabold tracking-wide shadow-[0_0_40px_rgba(245,158,11,0.3)] transition-all hover:shadow-[0_0_60px_rgba(245,158,11,0.4)] hover:scale-105 active:scale-95" onClick={scrollToOrder}>
               {page.cta_text} →
             </Button>
           </div>
@@ -1035,29 +1073,34 @@ const LandingPage = () => {
       </section>
 
       {/* ═══ STAGE 2: INTEREST ═══ Gold border social proof + Benefits with gold dividers */}
+      <ScrollReveal>
       <section className="py-10 border-t border-zinc-800">
         <div className="container mx-auto px-4">
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 md:gap-6">
-            <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-2.5 md:px-5 md:py-3">
+            <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-2.5 md:px-5 md:py-3 hover:-translate-y-0.5 transition-transform">
               <Crown className="h-4 w-4 md:h-5 md:w-5 text-amber-400" />
               <span className="text-xs md:text-sm font-semibold text-amber-300">৫০০+ এক্সক্লুসিভ গ্রাহক</span>
             </div>
-            <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-2.5 md:px-5 md:py-3">
+            <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-2.5 md:px-5 md:py-3 hover:-translate-y-0.5 transition-transform">
               <Star className="h-4 w-4 md:h-5 md:w-5 fill-amber-400 text-amber-400" />
               <span className="text-xs md:text-sm font-semibold text-amber-300">৪.৯/৫ রেটিং</span>
             </div>
           </div>
         </div>
       </section>
+      </ScrollReveal>
 
       {benefits.length > 0 && benefits[0].title && (
         <section className="py-20 border-t border-zinc-800">
           <div className="container mx-auto px-4 max-w-4xl">
+            <ScrollReveal>
             <h2 className="text-center text-sm font-semibold tracking-wide text-amber-400 mb-4">একচেটিয়া সুবিধা</h2>
             <p className="text-center text-zinc-500 mb-16 text-sm">শুধুমাত্র এক্সক্লুসিভ গ্রাহকদের জন্য</p>
+            </ScrollReveal>
             <div className="space-y-0">
               {benefits.filter(b => b.title).map((b, i) => (
-                <div key={i} className="group">
+                <ScrollReveal key={i} delay={i * 100} direction="right">
+                <div className="group">
                   <div className="h-px bg-gradient-to-r from-transparent via-amber-500/30 to-transparent" />
                   <div className="flex items-start gap-6 py-8">
                     <span className="text-3xl font-extrabold text-zinc-700 group-hover:text-amber-500 transition-colors w-12 shrink-0">
@@ -1069,6 +1112,7 @@ const LandingPage = () => {
                     </div>
                   </div>
                 </div>
+                </ScrollReveal>
               ))}
               <div className="h-px bg-gradient-to-r from-transparent via-amber-500/30 to-transparent" />
             </div>
@@ -1076,15 +1120,16 @@ const LandingPage = () => {
         </section>
       )}
 
-      {/* Mid-CTA: Exclusive style */}
+      <ScrollReveal direction="scale">
       <section className="py-14 bg-gradient-to-r from-zinc-900 via-zinc-800/50 to-zinc-900 border-y border-zinc-800">
         <div className="container mx-auto px-4 text-center">
           <p className="text-amber-400 text-sm tracking-wide font-semibold mb-4">সীমিত সময়ের অফার</p>
-          <Button size="lg" className="px-12 py-7 rounded-none bg-amber-500 hover:bg-amber-400 text-zinc-950 font-extrabold tracking-wide shadow-[0_0_40px_rgba(245,158,11,0.3)]" onClick={scrollToOrder}>
+          <Button size="lg" className="px-12 py-7 rounded-none bg-amber-500 hover:bg-amber-400 text-zinc-950 font-extrabold tracking-wide shadow-[0_0_40px_rgba(245,158,11,0.3)] hover:scale-105 active:scale-95 transition-transform" onClick={scrollToOrder}>
             {page.cta_text} →
           </Button>
         </div>
       </section>
+      </ScrollReveal>
 
       {/* ═══ STAGE 3: DESIRE ═══ Cinematic media (separated) + VIP Reviews */}
       {renderMediaGallery(
@@ -1098,11 +1143,14 @@ const LandingPage = () => {
       {reviews.length > 0 && (
         <section className="py-12 md:py-20 border-t border-zinc-800">
           <div className="container mx-auto px-4 max-w-4xl">
+            <ScrollReveal>
             <h2 className="text-center text-sm font-semibold tracking-wide text-amber-400 mb-4">VIP গ্রাহকদের অভিজ্ঞতা</h2>
             <p className="text-center text-zinc-500 mb-10 md:mb-16 text-sm">যারা ইতিমধ্যে এক্সক্লুসিভ অভিজ্ঞতা নিয়েছেন</p>
+            </ScrollReveal>
             <div className="grid gap-4 md:gap-8 grid-cols-1 md:grid-cols-2 mx-auto">
               {reviews.map((r, i) => (
-                <div key={i} className="border border-zinc-800 rounded-lg p-6 md:p-8 bg-zinc-900/50 relative hover:border-amber-500/30 transition-all">
+                <ScrollReveal key={i} delay={i * 150} direction="scale">
+                <div className="border border-zinc-800 rounded-lg p-6 md:p-8 bg-zinc-900/50 relative hover:border-amber-500/30 hover:-translate-y-1 transition-all">
                   <div className="absolute top-0 left-8 h-1 w-16 bg-gradient-to-r from-amber-500 to-amber-300" />
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex">{Array.from({ length: r.rating }).map((_, j) => <Star key={j} className="h-4 w-4 fill-amber-400 text-amber-400" />)}</div>
@@ -1118,13 +1166,14 @@ const LandingPage = () => {
                     <span className="font-semibold text-zinc-300">{r.name}</span>
                   </div>
                 </div>
+                </ScrollReveal>
               ))}
             </div>
           </div>
         </section>
       )}
 
-      {/* ═══ STAGE 4: ACTION ═══ "Last Chance" banner + Gold glow Order Form */}
+      <ScrollReveal>
       <section className="py-8 border-t border-zinc-800">
         <div className="container mx-auto px-4 max-w-xl text-center">
           <div className="inline-flex items-center gap-2 rounded-lg bg-red-500/10 border border-red-500/30 px-6 py-3 animate-pulse shadow-[0_0_20px_rgba(239,68,68,0.1)]">
@@ -1133,7 +1182,9 @@ const LandingPage = () => {
           </div>
         </div>
       </section>
+      </ScrollReveal>
 
+      <ScrollReveal>
       <section className="py-6">
         <div className="container mx-auto px-4 max-w-xl text-center">
           <div className="inline-flex items-center gap-2 border border-amber-500/20 bg-amber-500/5 rounded-lg px-5 py-3">
@@ -1142,7 +1193,9 @@ const LandingPage = () => {
           </div>
         </div>
       </section>
+      </ScrollReveal>
 
+      <ScrollReveal direction="scale">
       <section id="lp-order-form" className="py-20">
         <div className="container mx-auto px-4 max-w-xl">
           <div className="rounded-lg border border-amber-500/20 bg-zinc-900 p-8 md:p-10 shadow-[0_0_60px_rgba(245,158,11,0.08)] relative">
@@ -1159,39 +1212,44 @@ const LandingPage = () => {
                 "text-zinc-300",
                 true
               )}
-              <Button type="submit" size="lg" className="w-full text-lg py-6 mt-6 rounded-none bg-amber-500 hover:bg-amber-400 text-zinc-950 font-extrabold tracking-wide shadow-[0_0_30px_rgba(245,158,11,0.3)]" disabled={submitting} onClick={handleOrder}>
+              <Button type="submit" size="lg" className="w-full text-lg py-6 mt-6 rounded-none bg-amber-500 hover:bg-amber-400 text-zinc-950 font-extrabold tracking-wide shadow-[0_0_30px_rgba(245,158,11,0.3)] hover:scale-[1.02] active:scale-95 transition-transform" disabled={submitting} onClick={handleOrder}>
                 {submitting ? "প্রসেস হচ্ছে..." : `${page.cta_text} →`}
               </Button>
             </div>
           </div>
         </div>
       </section>
+      </ScrollReveal>
 
       {faqs.length > 0 && faqs[0].question && (
-        <section className="py-20 border-t border-zinc-800">
-          <div className="container mx-auto px-4 max-w-2xl">
-            <h2 className="text-center text-sm font-semibold tracking-wide text-amber-400 mb-12">সচরাচর জিজ্ঞাসা</h2>
-            <Accordion type="single" collapsible className="space-y-3">
-              {faqs.filter(f => f.question).map((f, i) => (
-                <AccordionItem key={i} value={`faq-${i}`} className="border border-zinc-800 rounded-lg px-5 bg-zinc-900/50">
-                  <AccordionTrigger className="text-left font-medium text-zinc-200">{f.question}</AccordionTrigger>
-                  <AccordionContent className="text-zinc-400">{f.answer}</AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </div>
-        </section>
-      )}
+          <ScrollReveal>
+          <section className="py-20 border-t border-zinc-800">
+            <div className="container mx-auto px-4 max-w-2xl">
+              <h2 className="text-center text-sm font-semibold tracking-wide text-amber-400 mb-12">সচরাচর জিজ্ঞাসা</h2>
+              <Accordion type="single" collapsible className="space-y-3">
+                {faqs.filter(f => f.question).map((f, i) => (
+                  <AccordionItem key={i} value={`faq-${i}`} className="border border-zinc-800 rounded-lg px-5 bg-zinc-900/50">
+                    <AccordionTrigger className="text-left font-medium text-zinc-200">{f.question}</AccordionTrigger>
+                    <AccordionContent className="text-zinc-400">{f.answer}</AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </div>
+          </section>
+          </ScrollReveal>
+        )}
 
+      <ScrollReveal direction="scale">
       <section className="py-20 border-t border-zinc-800 bg-gradient-to-t from-zinc-900 to-zinc-950">
         <div className="container mx-auto px-4 text-center">
           <p className="text-amber-400 text-sm tracking-wide font-semibold mb-6">এখনই সিদ্ধান্ত নিন</p>
           <h2 className="font-display text-3xl md:text-4xl font-extrabold text-white mb-8">{page.headline}</h2>
-          <Button size="lg" className="text-lg px-14 py-7 rounded-none bg-amber-500 hover:bg-amber-400 text-zinc-950 font-extrabold tracking-wide shadow-[0_0_40px_rgba(245,158,11,0.3)]" onClick={scrollToOrder}>
+          <Button size="lg" className="text-lg px-14 py-7 rounded-none bg-amber-500 hover:bg-amber-400 text-zinc-950 font-extrabold tracking-wide shadow-[0_0_40px_rgba(245,158,11,0.3)] hover:scale-105 active:scale-95 transition-transform" onClick={scrollToOrder}>
             {page.cta_text} →
           </Button>
         </div>
       </section>
+      </ScrollReveal>
 
       <footer className="py-6 text-center text-sm text-zinc-600 border-t border-zinc-800">
         {settings.copyright_text || `© ${new Date().getFullYear()} ${settings.site_name}`}
