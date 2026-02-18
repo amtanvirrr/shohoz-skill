@@ -803,10 +803,10 @@ const LandingPage = () => {
         )}
 
         {reviews.length > 0 && (
-          <section className="py-16 md:py-20">
-            <div className="container mx-auto px-4">
-              <h2 className="text-center font-display text-3xl md:text-4xl font-extrabold mb-12">গ্রাহকরা কী বলছেন</h2>
-              <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+          <section className="py-12 md:py-20">
+            <div className="container mx-auto px-4 max-w-4xl">
+              <h2 className="text-center font-display text-2xl md:text-4xl font-extrabold mb-8 md:mb-12">গ্রাহকরা কী বলছেন</h2>
+              <div className="grid gap-4 md:gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                 {reviews.map((r, i) => (
                   <div key={i} className="rounded-2xl border border-border bg-card overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
                     <div className="h-1.5 bg-gradient-to-r from-primary to-accent" />
