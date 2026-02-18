@@ -180,22 +180,19 @@ const Index = () => {
   const handleTrack = async () => {
     const q = trackQuery.trim();
     if (!q) {
-      toast({ title: "তথ্য দিন", description: "অর্ডার আইডি, ফোন, নাম, ইমেইল বা ট্রানজেকশন আইডি দিন।", variant: "destructive" });
+      toast({ title: "তথ্য দিন", description: "অর্ডার আইডি অথবা ফোন নম্বর দিন।", variant: "destructive" });
       return;
     }
 
-    const { data, error } = await supabase
-      .from("orders")
-      .select("order_id, status, product_title, created_at, customer_phone")
-      .or(`order_id.ilike.%${q}%,customer_phone.ilike.%${q}%,customer_name.ilike.%${q}%,customer_email.ilike.%${q}%,transaction_id.ilike.%${q}%`)
-      .order("created_at", { ascending: false })
-      .limit(5);
+    const { data: result, error } = await supabase.functions.invoke("track-order", {
+      body: { query: q },
+    });
 
-    if (error || !data || data.length === 0) {
+    if (error || !result?.data || result.data.length === 0) {
       setTrackResult(null);
-      toast({ title: "অর্ডার পাওয়া যায়নি", description: "সঠিক তথ্য দিয়ে আবার চেষ্টা করুন।", variant: "destructive" });
+      toast({ title: "অর্ডার পাওয়া যায়নি", description: "সঠিক অর্ডার আইডি বা ফোন নম্বর দিয়ে আবার চেষ্টা করুন।", variant: "destructive" });
     } else {
-      setTrackResult(data);
+      setTrackResult(result.data);
     }
   };
 
@@ -352,10 +349,10 @@ const Index = () => {
             <h2 className="mt-4 text-2xl font-bold text-foreground">{settings.homepage_track_title || "আপনার অর্ডার ট্র্যাক করুন"}</h2>
             <p className="mt-2 text-sm text-muted-foreground">{settings.homepage_track_subtitle || "আপনার অর্ডারের বর্তমান অবস্থা জানুন"}</p>
             <div className="mt-6 flex gap-3">
-              <Input placeholder="অর্ডার আইডি, ফোন, নাম, ইমেইল বা ট্রানজেকশন আইডি" value={trackQuery} onChange={(e) => setTrackQuery(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleTrack()} />
+              <Input placeholder="অর্ডার আইডি অথবা ফোন নম্বর" value={trackQuery} onChange={(e) => setTrackQuery(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleTrack()} />
               <Button className="shrink-0" onClick={handleTrack}>ট্র্যাক করুন</Button>
             </div>
-            <p className="mt-2 text-xs text-muted-foreground">যেকোনো তথ্য দিয়ে অর্ডার খুঁজুন</p>
+            <p className="mt-2 text-xs text-muted-foreground">অর্ডার আইডি বা ফোন নম্বর দিয়ে অর্ডার খুঁজুন</p>
             {trackResult && (
               <div className="mt-4 space-y-3">
                 {trackResult.map((order: any, idx: number) => (
