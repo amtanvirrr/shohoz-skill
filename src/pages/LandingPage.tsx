@@ -497,15 +497,25 @@ const LandingPage = () => {
       premium: "text-foreground",
       dark: "text-white",
     };
+    const linkStyles = {
+      light: "text-muted-foreground hover:text-foreground",
+      premium: "text-primary/70 hover:text-primary",
+      dark: "text-zinc-400 hover:text-white",
+    };
     return (
       <header className={`py-3 md:py-4 sticky top-0 z-50 backdrop-blur-md ${styles[variant]}`}>
-        <div className="container mx-auto px-4 flex items-center justify-center gap-2.5 md:gap-3">
-          {settings.logo_url && (
-            <img src={settings.logo_url} alt={settings.site_name} className="h-8 w-8 md:h-9 md:w-9 rounded-lg object-contain" />
-          )}
-          <span className={`font-display text-lg md:text-xl font-bold tracking-tight ${textStyles[variant]}`}>
-            {settings.site_name}
-          </span>
+        <div className="container mx-auto px-4 flex items-center justify-between">
+          <a href="/" className="flex items-center gap-2.5 md:gap-3">
+            {settings.logo_url && (
+              <img src={settings.logo_url} alt={settings.site_name} className="h-8 w-8 md:h-9 md:w-9 rounded-lg object-contain" />
+            )}
+            <span className={`font-display text-lg md:text-xl font-bold tracking-tight ${textStyles[variant]}`}>
+              {settings.site_name}
+            </span>
+          </a>
+          <a href="/" className={`text-sm font-medium transition-colors ${linkStyles[variant]}`}>
+            ← হোমে ফিরে যান
+          </a>
         </div>
       </header>
     );
