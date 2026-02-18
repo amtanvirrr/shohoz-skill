@@ -190,22 +190,7 @@ const CourseDetail = () => {
     } else {
       // Send admin notification email (fire-and-forget)
       supabase.functions.invoke("notify-order", {
-        body: {
-          orderId: data.order_id,
-          orderData: {
-            order_id: data.order_id,
-            customer_name: user.user_metadata?.full_name || "User",
-            customer_phone: user.user_metadata?.phone || "",
-            customer_email: user.email,
-            customer_address: null,
-            product_title: course.title,
-            product_type: "course",
-            price: course.price,
-            payment_method: paymentMethod,
-            transaction_id: transactionId.trim(),
-            notes: null,
-          },
-        },
+        body: { orderId: data.order_id },
       }).catch(() => {});
 
       trackEvent("Purchase", {

@@ -36,12 +36,27 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { orderId, orderData } = await req.json();
-    if (!orderId || !orderData) {
-      throw new Error("orderId and orderData are required");
+    const { orderId } = await req.json();
+    if (!orderId || typeof orderId !== "string") {
+      throw new Error("orderId is required");
     }
 
     const supabase = createClient(supabaseUrl, serviceKey);
+
+    // Fetch order data from database (server-side verified)
+    const { data: orderData, error: orderError } = await supabase
+      .from("orders")
+      .select("order_id, customer_name, customer_phone, customer_email, customer_address, product_title, product_type, price, payment_method, transaction_id, notes")
+      .eq("order_id", orderId)
+      .single();
+
+    if (orderError || !orderData) {
+      console.log("Order not found:", orderId);
+      return new Response(
+        JSON.stringify({ success: false, reason: "Order not found" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Fetch SMTP settings from site_settings
     const { data: settings } = await supabase

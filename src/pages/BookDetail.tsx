@@ -172,22 +172,7 @@ const BookDetail = () => {
     } else {
       // Send admin notification email (fire-and-forget)
       supabase.functions.invoke("notify-order", {
-        body: {
-          orderId: data.order_id,
-          orderData: {
-            order_id: data.order_id,
-            customer_name: order.name,
-            customer_phone: order.phone,
-            customer_email: order.email || null,
-            customer_address: isPhysical ? order.address : null,
-            product_title: book.title,
-            product_type: "book",
-            price: totalPrice,
-            payment_method: isPhysical ? "cod" : order.paymentMethod,
-            transaction_id: !isPhysical ? order.transactionId.trim() : null,
-            notes: isPhysical && activeZone ? `Shipping: ${activeZone.zone_label} (৳${shippingCost})` : null,
-          },
-        },
+        body: { orderId: data.order_id },
       }).catch(() => {});
 
       trackEvent("Purchase", {
