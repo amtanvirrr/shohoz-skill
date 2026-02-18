@@ -1,30 +1,24 @@
 
 
-# YouTube ভিডিও "refused to connect" সমস্যার সমাধান
+# YouTube CAPTCHA সমস্যার সমাধান
 
 ## সমস্যা কী?
 
-YouTube তাদের সাধারণ URL (যেমন `https://www.youtube.com/watch?v=abc123`) iframe-এ লোড করতে দেয় না — এটা তাদের সিকিউরিটি পলিসি। ভিডিও embed করতে হলে URL-টি `https://www.youtube.com/embed/abc123` ফরম্যাটে রূপান্তর করতে হয়।
+এই CAPTCHA আপনার কোড থেকে আসেনি — এটি Google/YouTube এর নিজস্ব bot detection সিস্টেম। পেজ লোড হওয়ার সাথে সাথে একাধিক YouTube iframe একসঙ্গে লোড হলে Google "unusual traffic" ধরে CAPTCHA দেখায়।
 
 ## সমাধান
 
-### ফাইল: `src/pages/LandingPage.tsx`
+`src/pages/LandingPage.tsx` ফাইলে দুটি পরিবর্তন করা হবে:
 
-একটি হেল্পার ফাংশন `toEmbedUrl()` যোগ করা হবে যা স্বয়ংক্রিয়ভাবে যেকোনো YouTube URL-কে embed ফরম্যাটে রূপান্তর করবে:
+### 1. Privacy-Enhanced Embed URL
+`toEmbedUrl()` ফাংশনে `youtube.com` এর বদলে `youtube-nocookie.com` ব্যবহার করা হবে। এটি কুকি ও ট্র্যাকিং কমায়, ফলে CAPTCHA ট্রিগার কম হয়।
 
-- `https://www.youtube.com/watch?v=VIDEO_ID` → `https://www.youtube.com/embed/VIDEO_ID`
-- `https://youtu.be/VIDEO_ID` → `https://www.youtube.com/embed/VIDEO_ID`
-- ইতিমধ্যে embed URL হলে পরিবর্তন হবে না
-- YouTube নয় এমন URL (সরাসরি .mp4 ফাইল ইত্যাদি) অপরিবর্তিত থাকবে
-
-এরপর যতগুলো জায়গায় `<iframe src={url}>` ব্যবহার করা হয়েছে (হিরো ভিডিও, মিডিয়া গ্যালারি — প্রায় ৬-৭ জায়গা), সবগুলোতে `src={toEmbedUrl(url)}` ব্যবহার করা হবে।
+### 2. Lazy Loading YouTube Iframes
+সব YouTube iframe-এ `loading="lazy"` অ্যাট্রিবিউট যোগ করা হবে, যাতে শুধু ভিউপোর্টে আসলেই ভিডিও লোড হয় — একসাথে সব রিকোয়েস্ট না যায়।
 
 ## প্রযুক্তিগত বিবরণ
 
-```text
-ইউজার যা দেয়:  https://www.youtube.com/watch?v=abc123
-                        ↓ toEmbedUrl()
-iframe যা পায়:  https://www.youtube.com/embed/abc123
-```
+- `toEmbedUrl()` এর আউটপুট পরিবর্তন: `youtube.com/embed/...` -> `youtube-nocookie.com/embed/...`
+- সব `<iframe>` ট্যাগে `loading="lazy"` যোগ (প্রায় ৮-১০ জায়গা)
+- শুধুমাত্র একটি ফাইল পরিবর্তন হবে: `src/pages/LandingPage.tsx`
 
-শুধুমাত্র একটি ফাইল (`LandingPage.tsx`) পরিবর্তন হবে। ডাটাবেজে কোনো পরিবর্তন নেই — ইউজার যেকোনো ফরম্যাটে URL দিতে পারবে, সিস্টেম নিজে থেকে ঠিক করে নেবে।
