@@ -73,6 +73,8 @@ interface LandingPage {
   subheadline: string;
   hero_image_url: string;
   hero_video_url: string;
+  hero_images: string[];
+  hero_videos: string[];
   benefits: { title: string; description: string }[];
   media_items: { type: string; url: string; caption: string }[];
   reviews: { name: string; rating: number; comment: string; image_url?: string }[];
@@ -147,6 +149,8 @@ const AdminLandingPages = () => {
     subheadline: "",
     hero_image_url: "",
     hero_video_url: "",
+    hero_images: [],
+    hero_videos: [],
     benefits: [{ title: "", description: "" }],
     media_items: [],
     reviews: [],
@@ -220,6 +224,10 @@ const AdminLandingPages = () => {
       faqs: form.faqs.filter(f => f.question.trim()),
       reviews: form.reviews.filter(r => r.name.trim()),
       media_items: form.media_items.filter(m => m.url.trim()),
+      hero_images: form.hero_images.filter(u => u.trim()),
+      hero_videos: form.hero_videos.filter(u => u.trim()),
+      hero_image_url: form.hero_images.filter(u => u.trim())[0] || form.hero_image_url || "",
+      hero_video_url: form.hero_videos.filter(u => u.trim())[0] || form.hero_video_url || "",
     };
 
     if (editing) {
@@ -255,6 +263,8 @@ const AdminLandingPages = () => {
       subheadline: page.subheadline,
       hero_image_url: page.hero_image_url || "",
       hero_video_url: page.hero_video_url || "",
+      hero_images: (page.hero_images as any as string[]) || [],
+      hero_videos: (page.hero_videos as any as string[]) || [],
       benefits: (page.benefits as any[])?.length ? page.benefits : [{ title: "", description: "" }],
       media_items: (page.media_items as any[]) || [],
       reviews: (page.reviews as any[]) || [],
@@ -418,14 +428,57 @@ const AdminLandingPages = () => {
               </CardContent>
             </Card>
 
-            {/* Hero Visual */}
+            {/* Hero Visual - Multiple Images & Videos */}
             <Card>
-              <CardHeader><CardTitle className="text-base">৩. হিরো ভিজ্যুয়াল</CardTitle></CardHeader>
-              <CardContent className="space-y-3">
-                <ImageUploadField label="হিরো ইমেজ" value={form.hero_image_url} onChange={url => setForm(f => ({ ...f, hero_image_url: url }))} folder="hero" />
+              <CardHeader><CardTitle className="text-base">৩. হিরো ভিজ্যুয়াল (একাধিক ছবি ও ভিডিও)</CardTitle></CardHeader>
+              <CardContent className="space-y-4">
+                {/* Multiple Hero Images */}
                 <div>
-                  <Label>হিরো ভিডিও URL (YouTube/ভিমিও)</Label>
-                  <Input className="mt-1" value={form.hero_video_url} onChange={e => setForm(f => ({ ...f, hero_video_url: e.target.value }))} placeholder="https://www.youtube.com/embed/..." />
+                  <div className="flex items-center justify-between mb-2">
+                    <Label className="font-semibold">হিরো ইমেজ</Label>
+                    <Button type="button" size="sm" variant="outline" onClick={() => setForm(f => ({ ...f, hero_images: [...f.hero_images, ""] }))}>
+                      <Plus className="h-3.5 w-3.5 mr-1" /> ইমেজ যোগ
+                    </Button>
+                  </div>
+                  {form.hero_images.length === 0 && <p className="text-sm text-muted-foreground">কোনো হিরো ইমেজ যোগ করা হয়নি</p>}
+                  {form.hero_images.map((url, i) => (
+                    <div key={i} className="flex gap-2 items-start">
+                      <div className="flex-1">
+                        <ImageUploadField label="" value={url} onChange={newUrl => {
+                          const arr = [...form.hero_images];
+                          arr[i] = newUrl;
+                          setForm(f => ({ ...f, hero_images: arr, hero_image_url: arr[0] || "" }));
+                        }} folder="hero" />
+                      </div>
+                      <Button size="icon" variant="ghost" className="mt-1" onClick={() => {
+                        const arr = form.hero_images.filter((_, idx) => idx !== i);
+                        setForm(f => ({ ...f, hero_images: arr, hero_image_url: arr[0] || "" }));
+                      }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    </div>
+                  ))}
+                </div>
+                {/* Multiple Hero Videos */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <Label className="font-semibold">হিরো ভিডিও URL</Label>
+                    <Button type="button" size="sm" variant="outline" onClick={() => setForm(f => ({ ...f, hero_videos: [...f.hero_videos, ""] }))}>
+                      <Plus className="h-3.5 w-3.5 mr-1" /> ভিডিও যোগ
+                    </Button>
+                  </div>
+                  {form.hero_videos.length === 0 && <p className="text-sm text-muted-foreground">কোনো হিরো ভিডিও যোগ করা হয়নি</p>}
+                  {form.hero_videos.map((url, i) => (
+                    <div key={i} className="flex gap-2 items-center">
+                      <Input className="flex-1" value={url} onChange={e => {
+                        const arr = [...form.hero_videos];
+                        arr[i] = e.target.value;
+                        setForm(f => ({ ...f, hero_videos: arr, hero_video_url: arr[0] || "" }));
+                      }} placeholder="https://www.youtube.com/embed/..." />
+                      <Button size="icon" variant="ghost" onClick={() => {
+                        const arr = form.hero_videos.filter((_, idx) => idx !== i);
+                        setForm(f => ({ ...f, hero_videos: arr, hero_video_url: arr[0] || "" }));
+                      }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>

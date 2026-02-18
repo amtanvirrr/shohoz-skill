@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Star, CheckCircle, Minus, Plus, ShoppingBag, Clock, Flame, AlertTriangle, Tag, Loader2, X as XIcon, Shield, Truck, Award, Users, ThumbsUp, Zap, Crown, Gem } from "lucide-react";
+import { Star, CheckCircle, Minus, Plus, ShoppingBag, Clock, Flame, AlertTriangle, Tag, Loader2, X as XIcon, Shield, Truck, Award, Users, ThumbsUp, Zap, Crown, Gem, ChevronLeft, ChevronRight } from "lucide-react";
 import OrderSuccessDialog from "@/components/OrderSuccessDialog";
 
 interface LandingPageData {
@@ -23,6 +23,8 @@ interface LandingPageData {
   subheadline: string;
   hero_image_url: string;
   hero_video_url: string;
+  hero_images: string[];
+  hero_videos: string[];
   benefits: { title: string; description: string }[];
   media_items: { type: string; url: string; caption: string }[];
   reviews: { name: string; rating: number; comment: string; image_url?: string }[];
@@ -92,6 +94,64 @@ const useCountdown = (endTime: string | null) => {
   return timeLeft;
 };
 
+// ==================== AUTO-SLIDING CAROUSEL ====================
+const AutoSlider = ({ items, renderItem, className = "", interval = 4000 }: {
+  items: string[];
+  renderItem: (url: string, index: number) => React.ReactNode;
+  className?: string;
+  interval?: number;
+}) => {
+  const [current, setCurrent] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval>>();
+
+  const startTimer = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (items.length <= 1) return;
+    timerRef.current = setInterval(() => {
+      setCurrent(c => (c + 1) % items.length);
+    }, interval);
+  }, [items.length, interval]);
+
+  useEffect(() => {
+    startTimer();
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [startTimer]);
+
+  const goTo = (dir: number) => {
+    setCurrent(c => (c + dir + items.length) % items.length);
+    startTimer();
+  };
+
+  if (items.length === 0) return null;
+  if (items.length === 1) return <div className={className}>{renderItem(items[0], 0)}</div>;
+
+  return (
+    <div className={`relative group ${className}`}>
+      <div className="overflow-hidden rounded-inherit">
+        <div className="flex transition-transform duration-500 ease-in-out" style={{ transform: `translateX(-${current * 100}%)` }}>
+          {items.map((url, i) => (
+            <div key={i} className="w-full flex-shrink-0">{renderItem(url, i)}</div>
+          ))}
+        </div>
+      </div>
+      {/* Navigation arrows */}
+      <button onClick={() => goTo(-1)} className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
+        <ChevronLeft className="h-5 w-5" />
+      </button>
+      <button onClick={() => goTo(1)} className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
+        <ChevronRight className="h-5 w-5" />
+      </button>
+      {/* Dots */}
+      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+        {items.map((_, i) => (
+          <button key={i} onClick={() => { setCurrent(i); startTimer(); }}
+            className={`h-2 rounded-full transition-all ${i === current ? "w-6 bg-white" : "w-2 bg-white/50"}`} />
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const LandingPage = () => {
   const { slug } = useParams();
   const { user } = useAuth();
@@ -119,6 +179,14 @@ const LandingPage = () => {
       .then(async ({ data }) => {
         if (!data) { setLoading(false); return; }
         const lp = data as any;
+        // Merge old single fields into arrays for backward compat
+        const heroImages: string[] = (lp.hero_images as string[] || []).filter((u: string) => u && u.trim());
+        const heroVideos: string[] = (lp.hero_videos as string[] || []).filter((u: string) => u && u.trim());
+        // Fallback: if arrays empty but old fields exist, use them
+        if (heroImages.length === 0 && lp.hero_image_url) heroImages.push(lp.hero_image_url);
+        if (heroVideos.length === 0 && lp.hero_video_url) heroVideos.push(lp.hero_video_url);
+        lp.hero_images = heroImages;
+        lp.hero_videos = heroVideos;
         setPage(lp);
         const table = lp.product_type === "course" ? "courses" : lp.product_type === "quiz" ? "quizzes" : "books";
         const [prodRes, mfsRes, szRes] = await Promise.all([
@@ -212,7 +280,7 @@ const LandingPage = () => {
         });
       }
       supabase.functions.invoke("notify-order", { body: { orderId: data.order_id, orderData: { order_id: data.order_id, customer_name: order.name, customer_phone: order.phone, product_title: product.title, price: totalPrice, payment_method: paymentMethod, transaction_id: !isPhysical ? order.transactionId.trim() : null } } }).catch(() => {});
-      setSuccessDialog({ open: true, orderId: data.order_id, message: isPhysical ? "আপনার অর্ডারটি সফলভাবে গৃহীত হয়েছে।" : "পেমেন্ট যাচাইয়ের পর আপনি কন্টেন্ট অ্যাক্সেস করতে পারবেন।" });
+      setSuccessDialog({ open: true, orderId: data.order_id, message: isPhysical ? "আপনার অর্ডারটি সফলভাবে গৃহীত হয়েছে।" : "পেমেন্ট যাচাইয়ের পর আপনি কন্টেন্ট অ্যাকসেস করতে পারবেন।" });
       setOrder({ name: "", phone: "", address: "", paymentMethod: mfsMethods[0]?.provider || "", transactionId: "" });
       setQuantity(1);
       setAppliedCoupon(null);
@@ -229,6 +297,13 @@ const LandingPage = () => {
   const faqs = (page.faqs as any[]) || [];
   const mediaItems = (page.media_items as any[]) || [];
   const selectedMfs = mfsMethods.find(m => m.provider === order.paymentMethod);
+
+  // Separate media items by type
+  const mediaImages = mediaItems.filter(m => m.type === "image" && m.url);
+  const mediaVideos = mediaItems.filter(m => m.type === "video" && m.url);
+
+  const heroImages = page.hero_images || [];
+  const heroVideos = page.hero_videos || [];
 
   const scrollToOrder = () => {
     document.getElementById("lp-order-form")?.scrollIntoView({ behavior: "smooth" });
@@ -317,9 +392,79 @@ const LandingPage = () => {
     </form>
   );
 
+  // ==================== SHARED: Hero Media Section (Videos on top, Images below) ====================
+  const renderHeroMedia = (containerClass: string, videoClass: string, imageClass: string) => {
+    if (heroVideos.length === 0 && heroImages.length === 0) return null;
+    return (
+      <div className={containerClass}>
+        {/* Videos first */}
+        {heroVideos.length > 0 && (
+          <AutoSlider
+            items={heroVideos}
+            renderItem={(url) => (
+              <div className={`aspect-video ${videoClass}`}>
+                <iframe src={url} className="w-full h-full" allowFullScreen allow="autoplay; encrypted-media" />
+              </div>
+            )}
+          />
+        )}
+        {/* Images below videos */}
+        {heroImages.length > 0 && (
+          <AutoSlider
+            items={heroImages}
+            renderItem={(url) => (
+              <img src={url} alt={page.headline} className={imageClass} />
+            )}
+          />
+        )}
+      </div>
+    );
+  };
+
+  // ==================== SHARED: Media Gallery (separated by type with sliding) ====================
+  const renderMediaGallery = (sectionClass: string, containerClass: string, videoFrameClass: string, imageFrameClass: string, captionClass: string) => {
+    if (mediaImages.length === 0 && mediaVideos.length === 0) return null;
+    return (
+      <section className={sectionClass}>
+        <div className={containerClass}>
+          {/* Videos section */}
+          {mediaVideos.length > 0 && (
+            <div className="mb-8">
+              <AutoSlider
+                items={mediaVideos.map(m => m.url)}
+                renderItem={(url, i) => {
+                  const item = mediaVideos[i];
+                  return (
+                    <div className={videoFrameClass}>
+                      <div className="aspect-video"><iframe src={url} className="w-full h-full" allowFullScreen /></div>
+                      {item?.caption && <p className={captionClass}>{item.caption}</p>}
+                    </div>
+                  );
+                }}
+              />
+            </div>
+          )}
+          {/* Images section */}
+          {mediaImages.length > 0 && (
+            <AutoSlider
+              items={mediaImages.map(m => m.url)}
+              renderItem={(url, i) => {
+                const item = mediaImages[i];
+                return (
+                  <div className={imageFrameClass}>
+                    <img src={url} alt={item?.caption || ""} className="w-full object-cover" />
+                    {item?.caption && <p className={captionClass}>{item.caption}</p>}
+                  </div>
+                );
+              }}
+            />
+          )}
+        </div>
+      </section>
+    );
+  };
+
   // ==================== MINIMALIST THEME ====================
-  // Color Psychology: White/off-white + deep charcoal + single emerald accent = Trust & Focus
-  // Funnel: AIDA with maximum whitespace, single-column, text-focused
   if (theme === "minimalist") {
     return (
       <div className="min-h-screen bg-background text-foreground">
@@ -332,7 +477,20 @@ const LandingPage = () => {
             {page.subheadline && (
               <p className="mt-6 text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed">{page.subheadline}</p>
             )}
-            <div className="mt-8 flex items-center justify-center gap-3">
+          </div>
+        </section>
+
+        {/* Hero media: Videos on top, Images below */}
+        {renderHeroMedia(
+          "pb-12 container mx-auto px-4 max-w-3xl space-y-6",
+          "rounded-2xl overflow-hidden border border-border shadow-sm",
+          "rounded-2xl w-full object-cover max-h-[480px] border border-border shadow-sm"
+        )}
+
+        {/* Pricing + Urgency + CTA below hero visuals */}
+        <section className="pb-16">
+          <div className="container mx-auto px-4 max-w-2xl text-center">
+            <div className="flex items-center justify-center gap-3">
               {product.price === 0 ? (
                 <span className="text-3xl font-bold text-primary">ফ্রি</span>
               ) : (
@@ -342,7 +500,6 @@ const LandingPage = () => {
                 </>
               )}
             </div>
-            {/* Subtle urgency - borderless, minimal */}
             {page.show_countdown && !countdown.expired && (
               <p className="mt-4 text-sm text-muted-foreground">
                 <Clock className="inline h-4 w-4 mr-1 opacity-60" />
@@ -358,23 +515,7 @@ const LandingPage = () => {
           </div>
         </section>
 
-        {/* Hero media */}
-        {(page.hero_video_url || page.hero_image_url) && (
-          <section className="pb-20">
-            <div className="container mx-auto px-4 max-w-3xl">
-              {page.hero_video_url ? (
-                <div className="aspect-video rounded-2xl overflow-hidden border border-border shadow-sm">
-                  <iframe src={page.hero_video_url} className="w-full h-full" allowFullScreen allow="autoplay; encrypted-media" />
-                </div>
-              ) : (
-                <img src={page.hero_image_url} alt={page.headline} className="rounded-2xl w-full object-cover max-h-[480px] border border-border shadow-sm" />
-              )}
-            </div>
-          </section>
-        )}
-
         {/* ═══ STAGE 2: INTEREST ═══ Social Proof Badge + Benefits */}
-        {/* Trust Badge: Simple text style */}
         <section className="py-6">
           <div className="container mx-auto px-4 max-w-2xl">
             <div className="flex items-center justify-center gap-8 text-sm text-muted-foreground">
@@ -384,7 +525,6 @@ const LandingPage = () => {
           </div>
         </section>
 
-        {/* Benefits: Checkmark + text only, no cards */}
         {benefits.length > 0 && benefits[0].title && (
           <section className="py-16 md:py-24">
             <div className="container mx-auto px-4 max-w-2xl">
@@ -403,25 +543,15 @@ const LandingPage = () => {
           </section>
         )}
 
-        {/* ═══ STAGE 3: DESIRE ═══ Media + Reviews + Mid-CTA */}
-        {mediaItems.length > 0 && (
-          <section className="py-16">
-            <div className="container mx-auto px-4 max-w-3xl space-y-8">
-              {mediaItems.map((m, i) => (
-                <div key={i} className="rounded-2xl overflow-hidden border border-border">
-                  {m.type === "video" ? (
-                    <div className="aspect-video"><iframe src={m.url} className="w-full h-full" allowFullScreen /></div>
-                  ) : (
-                    <img src={m.url} alt={m.caption || ""} className="w-full object-cover" />
-                  )}
-                  {m.caption && <p className="p-4 text-sm text-center text-muted-foreground">{m.caption}</p>}
-                </div>
-              ))}
-            </div>
-          </section>
+        {/* ═══ STAGE 3: DESIRE ═══ Media Gallery (separated) + Reviews + Mid-CTA */}
+        {renderMediaGallery(
+          "py-16",
+          "container mx-auto px-4 max-w-3xl",
+          "rounded-2xl overflow-hidden border border-border",
+          "rounded-2xl overflow-hidden border border-border",
+          "p-4 text-sm text-center text-muted-foreground"
         )}
 
-        {/* Reviews: Simple blockquotes with horizontal dividers */}
         {reviews.length > 0 && (
           <section className="py-16 md:py-24">
             <div className="container mx-auto px-4 max-w-2xl">
@@ -438,7 +568,6 @@ const LandingPage = () => {
           </section>
         )}
 
-        {/* Mid-CTA: Minimal */}
         <section className="py-12">
           <div className="container mx-auto px-4 max-w-xl text-center">
             <p className="text-muted-foreground mb-4">আর দেরি না করে সিদ্ধান্ত নিন</p>
@@ -449,7 +578,6 @@ const LandingPage = () => {
         </section>
 
         {/* ═══ STAGE 4: ACTION ═══ Trust Signal + Order Form */}
-        {/* Trust Signal: Simple guarantee text */}
         <section className="py-8">
           <div className="container mx-auto px-4 max-w-xl text-center">
             <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
@@ -459,7 +587,6 @@ const LandingPage = () => {
           </div>
         </section>
 
-        {/* Order Form: Clean, minimal shadow */}
         <section id="lp-order-form" className="py-16 md:py-24">
           <div className="container mx-auto px-4 max-w-xl">
             <div className="rounded-2xl border border-border p-8 md:p-10 bg-card shadow-sm">
@@ -477,7 +604,6 @@ const LandingPage = () => {
           </div>
         </section>
 
-        {/* FAQs */}
         {faqs.length > 0 && faqs[0].question && (
           <section className="py-16 md:py-24 border-t border-border">
             <div className="container mx-auto px-4 max-w-2xl">
@@ -503,15 +629,12 @@ const LandingPage = () => {
   }
 
   // ==================== PREMIUM THEME ====================
-  // Color Psychology: Rich gradients (primary->accent) + deep shadows = High perceived value + Urgency
-  // Funnel: AIDA with split hero, numbered benefits, prominent discount badges, verified reviews
   if (theme === "premium") {
     return (
       <div className="min-h-screen bg-gradient-to-b from-primary/5 via-background to-background">
-        {/* ═══ STAGE 1: ATTENTION ═══ Split hero with gradient bg, discount badge, countdown */}
+        {/* ═══ STAGE 1: ATTENTION ═══ Hero text + visuals below */}
         <section className="relative py-16 md:py-24 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-accent/5 to-transparent" />
-          {/* Animated gradient orbs */}
           <div className="absolute top-10 right-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl animate-pulse" />
           <div className="absolute bottom-10 left-10 w-56 h-56 bg-accent/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
           <div className="container mx-auto px-4 relative z-10">
@@ -520,7 +643,6 @@ const LandingPage = () => {
                 <div className="inline-block rounded-full bg-primary/10 px-4 py-1.5 text-sm font-semibold text-primary mb-4">
                   ⭐ প্রিমিয়াম কালেকশন
                 </div>
-                {/* Prominent discount badge */}
                 {product.original_price && discountPercent > 0 && (
                   <div className="inline-flex items-center gap-2 ml-3 rounded-full bg-destructive text-white text-sm font-extrabold px-4 py-1.5 animate-bounce shadow-lg">
                     🔥 {discountPercent}% ছাড়!
@@ -532,60 +654,76 @@ const LandingPage = () => {
                 {page.subheadline && (
                   <p className="mt-5 text-lg md:text-xl text-muted-foreground leading-relaxed">{page.subheadline}</p>
                 )}
-                <div className="mt-6 flex items-baseline gap-4">
-                  {product.price === 0 ? (
-                    <span className="text-4xl font-extrabold text-primary">ফ্রি</span>
-                  ) : (
-                    <>
-                      <span className="text-5xl font-extrabold">৳{product.price}</span>
-                      {product.original_price && (
-                        <span className="text-2xl text-muted-foreground line-through">৳{product.original_price}</span>
-                      )}
-                    </>
-                  )}
-                </div>
-                {/* Countdown: Prominent card style with shadow */}
-                {page.show_countdown && !countdown.expired && (
-                  <div className="mt-5 inline-flex items-center gap-3 rounded-xl bg-destructive/10 border border-destructive/20 px-5 py-3 shadow-lg">
-                    <Clock className="h-5 w-5 text-destructive animate-pulse" />
-                    <span className="font-extrabold text-destructive">
-                      {countdown.days > 0 && `${countdown.days}দিন `}{String(countdown.hours).padStart(2, '0')}:{String(countdown.minutes).padStart(2, '0')}:{String(countdown.seconds).padStart(2, '0')}
-                    </span>
-                  </div>
-                )}
-                {page.show_stock_badge && stockRemaining > 0 && (
-                  <div className="mt-3 inline-flex items-center gap-2 rounded-xl bg-accent/10 border border-accent/20 px-4 py-2 shadow-md">
-                    <Flame className="h-4 w-4 text-accent" />
-                    <span className="text-sm font-bold text-accent">মাত্র {stockRemaining}টি বাকি!</span>
-                    <div className="w-24 h-2 rounded-full bg-accent/20 overflow-hidden">
-                      <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${stockPercent}%` }} />
-                    </div>
-                  </div>
-                )}
-                <div className="mt-8">
-                  <Button size="lg" className="text-lg px-10 py-7 rounded-xl shadow-2xl hover:shadow-xl transition-all font-bold bg-gradient-to-r from-primary to-accent text-white hover:opacity-90" onClick={scrollToOrder}>
-                    {page.cta_text} →
-                  </Button>
-                </div>
               </div>
-              <div className="relative">
-                {page.hero_video_url ? (
-                  <div className="aspect-video rounded-2xl overflow-hidden shadow-2xl ring-1 ring-primary/20">
-                    <iframe src={page.hero_video_url} className="w-full h-full" allowFullScreen allow="autoplay; encrypted-media" />
-                  </div>
-                ) : page.hero_image_url ? (
-                  <div className="relative">
-                    <div className="absolute -inset-4 bg-gradient-to-r from-primary/20 to-accent/20 rounded-3xl blur-2xl" />
-                    <img src={page.hero_image_url} alt={page.headline} className="relative rounded-2xl shadow-2xl w-full object-cover max-h-[500px] ring-1 ring-primary/10" />
-                  </div>
-                ) : null}
+              {/* Hero media on right side - videos first, images below */}
+              <div className="space-y-4">
+                {heroVideos.length > 0 && (
+                  <AutoSlider
+                    items={heroVideos}
+                    renderItem={(url) => (
+                      <div className="aspect-video rounded-2xl overflow-hidden shadow-2xl ring-1 ring-primary/20">
+                        <iframe src={url} className="w-full h-full" allowFullScreen allow="autoplay; encrypted-media" />
+                      </div>
+                    )}
+                  />
+                )}
+                {heroImages.length > 0 && (
+                  <AutoSlider
+                    items={heroImages}
+                    renderItem={(url) => (
+                      <div className="relative">
+                        <div className="absolute -inset-4 bg-gradient-to-r from-primary/20 to-accent/20 rounded-3xl blur-2xl" />
+                        <img src={url} alt={page.headline} className="relative rounded-2xl shadow-2xl w-full object-cover max-h-[500px] ring-1 ring-primary/10" />
+                      </div>
+                    )}
+                  />
+                )}
               </div>
             </div>
           </div>
         </section>
 
+        {/* Pricing + Urgency + CTA below hero */}
+        <section className="py-10 relative z-10">
+          <div className="container mx-auto px-4 text-center">
+            <div className="flex items-baseline justify-center gap-4">
+              {product.price === 0 ? (
+                <span className="text-4xl font-extrabold text-primary">ফ্রি</span>
+              ) : (
+                <>
+                  <span className="text-5xl font-extrabold">৳{product.price}</span>
+                  {product.original_price && (
+                    <span className="text-2xl text-muted-foreground line-through">৳{product.original_price}</span>
+                  )}
+                </>
+              )}
+            </div>
+            {page.show_countdown && !countdown.expired && (
+              <div className="mt-5 inline-flex items-center gap-3 rounded-xl bg-destructive/10 border border-destructive/20 px-5 py-3 shadow-lg">
+                <Clock className="h-5 w-5 text-destructive animate-pulse" />
+                <span className="font-extrabold text-destructive">
+                  {countdown.days > 0 && `${countdown.days}দিন `}{String(countdown.hours).padStart(2, '0')}:{String(countdown.minutes).padStart(2, '0')}:{String(countdown.seconds).padStart(2, '0')}
+                </span>
+              </div>
+            )}
+            {page.show_stock_badge && stockRemaining > 0 && (
+              <div className="mt-3 inline-flex items-center gap-2 rounded-xl bg-accent/10 border border-accent/20 px-4 py-2 shadow-md">
+                <Flame className="h-4 w-4 text-accent" />
+                <span className="text-sm font-bold text-accent">মাত্র {stockRemaining}টি বাকি!</span>
+                <div className="w-24 h-2 rounded-full bg-accent/20 overflow-hidden">
+                  <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${stockPercent}%` }} />
+                </div>
+              </div>
+            )}
+            <div className="mt-8">
+              <Button size="lg" className="text-lg px-10 py-7 rounded-xl shadow-2xl hover:shadow-xl transition-all font-bold bg-gradient-to-r from-primary to-accent text-white hover:opacity-90" onClick={scrollToOrder}>
+                {page.cta_text} →
+              </Button>
+            </div>
+          </div>
+        </section>
+
         {/* ═══ STAGE 2: INTEREST ═══ Social Proof Icons + Numbered Benefits */}
-        {/* Social Proof: Icon + number badge cards */}
         <section className="py-10">
           <div className="container mx-auto px-4">
             <div className="flex flex-wrap items-center justify-center gap-6">
@@ -605,7 +743,6 @@ const LandingPage = () => {
           </div>
         </section>
 
-        {/* Benefits: Gradient border cards with numbers + hover effect */}
         {benefits.length > 0 && benefits[0].title && (
           <section className="py-16 md:py-20">
             <div className="container mx-auto px-4">
@@ -628,7 +765,7 @@ const LandingPage = () => {
           </section>
         )}
 
-        {/* Mid-CTA: "আজই অর্ডার করুন" banner */}
+        {/* Mid-CTA */}
         <section className="py-12 bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10">
           <div className="container mx-auto px-4 text-center">
             <p className="text-lg font-semibold mb-4">
@@ -640,27 +777,15 @@ const LandingPage = () => {
           </div>
         </section>
 
-        {/* ═══ STAGE 3: DESIRE ═══ Media Gallery + Verified Reviews */}
-        {mediaItems.length > 0 && (
-          <section className="py-16 md:py-20 bg-muted/30">
-            <div className="container mx-auto px-4">
-              <div className={`grid gap-6 ${mediaItems.length === 1 ? "max-w-3xl mx-auto" : mediaItems.length === 2 ? "md:grid-cols-2" : "md:grid-cols-2 lg:grid-cols-3"}`}>
-                {mediaItems.map((m, i) => (
-                  <div key={i} className={`rounded-2xl overflow-hidden shadow-xl ring-1 ring-border ${i === 0 && mediaItems.length >= 3 ? "md:col-span-2 md:row-span-2" : ""}`}>
-                    {m.type === "video" ? (
-                      <div className="aspect-video"><iframe src={m.url} className="w-full h-full" allowFullScreen /></div>
-                    ) : (
-                      <img src={m.url} alt={m.caption || ""} className="w-full h-full object-cover" />
-                    )}
-                    {m.caption && <p className="p-4 text-sm text-center text-muted-foreground bg-card">{m.caption}</p>}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
+        {/* ═══ STAGE 3: DESIRE ═══ Media Gallery (separated) + Verified Reviews */}
+        {renderMediaGallery(
+          "py-16 md:py-20 bg-muted/30",
+          "container mx-auto px-4 max-w-4xl",
+          "rounded-2xl overflow-hidden shadow-xl ring-1 ring-border",
+          "rounded-2xl overflow-hidden shadow-xl ring-1 ring-border",
+          "p-4 text-sm text-center text-muted-foreground bg-card"
         )}
 
-        {/* Reviews: Cards with gradient top border + "ভেরিফাইড" badge */}
         {reviews.length > 0 && (
           <section className="py-16 md:py-20">
             <div className="container mx-auto px-4">
@@ -693,8 +818,7 @@ const LandingPage = () => {
           </section>
         )}
 
-        {/* ═══ STAGE 4: ACTION ═══ Trust Signals + "Bestseller" ribbon + Order Form */}
-        {/* Trust Signals: Shield + Truck + Award */}
+        {/* ═══ STAGE 4: ACTION ═══ Trust Signals + Order Form */}
         <section className="py-10">
           <div className="container mx-auto px-4 max-w-2xl">
             <div className="grid grid-cols-3 gap-4">
@@ -714,11 +838,9 @@ const LandingPage = () => {
           </div>
         </section>
 
-        {/* Order Form with Bestseller ribbon */}
         <section id="lp-order-form" className="py-16 md:py-20">
           <div className="container mx-auto px-4 max-w-xl">
             <div className="relative">
-              {/* Bestseller ribbon */}
               <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10 rounded-full bg-gradient-to-r from-primary to-accent text-white text-sm font-extrabold px-6 py-1.5 shadow-xl">
                 🏆 সর্বাধিক বিক্রিত
               </div>
@@ -740,7 +862,6 @@ const LandingPage = () => {
           </div>
         </section>
 
-        {/* FAQs */}
         {faqs.length > 0 && faqs[0].question && (
           <section className="py-16 md:py-20">
             <div className="container mx-auto px-4 max-w-2xl">
@@ -757,7 +878,6 @@ const LandingPage = () => {
           </section>
         )}
 
-        {/* Final CTA */}
         <section className="py-16 bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10">
           <div className="container mx-auto px-4 text-center">
             <h2 className="font-display text-3xl md:text-4xl font-extrabold mb-6">{page.headline}</h2>
@@ -776,23 +896,20 @@ const LandingPage = () => {
   }
 
   // ==================== EXCLUSIVE THEME (Dark Luxury) ====================
-  // Color Psychology: Zinc-950 bg + Amber/Gold accents = Luxury, Exclusivity, FOMO
-  // Funnel: AIDA with full-bleed hero, scarcity-driven urgency, VIP reviews, dramatic order form
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
-      {/* ═══ STAGE 1: ATTENTION ═══ Full-bleed hero with vignette + animated "Limited Edition" badge */}
-      <section className="relative min-h-[85vh] flex items-center overflow-hidden">
-        {page.hero_image_url && !page.hero_video_url && (
+      {/* ═══ STAGE 1: ATTENTION ═══ Full-bleed hero with vignette */}
+      <section className="relative overflow-hidden">
+        {/* Background vignette from first hero image */}
+        {heroImages.length > 0 && (
           <div className="absolute inset-0">
-            <img src={page.hero_image_url} alt="" className="w-full h-full object-cover opacity-25" />
-            {/* Strong vignette */}
+            <img src={heroImages[0]} alt="" className="w-full h-full object-cover opacity-25" />
             <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/70 to-zinc-950/30" />
             <div className="absolute inset-0 bg-gradient-to-r from-zinc-950/60 via-transparent to-zinc-950/60" />
           </div>
         )}
         <div className="container mx-auto px-4 relative z-10 py-20">
           <div className="max-w-3xl">
-            {/* Animated Limited Edition badge */}
             <div className="inline-flex items-center gap-2 border border-amber-500/40 bg-amber-500/10 rounded-full px-5 py-2 text-sm font-semibold text-amber-400 mb-8 tracking-wider uppercase animate-pulse">
               <Gem className="h-4 w-4" /> সীমিত সংস্করণ
             </div>
@@ -802,7 +919,39 @@ const LandingPage = () => {
             {page.subheadline && (
               <p className="mt-6 text-xl text-zinc-400 max-w-2xl leading-relaxed">{page.subheadline}</p>
             )}
-            <div className="mt-8 flex items-baseline gap-4">
+          </div>
+        </div>
+
+        {/* Hero Videos (sliding) */}
+        {heroVideos.length > 0 && (
+          <div className="container mx-auto px-4 relative z-10 pb-8 max-w-4xl">
+            <AutoSlider
+              items={heroVideos}
+              renderItem={(url) => (
+                <div className="aspect-video rounded-xl overflow-hidden ring-1 ring-zinc-800 shadow-2xl">
+                  <iframe src={url} className="w-full h-full" allowFullScreen allow="autoplay; encrypted-media" />
+                </div>
+              )}
+            />
+          </div>
+        )}
+
+        {/* Hero Images (sliding, below videos) */}
+        {heroImages.length > 0 && (
+          <div className="container mx-auto px-4 relative z-10 pb-16 max-w-4xl">
+            <AutoSlider
+              items={heroImages}
+              renderItem={(url) => (
+                <img src={url} alt={page.headline} className="rounded-xl w-full object-cover max-h-[500px] ring-1 ring-zinc-800 shadow-2xl" />
+              )}
+            />
+          </div>
+        )}
+
+        {/* Pricing, Countdown, Stock Badge, CTA - below hero visuals */}
+        <div className="container mx-auto px-4 relative z-10 pb-20">
+          <div className="max-w-3xl">
+            <div className="flex items-baseline gap-4">
               {product.price === 0 ? (
                 <span className="text-4xl font-extrabold text-amber-400">ফ্রি</span>
               ) : (
@@ -812,7 +961,6 @@ const LandingPage = () => {
                 </>
               )}
             </div>
-            {/* Exclusive urgency: Amber glow countdown + Dramatic stock counter with red glow */}
             <div className="mt-6 space-y-3">
               {page.show_countdown && !countdown.expired && (
                 <div className="inline-flex items-center gap-3 rounded-lg bg-amber-500/10 border border-amber-500/30 px-5 py-3 shadow-[0_0_20px_rgba(245,158,11,0.15)]">
@@ -839,17 +987,9 @@ const LandingPage = () => {
             </Button>
           </div>
         </div>
-        {page.hero_video_url && (
-          <div className="container mx-auto px-4 relative z-10 pb-16 max-w-4xl">
-            <div className="aspect-video rounded-xl overflow-hidden ring-1 ring-zinc-800 shadow-2xl">
-              <iframe src={page.hero_video_url} className="w-full h-full" allowFullScreen allow="autoplay; encrypted-media" />
-            </div>
-          </div>
-        )}
       </section>
 
       {/* ═══ STAGE 2: INTEREST ═══ Gold border social proof + Benefits with gold dividers */}
-      {/* Social Proof: Gold border badges */}
       <section className="py-10 border-t border-zinc-800">
         <div className="container mx-auto px-4">
           <div className="flex flex-wrap items-center justify-center gap-6">
@@ -865,7 +1005,6 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Benefits: Gold divider lines, numbered, hover amber */}
       {benefits.length > 0 && benefits[0].title && (
         <section className="py-20 border-t border-zinc-800">
           <div className="container mx-auto px-4 max-w-4xl">
@@ -874,7 +1013,6 @@ const LandingPage = () => {
             <div className="space-y-0">
               {benefits.filter(b => b.title).map((b, i) => (
                 <div key={i} className="group">
-                  {/* Gold divider */}
                   <div className="h-px bg-gradient-to-r from-transparent via-amber-500/30 to-transparent" />
                   <div className="flex items-start gap-6 py-8">
                     <span className="text-3xl font-extrabold text-zinc-700 group-hover:text-amber-500 transition-colors w-12 shrink-0">
@@ -903,27 +1041,15 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ═══ STAGE 3: DESIRE ═══ Cinematic media + VIP Reviews */}
-      {mediaItems.length > 0 && (
-        <section className="py-20 bg-zinc-900/50">
-          <div className="container mx-auto px-4">
-            <div className={`grid gap-4 ${mediaItems.length === 1 ? "max-w-3xl mx-auto" : "md:grid-cols-2"}`}>
-              {mediaItems.map((m, i) => (
-                <div key={i} className="rounded-lg overflow-hidden ring-1 ring-zinc-800 shadow-xl hover:ring-amber-500/30 transition-all">
-                  {m.type === "video" ? (
-                    <div className="aspect-video"><iframe src={m.url} className="w-full h-full" allowFullScreen /></div>
-                  ) : (
-                    <img src={m.url} alt={m.caption || ""} className="w-full object-cover" />
-                  )}
-                  {m.caption && <p className="p-4 text-sm text-center text-zinc-500 bg-zinc-900">{m.caption}</p>}
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+      {/* ═══ STAGE 3: DESIRE ═══ Cinematic media (separated) + VIP Reviews */}
+      {renderMediaGallery(
+        "py-20 bg-zinc-900/50",
+        "container mx-auto px-4 max-w-4xl",
+        "rounded-lg overflow-hidden ring-1 ring-zinc-800 shadow-xl hover:ring-amber-500/30 transition-all",
+        "rounded-lg overflow-hidden ring-1 ring-zinc-800 shadow-xl hover:ring-amber-500/30 transition-all",
+        "p-4 text-sm text-center text-zinc-500 bg-zinc-900"
       )}
 
-      {/* Reviews: VIP style with gold bar */}
       {reviews.length > 0 && (
         <section className="py-20 border-t border-zinc-800">
           <div className="container mx-auto px-4">
@@ -954,7 +1080,6 @@ const LandingPage = () => {
       )}
 
       {/* ═══ STAGE 4: ACTION ═══ "Last Chance" banner + Gold glow Order Form */}
-      {/* Last Chance pulsing banner */}
       <section className="py-8 border-t border-zinc-800">
         <div className="container mx-auto px-4 max-w-xl text-center">
           <div className="inline-flex items-center gap-2 rounded-lg bg-red-500/10 border border-red-500/30 px-6 py-3 animate-pulse shadow-[0_0_20px_rgba(239,68,68,0.1)]">
@@ -964,7 +1089,6 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Exclusive guarantee */}
       <section className="py-6">
         <div className="container mx-auto px-4 max-w-xl text-center">
           <div className="inline-flex items-center gap-2 border border-amber-500/20 bg-amber-500/5 rounded-lg px-5 py-3">
@@ -974,11 +1098,9 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Order Form: Dark card with gold border glow */}
       <section id="lp-order-form" className="py-20">
         <div className="container mx-auto px-4 max-w-xl">
           <div className="rounded-lg border border-amber-500/20 bg-zinc-900 p-8 md:p-10 shadow-[0_0_60px_rgba(245,158,11,0.08)] relative">
-            {/* Gold glow effect */}
             <div className="absolute -inset-px rounded-lg bg-gradient-to-br from-amber-500/20 via-transparent to-amber-500/10 pointer-events-none" />
             <div className="relative z-10">
               <h2 className="text-center font-display text-2xl font-extrabold text-white mb-2">
@@ -1000,7 +1122,6 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* FAQs */}
       {faqs.length > 0 && faqs[0].question && (
         <section className="py-20 border-t border-zinc-800">
           <div className="container mx-auto px-4 max-w-2xl">
@@ -1017,7 +1138,6 @@ const LandingPage = () => {
         </section>
       )}
 
-      {/* Final CTA */}
       <section className="py-20 border-t border-zinc-800 bg-gradient-to-t from-zinc-900 to-zinc-950">
         <div className="container mx-auto px-4 text-center">
           <p className="text-amber-400 text-sm tracking-wide font-semibold mb-6">এখনই সিদ্ধান্ত নিন</p>
