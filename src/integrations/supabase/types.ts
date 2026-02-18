@@ -334,7 +334,9 @@ export type Database = {
           faqs: Json
           headline: string
           hero_image_url: string | null
+          hero_images: Json | null
           hero_video_url: string | null
+          hero_videos: Json | null
           id: string
           is_published: boolean
           media_items: Json
@@ -361,7 +363,9 @@ export type Database = {
           faqs?: Json
           headline?: string
           hero_image_url?: string | null
+          hero_images?: Json | null
           hero_video_url?: string | null
+          hero_videos?: Json | null
           id?: string
           is_published?: boolean
           media_items?: Json
@@ -388,7 +392,9 @@ export type Database = {
           faqs?: Json
           headline?: string
           hero_image_url?: string | null
+          hero_images?: Json | null
           hero_video_url?: string | null
+          hero_videos?: Json | null
           id?: string
           is_published?: boolean
           media_items?: Json
