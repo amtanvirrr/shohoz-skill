@@ -226,6 +226,41 @@ const LandingPage = () => {
       });
   }, [slug]);
 
+  // SEO: Dynamic meta tags for landing page
+  useEffect(() => {
+    if (!page || !product) return;
+    const title = `${page.headline || product.title} | ${settings.site_name}`;
+    const description = page.subheadline || `${product.title} — মাত্র ৳${product.price}`;
+    const ogImage = product.image_url || page.hero_image_url || settings.logo_url || "";
+    const url = window.location.href;
+    document.title = title;
+    const setMeta = (attr: string, key: string, content: string) => {
+      let el = document.querySelector(`meta[${attr}="${key}"]`);
+      if (!el) { el = document.createElement("meta"); el.setAttribute(attr, key); document.head.appendChild(el); }
+      el.setAttribute("content", content);
+    };
+    setMeta("name", "description", description);
+    setMeta("property", "og:title", title);
+    setMeta("property", "og:description", description);
+    setMeta("property", "og:image", ogImage);
+    setMeta("property", "og:url", url);
+    setMeta("property", "og:type", "product");
+    setMeta("name", "twitter:card", "summary_large_image");
+    setMeta("name", "twitter:title", title);
+    setMeta("name", "twitter:description", description);
+    setMeta("name", "twitter:image", ogImage);
+    let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+    if (!canonical) { canonical = document.createElement("link"); canonical.rel = "canonical"; document.head.appendChild(canonical); }
+    canonical.href = url;
+    let jsonLd = document.querySelector('#landing-jsonld');
+    if (!jsonLd) { jsonLd = document.createElement("script"); jsonLd.id = "landing-jsonld"; (jsonLd as HTMLScriptElement).type = "application/ld+json"; document.head.appendChild(jsonLd); }
+    jsonLd.textContent = JSON.stringify({
+      "@context": "https://schema.org", "@type": "Product", name: product.title, description, image: ogImage,
+      offers: { "@type": "Offer", price: product.price, priceCurrency: "BDT", availability: "https://schema.org/InStock" },
+    });
+    return () => { document.querySelector('#landing-jsonld')?.remove(); };
+  }, [page, product, settings]);
+
   if (loading) return <div className="flex min-h-screen items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>;
   if (!page || !product) return <div className="flex min-h-screen items-center justify-center"><p className="text-xl text-muted-foreground">পেজটি পাওয়া যায়নি</p></div>;
 
