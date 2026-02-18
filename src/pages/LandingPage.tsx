@@ -653,75 +653,71 @@ const LandingPage = () => {
     return (
       <div className="min-h-screen bg-gradient-to-b from-primary/5 via-background to-background">
         {/* ═══ STAGE 1: ATTENTION ═══ Hero text + visuals below */}
-        <section className="relative py-16 md:py-24 overflow-hidden">
+        <section className="relative py-12 md:py-24 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-accent/5 to-transparent" />
           <div className="absolute top-10 right-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl animate-pulse" />
           <div className="absolute bottom-10 left-10 w-56 h-56 bg-accent/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-          <div className="container mx-auto px-4 relative z-10">
-            <div className="grid gap-10 md:grid-cols-2 items-center">
-              <div>
-                <div className="inline-block rounded-full bg-primary/10 px-4 py-1.5 text-sm font-semibold text-primary mb-4">
-                  ⭐ প্রিমিয়াম কালেকশন
-                </div>
-                {product.original_price && discountPercent > 0 && (
-                  <div className="inline-flex items-center gap-2 ml-3 rounded-full bg-destructive text-white text-sm font-extrabold px-4 py-1.5 animate-bounce shadow-lg">
-                    🔥 {discountPercent}% ছাড়!
-                  </div>
-                )}
-                <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-extrabold leading-[1.1] mt-4">
-                  {page.headline}
-                </h1>
-                {page.subheadline && (
-                  <p className="mt-5 text-lg md:text-xl text-muted-foreground leading-relaxed">{page.subheadline}</p>
-                )}
-              </div>
-              {/* Hero media on right side - videos first, images below */}
-              <div className="space-y-4">
-                {heroVideos.length > 0 && (
-                  <AutoSlider
-                    items={heroVideos}
-                    renderItem={(url) => (
-                      <div className="aspect-video rounded-2xl overflow-hidden shadow-2xl ring-1 ring-primary/20">
-                        <iframe src={toEmbedUrl(url)} className="w-full h-full" allowFullScreen allow="autoplay; encrypted-media" />
-                      </div>
-                    )}
-                  />
-                )}
-                {heroImages.length > 0 && (
-                  <AutoSlider
-                    items={heroImages}
-                    renderItem={(url) => (
-                      <div className="relative">
-                        <div className="absolute -inset-4 bg-gradient-to-r from-primary/20 to-accent/20 rounded-3xl blur-2xl" />
-                        <img src={url} alt={page.headline} className="relative rounded-2xl shadow-2xl w-full object-cover max-h-[500px] ring-1 ring-primary/10" />
-                      </div>
-                    )}
-                  />
-                )}
-              </div>
+          <div className="container mx-auto px-4 relative z-10 max-w-3xl text-center">
+            <div className="inline-block rounded-full bg-primary/10 px-4 py-1.5 text-sm font-semibold text-primary mb-4">
+              ⭐ প্রিমিয়াম কালেকশন
             </div>
+            {product.original_price && discountPercent > 0 && (
+              <div className="inline-flex items-center gap-2 ml-3 rounded-full bg-destructive text-white text-sm font-extrabold px-4 py-1.5 animate-bounce shadow-lg">
+                🔥 {discountPercent}% ছাড়!
+              </div>
+            )}
+            <h1 className="font-display text-3xl md:text-5xl lg:text-6xl font-extrabold leading-[1.1] mt-4">
+              {page.headline}
+            </h1>
+            {page.subheadline && (
+              <p className="mt-5 text-base md:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto">{page.subheadline}</p>
+            )}
           </div>
         </section>
 
+        {/* Hero media - centered, videos first, images below */}
+        {(heroVideos.length > 0 || heroImages.length > 0) && (
+          <div className="container mx-auto px-4 relative z-10 pb-8 max-w-3xl space-y-4">
+            {heroVideos.length > 0 && (
+              <AutoSlider
+                items={heroVideos}
+                renderItem={(url) => (
+                  <div className="aspect-video rounded-2xl overflow-hidden shadow-2xl ring-1 ring-primary/20">
+                    <iframe src={toEmbedUrl(url)} className="w-full h-full" allowFullScreen allow="autoplay; encrypted-media" />
+                  </div>
+                )}
+              />
+            )}
+            {heroImages.length > 0 && (
+              <AutoSlider
+                items={heroImages}
+                renderItem={(url) => (
+                  <img src={url} alt={page.headline} className="rounded-2xl w-full object-cover max-h-[500px] shadow-2xl ring-1 ring-primary/20" />
+                )}
+              />
+            )}
+          </div>
+        )}
+
         {/* Pricing + Urgency + CTA below hero */}
-        <section className="py-10 relative z-10">
-          <div className="container mx-auto px-4 text-center">
-            <div className="flex items-baseline justify-center gap-4">
+        <section className="py-8 md:py-10 relative z-10">
+          <div className="container mx-auto px-4 max-w-3xl text-center">
+            <div className="flex items-baseline justify-center gap-3 md:gap-4">
               {product.price === 0 ? (
-                <span className="text-4xl font-extrabold text-primary">ফ্রি</span>
+                <span className="text-3xl md:text-4xl font-extrabold text-primary">ফ্রি</span>
               ) : (
                 <>
-                  <span className="text-5xl font-extrabold">৳{product.price}</span>
+                  <span className="text-4xl md:text-5xl font-extrabold">৳{product.price}</span>
                   {product.original_price && (
-                    <span className="text-2xl text-muted-foreground line-through">৳{product.original_price}</span>
+                    <span className="text-xl md:text-2xl text-muted-foreground line-through">৳{product.original_price}</span>
                   )}
                 </>
               )}
             </div>
             {page.show_countdown && !countdown.expired && (
-              <div className="mt-5 inline-flex items-center gap-3 rounded-xl bg-destructive/10 border border-destructive/20 px-5 py-3 shadow-lg">
-                <Clock className="h-5 w-5 text-destructive animate-pulse" />
-                <span className="font-extrabold text-destructive">
+              <div className="mt-4 md:mt-5 inline-flex items-center gap-2 md:gap-3 rounded-xl bg-destructive/10 border border-destructive/20 px-4 py-2.5 md:px-5 md:py-3 shadow-lg">
+                <Clock className="h-4 w-4 md:h-5 md:w-5 text-destructive animate-pulse" />
+                <span className="font-extrabold text-destructive text-sm md:text-base">
                   {countdown.days > 0 && `${countdown.days}দিন `}{String(countdown.hours).padStart(2, '0')}:{String(countdown.minutes).padStart(2, '0')}:{String(countdown.seconds).padStart(2, '0')}
                 </span>
               </div>
@@ -735,8 +731,8 @@ const LandingPage = () => {
                 </div>
               </div>
             )}
-            <div className="mt-8">
-              <Button size="lg" className="text-lg px-10 py-7 rounded-xl shadow-2xl hover:shadow-xl transition-all font-bold bg-gradient-to-r from-primary to-accent text-white hover:opacity-90" onClick={scrollToOrder}>
+            <div className="mt-6 md:mt-8">
+              <Button size="lg" className="text-base md:text-lg px-8 md:px-10 py-6 md:py-7 rounded-xl shadow-2xl hover:shadow-xl transition-all font-bold bg-gradient-to-r from-primary to-accent text-white hover:opacity-90" onClick={scrollToOrder}>
                 {page.cta_text} →
               </Button>
             </div>
@@ -744,31 +740,31 @@ const LandingPage = () => {
         </section>
 
         {/* ═══ STAGE 2: INTEREST ═══ Social Proof Icons + Numbered Benefits */}
-        <section className="py-10">
+        <section className="py-8 md:py-10">
           <div className="container mx-auto px-4">
-            <div className="flex flex-wrap items-center justify-center gap-6">
-              <div className="flex items-center gap-2 rounded-xl bg-card border border-border px-5 py-3 shadow-md">
-                <Users className="h-5 w-5 text-primary" />
-                <div><span className="font-extrabold text-lg">৫০০+</span><span className="text-xs text-muted-foreground ml-1">সন্তুষ্ট গ্রাহক</span></div>
+            <div className="flex flex-wrap items-center justify-center gap-3 md:gap-6">
+              <div className="flex items-center gap-2 rounded-xl bg-card border border-border px-4 py-2.5 md:px-5 md:py-3 shadow-md">
+                <Users className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+                <div><span className="font-extrabold text-sm md:text-lg">৫০০+</span><span className="text-[10px] md:text-xs text-muted-foreground ml-1">সন্তুষ্ট গ্রাহক</span></div>
               </div>
-              <div className="flex items-center gap-2 rounded-xl bg-card border border-border px-5 py-3 shadow-md">
-                <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                <div><span className="font-extrabold text-lg">৪.৮</span><span className="text-xs text-muted-foreground ml-1">রেটিং</span></div>
+              <div className="flex items-center gap-2 rounded-xl bg-card border border-border px-4 py-2.5 md:px-5 md:py-3 shadow-md">
+                <Star className="h-4 w-4 md:h-5 md:w-5 fill-yellow-400 text-yellow-400" />
+                <div><span className="font-extrabold text-sm md:text-lg">৪.৮</span><span className="text-[10px] md:text-xs text-muted-foreground ml-1">রেটিং</span></div>
               </div>
-              <div className="flex items-center gap-2 rounded-xl bg-card border border-border px-5 py-3 shadow-md">
-                <Award className="h-5 w-5 text-accent" />
-                <div><span className="font-extrabold text-lg">#১</span><span className="text-xs text-muted-foreground ml-1">বেস্টসেলার</span></div>
+              <div className="flex items-center gap-2 rounded-xl bg-card border border-border px-4 py-2.5 md:px-5 md:py-3 shadow-md">
+                <Award className="h-4 w-4 md:h-5 md:w-5 text-accent" />
+                <div><span className="font-extrabold text-sm md:text-lg">#১</span><span className="text-[10px] md:text-xs text-muted-foreground ml-1">বেস্টসেলার</span></div>
               </div>
             </div>
           </div>
         </section>
 
         {benefits.length > 0 && benefits[0].title && (
-          <section className="py-16 md:py-20">
-            <div className="container mx-auto px-4">
-              <h2 className="text-center font-display text-3xl md:text-4xl font-extrabold mb-4">কেন এটি আপনার জন্য?</h2>
-              <p className="text-center text-muted-foreground mb-12 max-w-lg mx-auto">এই প্রোডাক্টটি আপনার জীবনে যে পরিবর্তন আনবে</p>
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <section className="py-12 md:py-20">
+            <div className="container mx-auto px-4 max-w-4xl">
+              <h2 className="text-center font-display text-2xl md:text-4xl font-extrabold mb-4">কেন এটি আপনার জন্য?</h2>
+              <p className="text-center text-muted-foreground mb-8 md:mb-12 max-w-lg mx-auto text-sm md:text-base">এই প্রোডাক্টটি আপনার জীবনে যে পরিবর্তন আনবে</p>
+              <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                 {benefits.filter(b => b.title).map((b, i) => (
                   <div key={i} className="group relative rounded-2xl p-[2px] bg-gradient-to-br from-primary/40 to-accent/40 hover:from-primary hover:to-accent transition-all shadow-lg hover:shadow-2xl hover:-translate-y-1">
                     <div className="rounded-2xl bg-card p-7 h-full">
@@ -841,18 +837,18 @@ const LandingPage = () => {
         {/* ═══ STAGE 4: ACTION ═══ Trust Signals + Order Form */}
         <section className="py-10">
           <div className="container mx-auto px-4 max-w-2xl">
-            <div className="grid grid-cols-3 gap-4">
-              <div className="flex flex-col items-center gap-2 rounded-xl bg-card border border-border p-4 shadow-sm text-center">
-                <Shield className="h-6 w-6 text-primary" />
-                <span className="text-xs font-semibold">নিরাপদ পেমেন্ট</span>
+            <div className="grid grid-cols-3 gap-2 md:gap-4">
+              <div className="flex flex-col items-center gap-1.5 md:gap-2 rounded-xl bg-card border border-border p-3 md:p-4 shadow-sm text-center">
+                <Shield className="h-5 w-5 md:h-6 md:w-6 text-primary" />
+                <span className="text-[10px] md:text-xs font-semibold">নিরাপদ পেমেন্ট</span>
               </div>
-              <div className="flex flex-col items-center gap-2 rounded-xl bg-card border border-border p-4 shadow-sm text-center">
-                <Truck className="h-6 w-6 text-primary" />
-                <span className="text-xs font-semibold">দ্রুত ডেলিভারি</span>
+              <div className="flex flex-col items-center gap-1.5 md:gap-2 rounded-xl bg-card border border-border p-3 md:p-4 shadow-sm text-center">
+                <Truck className="h-5 w-5 md:h-6 md:w-6 text-primary" />
+                <span className="text-[10px] md:text-xs font-semibold">দ্রুত ডেলিভারি</span>
               </div>
-              <div className="flex flex-col items-center gap-2 rounded-xl bg-card border border-border p-4 shadow-sm text-center">
-                <Award className="h-6 w-6 text-accent" />
-                <span className="text-xs font-semibold">১০০% গ্যারান্টি</span>
+              <div className="flex flex-col items-center gap-1.5 md:gap-2 rounded-xl bg-card border border-border p-3 md:p-4 shadow-sm text-center">
+                <Award className="h-5 w-5 md:h-6 md:w-6 text-accent" />
+                <span className="text-[10px] md:text-xs font-semibold">১০০% গ্যারান্টি</span>
               </div>
             </div>
           </div>
@@ -928,16 +924,16 @@ const LandingPage = () => {
             <div className="absolute inset-0 bg-gradient-to-r from-zinc-950/60 via-transparent to-zinc-950/60" />
           </div>
         )}
-        <div className="container mx-auto px-4 relative z-10 py-20">
-          <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 border border-amber-500/40 bg-amber-500/10 rounded-full px-5 py-2 text-sm font-semibold text-amber-400 mb-8 tracking-wider uppercase animate-pulse">
-              <Gem className="h-4 w-4" /> সীমিত সংস্করণ
+        <div className="container mx-auto px-4 relative z-10 py-12 md:py-20">
+          <div className="max-w-3xl mx-auto text-center">
+            <div className="inline-flex items-center gap-2 border border-amber-500/40 bg-amber-500/10 rounded-full px-4 py-1.5 md:px-5 md:py-2 text-xs md:text-sm font-semibold text-amber-400 mb-6 md:mb-8 tracking-wider uppercase animate-pulse">
+              <Gem className="h-3.5 w-3.5 md:h-4 md:w-4" /> সীমিত সংস্করণ
             </div>
-            <h1 className="font-display text-4xl md:text-6xl lg:text-7xl font-extrabold text-white leading-[1.05] tracking-tight">
+            <h1 className="font-display text-3xl md:text-5xl lg:text-7xl font-extrabold text-white leading-[1.05] tracking-tight">
               {page.headline}
             </h1>
             {page.subheadline && (
-              <p className="mt-6 text-xl text-zinc-400 max-w-2xl leading-relaxed">{page.subheadline}</p>
+              <p className="mt-4 md:mt-6 text-base md:text-xl text-zinc-400 max-w-2xl mx-auto leading-relaxed">{page.subheadline}</p>
             )}
           </div>
         </div>
@@ -969,32 +965,32 @@ const LandingPage = () => {
         )}
 
         {/* Pricing, Countdown, Stock Badge, CTA - below hero visuals */}
-        <div className="container mx-auto px-4 relative z-10 pb-20">
-          <div className="max-w-3xl">
-            <div className="flex items-baseline gap-4">
+        <div className="container mx-auto px-4 relative z-10 pb-12 md:pb-20">
+          <div className="max-w-3xl mx-auto text-center">
+            <div className="flex items-baseline justify-center gap-3 md:gap-4">
               {product.price === 0 ? (
-                <span className="text-4xl font-extrabold text-amber-400">ফ্রি</span>
+                <span className="text-3xl md:text-4xl font-extrabold text-amber-400">ফ্রি</span>
               ) : (
                 <>
-                  <span className="text-5xl font-extrabold text-white">৳{product.price}</span>
-                  {product.original_price && <span className="text-2xl text-zinc-500 line-through">৳{product.original_price}</span>}
+                  <span className="text-4xl md:text-5xl font-extrabold text-white">৳{product.price}</span>
+                  {product.original_price && <span className="text-xl md:text-2xl text-zinc-500 line-through">৳{product.original_price}</span>}
                 </>
               )}
             </div>
-            <div className="mt-6 space-y-3">
+            <div className="mt-4 md:mt-6 space-y-3 flex flex-col items-center">
               {page.show_countdown && !countdown.expired && (
-                <div className="inline-flex items-center gap-3 rounded-lg bg-amber-500/10 border border-amber-500/30 px-5 py-3 shadow-[0_0_20px_rgba(245,158,11,0.15)]">
-                  <Clock className="h-5 w-5 text-amber-400 animate-pulse" />
-                  <span className="font-extrabold text-amber-300 tracking-wide text-lg">
+                <div className="inline-flex items-center gap-2 md:gap-3 rounded-lg bg-amber-500/10 border border-amber-500/30 px-4 py-2.5 md:px-5 md:py-3 shadow-[0_0_20px_rgba(245,158,11,0.15)]">
+                  <Clock className="h-4 w-4 md:h-5 md:w-5 text-amber-400 animate-pulse" />
+                  <span className="font-extrabold text-amber-300 tracking-wide text-base md:text-lg">
                     {countdown.days > 0 && `${countdown.days}দিন `}{String(countdown.hours).padStart(2, '0')}:{String(countdown.minutes).padStart(2, '0')}:{String(countdown.seconds).padStart(2, '0')}
                   </span>
                 </div>
               )}
               {page.show_stock_badge && stockRemaining > 0 && (
-                <div className="flex items-center gap-3 rounded-lg bg-red-500/10 border border-red-500/30 px-5 py-3 shadow-[0_0_20px_rgba(239,68,68,0.15)] max-w-xs">
-                  <Flame className="h-5 w-5 text-red-400 animate-pulse" />
+                <div className="flex items-center gap-2 md:gap-3 rounded-lg bg-red-500/10 border border-red-500/30 px-4 py-2.5 md:px-5 md:py-3 shadow-[0_0_20px_rgba(239,68,68,0.15)] max-w-xs">
+                  <Flame className="h-4 w-4 md:h-5 md:w-5 text-red-400 animate-pulse" />
                   <div className="flex-1">
-                    <span className="text-sm font-bold text-red-300">মাত্র {stockRemaining}টি বাকি!</span>
+                    <span className="text-xs md:text-sm font-bold text-red-300">মাত্র {stockRemaining}টি বাকি!</span>
                     <div className="w-full h-2 rounded-full bg-red-900/50 overflow-hidden mt-1">
                       <div className="h-full rounded-full bg-gradient-to-r from-red-500 to-red-400 transition-all shadow-[0_0_8px_rgba(239,68,68,0.5)]" style={{ width: `${stockPercent}%` }} />
                     </div>
@@ -1002,7 +998,7 @@ const LandingPage = () => {
                 </div>
               )}
             </div>
-            <Button size="lg" className="mt-10 text-lg px-14 py-7 rounded-none bg-amber-500 hover:bg-amber-400 text-zinc-950 font-extrabold tracking-wide shadow-[0_0_40px_rgba(245,158,11,0.3)] transition-all hover:shadow-[0_0_60px_rgba(245,158,11,0.4)]" onClick={scrollToOrder}>
+            <Button size="lg" className="mt-8 md:mt-10 text-base md:text-lg px-10 md:px-14 py-6 md:py-7 rounded-none bg-amber-500 hover:bg-amber-400 text-zinc-950 font-extrabold tracking-wide shadow-[0_0_40px_rgba(245,158,11,0.3)] transition-all hover:shadow-[0_0_60px_rgba(245,158,11,0.4)]" onClick={scrollToOrder}>
               {page.cta_text} →
             </Button>
           </div>
@@ -1012,14 +1008,14 @@ const LandingPage = () => {
       {/* ═══ STAGE 2: INTEREST ═══ Gold border social proof + Benefits with gold dividers */}
       <section className="py-10 border-t border-zinc-800">
         <div className="container mx-auto px-4">
-          <div className="flex flex-wrap items-center justify-center gap-6">
-            <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-5 py-3">
-              <Crown className="h-5 w-5 text-amber-400" />
-              <span className="text-sm font-semibold text-amber-300">৫০০+ এক্সক্লুসিভ গ্রাহক</span>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 md:gap-6">
+            <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-2.5 md:px-5 md:py-3">
+              <Crown className="h-4 w-4 md:h-5 md:w-5 text-amber-400" />
+              <span className="text-xs md:text-sm font-semibold text-amber-300">৫০০+ এক্সক্লুসিভ গ্রাহক</span>
             </div>
-            <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-5 py-3">
-              <Star className="h-5 w-5 fill-amber-400 text-amber-400" />
-              <span className="text-sm font-semibold text-amber-300">৪.৯/৫ রেটিং</span>
+            <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-2.5 md:px-5 md:py-3">
+              <Star className="h-4 w-4 md:h-5 md:w-5 fill-amber-400 text-amber-400" />
+              <span className="text-xs md:text-sm font-semibold text-amber-300">৪.৯/৫ রেটিং</span>
             </div>
           </div>
         </div>
@@ -1071,13 +1067,13 @@ const LandingPage = () => {
       )}
 
       {reviews.length > 0 && (
-        <section className="py-20 border-t border-zinc-800">
-          <div className="container mx-auto px-4">
+        <section className="py-12 md:py-20 border-t border-zinc-800">
+          <div className="container mx-auto px-4 max-w-4xl">
             <h2 className="text-center text-sm font-semibold tracking-wide text-amber-400 mb-4">VIP গ্রাহকদের অভিজ্ঞতা</h2>
-            <p className="text-center text-zinc-500 mb-16 text-sm">যারা ইতিমধ্যে এক্সক্লুসিভ অভিজ্ঞতা নিয়েছেন</p>
-            <div className="grid gap-8 md:grid-cols-2 max-w-4xl mx-auto">
+            <p className="text-center text-zinc-500 mb-10 md:mb-16 text-sm">যারা ইতিমধ্যে এক্সক্লুসিভ অভিজ্ঞতা নিয়েছেন</p>
+            <div className="grid gap-4 md:gap-8 grid-cols-1 md:grid-cols-2 mx-auto">
               {reviews.map((r, i) => (
-                <div key={i} className="border border-zinc-800 rounded-lg p-8 bg-zinc-900/50 relative hover:border-amber-500/30 transition-all">
+                <div key={i} className="border border-zinc-800 rounded-lg p-6 md:p-8 bg-zinc-900/50 relative hover:border-amber-500/30 transition-all">
                   <div className="absolute top-0 left-8 h-1 w-16 bg-gradient-to-r from-amber-500 to-amber-300" />
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex">{Array.from({ length: r.rating }).map((_, j) => <Star key={j} className="h-4 w-4 fill-amber-400 text-amber-400" />)}</div>
