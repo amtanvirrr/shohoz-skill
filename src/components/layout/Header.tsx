@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
@@ -76,6 +76,17 @@ const Header = () => {
         </nav>
 
         <div className="hidden items-center gap-3 md:flex">
+          <button
+            onClick={() => {
+              document.documentElement.classList.toggle("dark");
+              localStorage.setItem("theme", document.documentElement.classList.contains("dark") ? "dark" : "light");
+            }}
+            className="rounded-lg p-2 text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+            aria-label="Toggle dark mode"
+          >
+            <Sun className="h-5 w-5 hidden dark:block" />
+            <Moon className="h-5 w-5 block dark:hidden" />
+          </button>
           {user ? (
             <>
               <Link to="/dashboard" className="flex items-center gap-2">
@@ -146,6 +157,18 @@ const Header = () => {
               </Link>
             ))}
           </nav>
+          <button
+            onClick={() => {
+              document.documentElement.classList.toggle("dark");
+              localStorage.setItem("theme", document.documentElement.classList.contains("dark") ? "dark" : "light");
+            }}
+            className="mt-3 flex w-full items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-secondary transition-colors"
+          >
+            <Sun className="h-4 w-4 hidden dark:block" />
+            <Moon className="h-4 w-4 block dark:hidden" />
+            <span className="dark:hidden">ডার্ক মোড</span>
+            <span className="hidden dark:inline">লাইট মোড</span>
+          </button>
           <div className="mt-4 flex gap-3">
             {user ? (
               <>
