@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import RichTextEditor from "@/components/RichTextEditor";
 import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft, Plus, Pencil, Trash2, Upload, X, FileText, GripVertical,
@@ -535,7 +535,7 @@ const AdminCourseDetail = () => {
             {lessonForm.lesson_type === "video" && (
               <div><Label>Video URL</Label><Input value={lessonForm.video_url} onChange={(e) => setLessonForm({ ...lessonForm, video_url: e.target.value })} className="mt-1" placeholder="YouTube/Vimeo URL" /></div>
             )}
-            <div><Label>Content</Label><Textarea rows={6} value={lessonForm.content} onChange={(e) => setLessonForm({ ...lessonForm, content: e.target.value })} className="mt-1" placeholder="Lesson content or notes..." /></div>
+            <div><Label>Content</Label><div className="mt-1"><RichTextEditor content={lessonForm.content} onChange={(html) => setLessonForm({ ...lessonForm, content: html })} placeholder="লেসনের কন্টেন্ট লিখুন..." minHeight="200px" /></div></div>
             <Button onClick={handleSaveLesson} className="w-full">{editingLesson ? "Update" : "Add"} Lesson</Button>
           </div>
         </DialogContent>
@@ -588,7 +588,7 @@ const AdminCourseDetail = () => {
             ) : (
               <div className="space-y-4">
                 <div><Label>Quiz Title *</Label><Input value={quizForm.title} onChange={(e) => setQuizForm({ ...quizForm, title: e.target.value })} className="mt-1" /></div>
-                <div><Label>Description</Label><Textarea rows={3} value={quizForm.description} onChange={(e) => setQuizForm({ ...quizForm, description: e.target.value })} className="mt-1" /></div>
+                <div><Label>Description</Label><div className="mt-1"><RichTextEditor content={quizForm.description} onChange={(html) => setQuizForm({ ...quizForm, description: html })} placeholder="কুইজের বিবরণ..." minHeight="100px" /></div></div>
                 <p className="text-xs text-muted-foreground">তৈরির পর কুইজ সেকশনে গিয়ে প্রশ্ন যোগ করুন।</p>
                 <Button onClick={handleSaveQuiz} className="w-full">কুইজ তৈরি করুন</Button>
               </div>

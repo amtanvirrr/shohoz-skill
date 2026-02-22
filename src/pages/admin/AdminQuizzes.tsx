@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import RichTextEditor from "@/components/RichTextEditor";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, ArrowLeft, Clock } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -184,7 +184,7 @@ const AdminQuizzes = () => {
             <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
               <DialogHeader><DialogTitle>{editingQ ? "Edit" : "Add"} Question</DialogTitle></DialogHeader>
               <div className="space-y-4 pt-4">
-                <div><Label>প্রশ্ন *</Label><Textarea value={qForm.question} onChange={(e) => setQForm({ ...qForm, question: e.target.value })} className="mt-1" rows={3} placeholder="প্রশ্নটি লিখুন..." /></div>
+                <div><Label>প্রশ্ন *</Label><div className="mt-1"><RichTextEditor content={qForm.question} onChange={(html) => setQForm({ ...qForm, question: html })} placeholder="প্রশ্নটি লিখুন..." minHeight="100px" /></div></div>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div><Label>Option A *</Label><Input value={qForm.option_a} onChange={(e) => setQForm({ ...qForm, option_a: e.target.value })} className="mt-1" /></div>
                   <div><Label>Option B *</Label><Input value={qForm.option_b} onChange={(e) => setQForm({ ...qForm, option_b: e.target.value })} className="mt-1" /></div>
@@ -210,7 +210,7 @@ const AdminQuizzes = () => {
                     ))}
                   </div>
                 </div>
-                <div><Label>ব্যাখ্যা (Explanation)</Label><Textarea value={qForm.explanation} onChange={(e) => setQForm({ ...qForm, explanation: e.target.value })} className="mt-1" rows={3} placeholder="উত্তরের ব্যাখ্যা দিন (ঐচ্ছিক)..." /></div>
+                <div><Label>ব্যাখ্যা (Explanation)</Label><div className="mt-1"><RichTextEditor content={qForm.explanation} onChange={(html) => setQForm({ ...qForm, explanation: html })} placeholder="উত্তরের ব্যাখ্যা দিন (ঐচ্ছিক)..." minHeight="100px" /></div></div>
                 <Button onClick={handleSaveQ} className="w-full">{editingQ ? "Update" : "Add"} Question</Button>
               </div>
             </DialogContent>
@@ -262,7 +262,7 @@ const AdminQuizzes = () => {
                 <Input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} className="mt-1" placeholder="seo-friendly-url-slug" />
                 <p className="text-xs text-muted-foreground mt-1">SEO ফ্রেন্ডলি URL। খালি রাখলে টাইটেল থেকে অটো তৈরি হবে।</p>
               </div>
-              <div><Label>Description</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="mt-1" rows={3} placeholder="কুইজের বিবরণ (ঐচ্ছিক)" /></div>
+              <div><Label>Description</Label><div className="mt-1"><RichTextEditor content={form.description} onChange={(html) => setForm({ ...form, description: html })} placeholder="কুইজের বিবরণ (ঐচ্ছিক)" minHeight="100px" /></div></div>
               <div><Label>সময়সীমা (মিনিট)</Label><Input type="number" min="1" value={form.duration_minutes} onChange={(e) => setForm({ ...form, duration_minutes: e.target.value })} className="mt-1" /></div>
               
               {/* Price fields */}

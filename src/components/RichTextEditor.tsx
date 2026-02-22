@@ -20,6 +20,8 @@ import { Separator } from "@/components/ui/separator";
 interface RichTextEditorProps {
   content: string;
   onChange: (html: string) => void;
+  placeholder?: string;
+  minHeight?: string;
 }
 
 const MenuBar = ({ editor }: { editor: any }) => {
@@ -142,7 +144,7 @@ const MenuBar = ({ editor }: { editor: any }) => {
   );
 };
 
-const RichTextEditor = ({ content, onChange }: RichTextEditorProps) => {
+const RichTextEditor = ({ content, onChange, placeholder = "এখানে লিখুন...", minHeight = "300px" }: RichTextEditorProps) => {
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -150,7 +152,7 @@ const RichTextEditor = ({ content, onChange }: RichTextEditorProps) => {
       Image.configure({ inline: false, allowBase64: false }),
       Link.configure({ openOnClick: false, HTMLAttributes: { class: "text-primary underline" } }),
       TextAlign.configure({ types: ["heading", "paragraph"] }),
-      Placeholder.configure({ placeholder: "এখানে আপনার ব্লগ পোস্ট লিখুন..." }),
+      Placeholder.configure({ placeholder }),
     ],
     content,
     onUpdate: ({ editor }) => {
@@ -163,7 +165,8 @@ const RichTextEditor = ({ content, onChange }: RichTextEditorProps) => {
       <MenuBar editor={editor} />
       <EditorContent
         editor={editor}
-        className="prose prose-sm dark:prose-invert max-w-none p-4 min-h-[300px] focus-within:outline-none [&_.tiptap]:outline-none [&_.tiptap]:min-h-[280px] prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground prose-img:rounded-xl"
+        className={`prose prose-sm dark:prose-invert max-w-none p-4 focus-within:outline-none [&_.tiptap]:outline-none prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground prose-img:rounded-xl`}
+        style={{ minHeight }}
       />
     </div>
   );

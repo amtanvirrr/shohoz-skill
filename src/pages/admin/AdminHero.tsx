@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import RichTextEditor from "@/components/RichTextEditor";
 import { useToast } from "@/hooks/use-toast";
 import { Save, Plus, Trash2, Image, Video, ArrowUp, ArrowDown, Upload, Loader2 } from "lucide-react";
 
@@ -168,11 +168,11 @@ const AdminHero = () => {
             <h3 className="font-display text-lg font-semibold text-foreground">টেক্সট</h3>
             <div>
               <Label>শিরোনাম</Label>
-              <Textarea value={fields.hero_title} onChange={(e) => handleChange("hero_title", e.target.value)} className="mt-1" rows={2} />
+              <div className="mt-1"><RichTextEditor content={fields.hero_title} onChange={(html) => handleChange("hero_title", html)} placeholder="হিরো শিরোনাম লিখুন..." minHeight="80px" /></div>
             </div>
             <div>
               <Label>সাবটাইটেল</Label>
-              <Textarea value={fields.hero_subtitle} onChange={(e) => handleChange("hero_subtitle", e.target.value)} className="mt-1" rows={2} />
+              <div className="mt-1"><RichTextEditor content={fields.hero_subtitle} onChange={(html) => handleChange("hero_subtitle", html)} placeholder="সাবটাইটেল লিখুন..." minHeight="80px" /></div>
             </div>
           </div>
 

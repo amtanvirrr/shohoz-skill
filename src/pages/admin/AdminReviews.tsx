@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import RichTextEditor from "@/components/RichTextEditor";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Eye, EyeOff, Star } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -151,7 +151,7 @@ const AdminReviews = () => {
               </div>
               <div>
                 <Label>Comment *</Label>
-                <Textarea rows={4} value={form.comment} onChange={(e) => setForm({ ...form, comment: e.target.value })} className="mt-1" />
+                <div className="mt-1"><RichTextEditor content={form.comment} onChange={(html) => setForm({ ...form, comment: html })} placeholder="রিভিউ কমেন্ট লিখুন..." minHeight="150px" /></div>
               </div>
               <label className="flex items-center gap-2 text-sm">
                 <input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} /> Active

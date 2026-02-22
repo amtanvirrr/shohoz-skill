@@ -4,11 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import RichTextEditor from "@/components/RichTextEditor";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Save } from "lucide-react";
-import RichTextEditor from "@/components/RichTextEditor";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const FONT_OPTIONS = [
@@ -214,7 +213,7 @@ const AdminSettings = () => {
             </div>
             <div>
               <Label htmlFor="site_description">ফুটার বর্ণনা</Label>
-              <Textarea id="site_description" value={fields.site_description} onChange={(e) => handleChange("site_description", e.target.value)} className="mt-1" placeholder="আপনার শেখার সেরা প্ল্যাটফর্ম..." rows={3} />
+              <div className="mt-1"><RichTextEditor content={fields.site_description} onChange={(html) => handleChange("site_description", html)} placeholder="আপনার শেখার সেরা প্ল্যাটফর্ম..." minHeight="100px" /></div>
             </div>
             <div>
               <Label htmlFor="copyright_text">কপিরাইট টেক্সট</Label>

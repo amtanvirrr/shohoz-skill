@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import RichTextEditor from "@/components/RichTextEditor";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -423,7 +424,7 @@ const AdminLandingPages = () => {
                 </div>
                 <div>
                   <Label>সাবহেডলাইন</Label>
-                  <Textarea className="mt-1" value={form.subheadline} onChange={e => setForm(f => ({ ...f, subheadline: e.target.value }))} placeholder="সংক্ষেপে প্রোডাক্টের মূল বার্তা" rows={2} />
+                  <div className="mt-1"><RichTextEditor content={form.subheadline} onChange={(html) => setForm(f => ({ ...f, subheadline: html }))} placeholder="সংক্ষেপে প্রোডাক্টের মূল বার্তা" minHeight="100px" /></div>
                 </div>
               </CardContent>
             </Card>
@@ -558,7 +559,7 @@ const AdminLandingPages = () => {
                           <ImageUploadField label="" value={r.image_url || ""} onChange={url => updateReview(i, "image_url", url)} folder="reviews" />
                         </div>
                       </div>
-                      <Textarea value={r.comment} onChange={e => updateReview(i, "comment", e.target.value)} placeholder="রিভিউ / সফলতার গল্প" rows={2} />
+                      <RichTextEditor content={r.comment} onChange={(html) => updateReview(i, "comment", html)} placeholder="রিভিউ / সফলতার গল্প" minHeight="80px" />
                     </div>
                     <Button size="icon" variant="ghost" onClick={() => removeReview(i)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                   </div>
@@ -663,7 +664,7 @@ const AdminLandingPages = () => {
                   <div key={i} className="flex gap-2 items-start">
                     <div className="flex-1 space-y-2">
                       <Input value={f.question} onChange={e => updateFaq(i, "question", e.target.value)} placeholder="প্রশ্ন" />
-                      <Textarea value={f.answer} onChange={e => updateFaq(i, "answer", e.target.value)} placeholder="উত্তর" rows={2} />
+                      <RichTextEditor content={f.answer} onChange={(html) => updateFaq(i, "answer", html)} placeholder="উত্তর" minHeight="80px" />
                     </div>
                     {form.faqs.length > 1 && (
                       <Button size="icon" variant="ghost" onClick={() => removeFaq(i)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
