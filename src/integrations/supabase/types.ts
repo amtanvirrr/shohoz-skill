@@ -800,6 +800,7 @@ export type Database = {
           option_d: string
           question: string
           quiz_id: string
+          section_id: string | null
           sort_order: number
         }
         Insert: {
@@ -812,6 +813,7 @@ export type Database = {
           option_d: string
           question: string
           quiz_id: string
+          section_id?: string | null
           sort_order?: number
         }
         Update: {
@@ -824,11 +826,54 @@ export type Database = {
           option_d?: string
           question?: string
           quiz_id?: string
+          section_id?: string | null
           sort_order?: number
         }
         Relationships: [
           {
             foreignKeyName: "quiz_questions_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "quizzes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quiz_questions_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "quiz_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quiz_sections: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          quiz_id: string
+          sort_order: number
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          quiz_id: string
+          sort_order?: number
+          title: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          quiz_id?: string
+          sort_order?: number
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_sections_quiz_id_fkey"
             columns: ["quiz_id"]
             isOneToOne: false
             referencedRelation: "quizzes"

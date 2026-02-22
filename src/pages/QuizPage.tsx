@@ -47,6 +47,14 @@ interface Question {
   option_d: string;
   correct_option: string;
   explanation: string | null;
+  section_id: string | null;
+}
+
+interface QuizSection {
+  id: string;
+  title: string;
+  description: string | null;
+  sort_order: number;
 }
 
 interface MfsMethod {
@@ -70,6 +78,7 @@ const QuizPage = () => {
   const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [quizSections, setQuizSections] = useState<QuizSection[]>([]);
   const [submitted, setSubmitted] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const [attempts, setAttempts] = useState<Record<string, QuizAttempt[]>>({});
@@ -95,7 +104,7 @@ const QuizPage = () => {
     setPreviewLoading(true);
     const { data } = await supabase
       .from("quiz_questions")
-      .select("id, question, option_a, option_b, option_c, option_d, correct_option, explanation, sort_order")
+      .select("id, question, option_a, option_b, option_c, option_d, correct_option, explanation, sort_order, section_id")
       .eq("quiz_id", quiz.id)
       .order("sort_order")
       .limit(3);
@@ -224,8 +233,12 @@ const QuizPage = () => {
     setAnswers({});
     setSubmitted(false);
     setTimeLeft(quiz.duration_minutes * 60);
-    const { data } = await supabase.from("quiz_questions").select("*").eq("quiz_id", quiz.id).order("sort_order");
-    setQuestions((data as Question[]) || []);
+    const [qRes, secRes] = await Promise.all([
+      supabase.from("quiz_questions").select("*").eq("quiz_id", quiz.id).order("sort_order"),
+      supabase.from("quiz_sections").select("*").eq("quiz_id", quiz.id).order("sort_order"),
+    ]);
+    setQuestions((qRes.data as Question[]) || []);
+    setQuizSections((secRes.data as QuizSection[]) || []);
   };
 
   const handleSubmit = useCallback(async () => {
@@ -378,6 +391,47 @@ const QuizPage = () => {
     return null;
   };
 
+  const renderQuestion = (q: Question, i: number) => {
+    const userAnswer = answers[q.id];
+    const isCorrect = userAnswer === q.correct_option;
+    return (
+      <div key={q.id} className={`rounded-xl border bg-card p-5 sm:p-6 ${submitted ? (userAnswer ? (isCorrect ? "border-success/30" : "border-destructive/30") : "border-border") : "border-border"}`}>
+        <p className="font-medium text-foreground">
+          <span className="mr-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">{i + 1}</span>
+          <span dangerouslySetInnerHTML={{ __html: q.question }} />
+        </p>
+        <div className="mt-4 space-y-2">
+          {["a", "b", "c", "d"].map((opt) => {
+            const isThisCorrect = q.correct_option === opt;
+            const isSelected = userAnswer === opt;
+            let classes = "border-border hover:border-primary/40";
+            if (submitted) {
+              if (isThisCorrect) classes = "border-success bg-success/5";
+              else if (isSelected && !isThisCorrect) classes = "border-destructive bg-destructive/5";
+              else classes = "border-border opacity-60";
+            } else if (isSelected) {
+              classes = "border-primary bg-primary/5";
+            }
+            return (
+              <label key={opt} className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 px-4 py-3 transition-all ${classes} ${submitted ? "pointer-events-none" : ""}`}>
+                <input type="radio" name={q.id} value={opt} checked={isSelected} onChange={() => setAnswers({ ...answers, [q.id]: opt })} className="accent-primary" disabled={submitted} />
+                <span className="mr-1 text-xs font-bold text-muted-foreground">{opt.toUpperCase()})</span>
+                <span className="flex-1 text-sm text-foreground">{(q as any)[`option_${opt}`]}</span>
+                {submitted && isThisCorrect && <CheckCircle className="h-5 w-5 shrink-0 text-success" />}
+                {submitted && isSelected && !isThisCorrect && <XCircle className="h-5 w-5 shrink-0 text-destructive" />}
+              </label>
+            );
+          })}
+        </div>
+        {submitted && q.explanation && (
+          <div className="mt-4 rounded-lg bg-primary/5 p-4 text-sm text-primary">
+            <span className="font-semibold">ব্যাখ্যা:</span> <span dangerouslySetInnerHTML={{ __html: q.explanation }} />
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // ── Quiz taking view ──
   if (selectedQuiz && questions.length > 0) {
     const results = submitted ? getResults() : null;
@@ -484,50 +538,48 @@ const QuizPage = () => {
             </div>
           )}
 
-          {/* Questions */}
+          {/* Questions - grouped by sections if sections exist */}
           <div className="mt-8 space-y-6">
-            {questions.map((q, i) => {
-              const userAnswer = answers[q.id];
-              const isCorrect = userAnswer === q.correct_option;
-
-              return (
-                <div key={q.id} className={`rounded-xl border bg-card p-5 sm:p-6 ${submitted ? (userAnswer ? (isCorrect ? "border-success/30" : "border-destructive/30") : "border-border") : "border-border"}`}>
-                  <p className="font-medium text-foreground">
-                    <span className="mr-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">{i + 1}</span>
-                    {q.question}
-                  </p>
-                  <div className="mt-4 space-y-2">
-                    {["a", "b", "c", "d"].map((opt) => {
-                      const isThisCorrect = q.correct_option === opt;
-                      const isSelected = userAnswer === opt;
-                      let classes = "border-border hover:border-primary/40";
-                      if (submitted) {
-                        if (isThisCorrect) classes = "border-success bg-success/5";
-                        else if (isSelected && !isThisCorrect) classes = "border-destructive bg-destructive/5";
-                        else classes = "border-border opacity-60";
-                      } else if (isSelected) {
-                        classes = "border-primary bg-primary/5";
-                      }
-
-                      return (
-                        <label key={opt} className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 px-4 py-3 transition-all ${classes} ${submitted ? "pointer-events-none" : ""}`}>
-                          <input type="radio" name={q.id} value={opt} checked={isSelected} onChange={() => setAnswers({ ...answers, [q.id]: opt })} className="accent-primary" disabled={submitted} />
-                          <span className="mr-1 text-xs font-bold text-muted-foreground">{opt.toUpperCase()})</span>
-                          <span className="flex-1 text-sm text-foreground">{(q as any)[`option_${opt}`]}</span>
-                          {submitted && isThisCorrect && <CheckCircle className="h-5 w-5 shrink-0 text-success" />}
-                          {submitted && isSelected && !isThisCorrect && <XCircle className="h-5 w-5 shrink-0 text-destructive" />}
-                        </label>
-                      );
-                    })}
-                  </div>
-                  {submitted && q.explanation && (
-                    <div className="mt-4 rounded-lg bg-primary/5 p-4 text-sm text-primary">
-                      <span className="font-semibold">ব্যাখ্যা:</span> {q.explanation}
+            {quizSections.length > 0 ? (
+              <>
+                {quizSections.map((sec) => {
+                  const secQuestions = questions.filter(q => q.section_id === sec.id);
+                  if (secQuestions.length === 0) return null;
+                  return (
+                    <div key={sec.id}>
+                      <div className="mb-4 rounded-lg bg-primary/5 border border-primary/10 px-4 py-3">
+                        <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+                          📖 {sec.title}
+                        </h2>
+                        {sec.description && <p className="text-sm text-muted-foreground mt-1">{sec.description}</p>}
+                        <p className="text-xs text-muted-foreground mt-1">{secQuestions.length} টি প্রশ্ন</p>
+                      </div>
+                      <div className="space-y-6">
+                        {secQuestions.map((q) => renderQuestion(q, questions.indexOf(q)))}
+                      </div>
                     </div>
-                  )}
-                </div>
-              );
-            })}
+                  );
+                })}
+                {/* Unsectioned questions */}
+                {(() => {
+                  const unsectioned = questions.filter(q => !q.section_id);
+                  if (unsectioned.length === 0) return null;
+                  return (
+                    <div>
+                      <div className="mb-4 rounded-lg bg-muted/50 border border-border px-4 py-3">
+                        <h2 className="text-lg font-bold text-foreground">📋 অন্যান্য প্রশ্ন</h2>
+                        <p className="text-xs text-muted-foreground mt-1">{unsectioned.length} টি প্রশ্ন</p>
+                      </div>
+                      <div className="space-y-6">
+                        {unsectioned.map((q) => renderQuestion(q, questions.indexOf(q)))}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </>
+            ) : (
+              questions.map((q, i) => renderQuestion(q, i))
+            )}
           </div>
 
           {!submitted && (
