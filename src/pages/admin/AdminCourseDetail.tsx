@@ -9,11 +9,13 @@ import RichTextEditor from "@/components/RichTextEditor";
 import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft, Plus, Pencil, Trash2, Upload, X, FileText, GripVertical,
-  Video, BookOpen, HelpCircle, ChevronDown, ChevronRight
+  Video, BookOpen, HelpCircle, ChevronDown, ChevronRight, Settings
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Switch } from "@/components/ui/switch";
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors,
   type DragEndEvent,
@@ -61,6 +63,30 @@ interface Quiz {
   negative_marking: boolean;
   negative_mark_value: number;
   pass_mark: number;
+  duration_minutes?: number;
+  slug?: string;
+}
+
+interface QuizSection {
+  id: string;
+  quiz_id: string;
+  title: string;
+  description: string | null;
+  sort_order: number;
+}
+
+interface QuizQuestion {
+  id: string;
+  quiz_id: string;
+  section_id: string | null;
+  question: string;
+  option_a: string;
+  option_b: string;
+  option_c: string;
+  option_d: string;
+  correct_option: string;
+  explanation: string | null;
+  sort_order: number;
 }
 
 const lessonInitial = {
@@ -82,13 +108,13 @@ interface SortableLessonItemProps {
   handleDeleteQuiz: (id: string) => void;
   openEditLesson: (lesson: Lesson) => void;
   handleDeleteLesson: (id: string) => void;
-  navigate: ReturnType<typeof useNavigate>;
+  openQuizManager: (quiz: Quiz) => void;
 }
 
 const SortableLessonItem = ({
   lesson, idx, resources: lessonResources, lessonQuizzes, getLessonIcon, formatFileSize,
   uploadingResource, triggerResourceUpload, handleDeleteResource,
-  openAddQuiz, handleDeleteQuiz, openEditLesson, handleDeleteLesson, navigate,
+  openAddQuiz, handleDeleteQuiz, openEditLesson, handleDeleteLesson, openQuizManager,
 }: SortableLessonItemProps) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: lesson.id });
   const style = {
@@ -179,7 +205,9 @@ const SortableLessonItem = ({
                     <HelpCircle className="h-4 w-4 text-primary" />
                     <span className="flex-1 text-foreground">{quiz.title}</span>
                     {quiz.pass_mark > 0 && <span className="text-xs text-muted-foreground">পাস: {quiz.pass_mark}</span>}
-                    <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => navigate(`/admin/quizzes`)}>Manage</Button>
+                    <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => openQuizManager(quiz)}>
+                      <Settings className="mr-1 h-3 w-3" /> ম্যানেজ
+                    </Button>
                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleDeleteQuiz(quiz.id)}>
                       <Trash2 className="h-3 w-3 text-destructive" />
                     </Button>
@@ -223,12 +251,33 @@ const AdminCourseDetail = () => {
   const resourceInputRef = useRef<HTMLInputElement>(null);
   const [activeResourceLesson, setActiveResourceLesson] = useState<string | null>(null);
 
-  // Quiz dialog
+  // Quiz dialog (add/link)
   const [quizDialogOpen, setQuizDialogOpen] = useState(false);
   const [quizLessonId, setQuizLessonId] = useState<string | null>(null);
-  const [quizForm, setQuizForm] = useState({ title: "", description: "", pass_mark: "0" });
+  const [quizForm, setQuizForm] = useState({ title: "", description: "", pass_mark: "0", duration_minutes: "10", negative_marking: false, negative_mark_value: "0.25" });
   const [availableQuizzes, setAvailableQuizzes] = useState<Quiz[]>([]);
-  const [quizMode, setQuizMode] = useState<"select" | "create">("select");
+  const [quizMode, setQuizMode] = useState<"select" | "create">("create");
+
+  // Quiz Manager dialog (sections + questions)
+  const [managerOpen, setManagerOpen] = useState(false);
+  const [managedQuiz, setManagedQuiz] = useState<Quiz | null>(null);
+  const [mSections, setMSections] = useState<QuizSection[]>([]);
+  const [mQuestions, setMQuestions] = useState<QuizQuestion[]>([]);
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+
+  // Section form
+  const [sectionDialogOpen, setSectionDialogOpen] = useState(false);
+  const [editingSection, setEditingSection] = useState<QuizSection | null>(null);
+  const [sectionForm, setSectionForm] = useState({ title: "", description: "" });
+
+  // Question form
+  const [questionDialogOpen, setQuestionDialogOpen] = useState(false);
+  const [editingQuestion, setEditingQuestion] = useState<QuizQuestion | null>(null);
+  const [questionSectionId, setQuestionSectionId] = useState<string | null>(null);
+  const [qForm, setQForm] = useState({
+    question: "", option_a: "", option_b: "", option_c: "", option_d: "",
+    correct_option: "a", explanation: "",
+  });
 
   const fetchAll = async () => {
     if (!id) return;
@@ -241,14 +290,12 @@ const AdminCourseDetail = () => {
     const lessonData = (lessonsRes.data as Lesson[]) || [];
     setLessons(lessonData);
 
-    // Filter quizzes for this course's lessons
     const lessonIds = lessonData.map((l) => l.id);
     const courseQuizzes = ((quizzesRes.data as Quiz[]) || []).filter(
       (q) => q.lesson_id && lessonIds.includes(q.lesson_id)
     );
     setQuizzes(courseQuizzes);
 
-    // Fetch resources for all lessons
     if (lessonIds.length > 0) {
       const { data: resData } = await supabase
         .from("lesson_resources")
@@ -369,12 +416,11 @@ const AdminCourseDetail = () => {
     fetchAll();
   };
 
-  // ---- Quiz for lesson ----
+  // ---- Quiz for lesson (Add/Link) ----
   const openAddQuiz = async (lessonId: string) => {
     setQuizLessonId(lessonId);
-    setQuizForm({ title: "", description: "", pass_mark: "0" });
-    setQuizMode("select");
-    // Fetch quizzes not linked to any lesson
+    setQuizForm({ title: "", description: "", pass_mark: "0", duration_minutes: "10", negative_marking: false, negative_mark_value: "0.25" });
+    setQuizMode("create");
     const { data } = await supabase.from("quizzes").select("*").is("lesson_id", null).eq("is_published", true);
     setAvailableQuizzes((data as Quiz[]) || []);
     setQuizDialogOpen(true);
@@ -389,24 +435,31 @@ const AdminCourseDetail = () => {
     fetchAll();
   };
 
-  const handleSaveQuiz = async () => {
+  const handleSaveNewQuiz = async () => {
     if (!quizForm.title || !quizLessonId) {
       toast({ title: "Quiz title required", variant: "destructive" });
       return;
     }
     const slugValue = generateSlug(quizForm.title) + '-' + Date.now().toString(36);
-    const { error } = await supabase.from("quizzes").insert({
+    const { data, error } = await supabase.from("quizzes").insert({
       title: quizForm.title,
       description: quizForm.description || null,
       lesson_id: quizLessonId,
       is_published: true,
       pass_mark: parseFloat(quizForm.pass_mark) || 0,
+      duration_minutes: parseInt(quizForm.duration_minutes) || 10,
+      negative_marking: quizForm.negative_marking,
+      negative_mark_value: quizForm.negative_marking ? parseFloat(quizForm.negative_mark_value) || 0.25 : 0,
       slug: slugValue,
-    });
+    }).select().single();
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "কুইজ তৈরি ও লেসনে যুক্ত করা হয়েছে" });
+    toast({ title: "কুইজ তৈরি হয়েছে! এখন প্রশ্ন যোগ করুন।" });
     setQuizDialogOpen(false);
-    fetchAll();
+    await fetchAll();
+    // Auto-open manager for the newly created quiz
+    if (data) {
+      openQuizManager(data as Quiz);
+    }
   };
 
   const handleDeleteQuiz = async (quizId: string) => {
@@ -416,6 +469,166 @@ const AdminCourseDetail = () => {
     fetchAll();
   };
 
+  // ============ QUIZ MANAGER (Sections + Questions) ============
+  const openQuizManager = async (quiz: Quiz) => {
+    setManagedQuiz(quiz);
+    setManagerOpen(true);
+    await fetchQuizData(quiz.id);
+  };
+
+  const fetchQuizData = async (quizId: string) => {
+    const [secRes, qRes] = await Promise.all([
+      supabase.from("quiz_sections").select("*").eq("quiz_id", quizId).order("sort_order"),
+      supabase.from("quiz_questions").select("*").eq("quiz_id", quizId).order("sort_order"),
+    ]);
+    setMSections((secRes.data as QuizSection[]) || []);
+    setMQuestions((qRes.data as QuizQuestion[]) || []);
+    // Expand all sections by default
+    const exp: Record<string, boolean> = {};
+    (secRes.data || []).forEach((s: any) => { exp[s.id] = true; });
+    setExpandedSections(exp);
+  };
+
+  // Section CRUD
+  const openAddSection = () => {
+    setEditingSection(null);
+    setSectionForm({ title: "", description: "" });
+    setSectionDialogOpen(true);
+  };
+
+  const openEditSection = (sec: QuizSection) => {
+    setEditingSection(sec);
+    setSectionForm({ title: sec.title, description: sec.description || "" });
+    setSectionDialogOpen(true);
+  };
+
+  const handleSaveSection = async () => {
+    if (!sectionForm.title || !managedQuiz) {
+      toast({ title: "সেকশনের নাম দিন", variant: "destructive" });
+      return;
+    }
+    if (editingSection) {
+      const { error } = await supabase.from("quiz_sections").update({
+        title: sectionForm.title,
+        description: sectionForm.description || null,
+      }).eq("id", editingSection.id);
+      if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+      toast({ title: "সেকশন আপডেট হয়েছে" });
+    } else {
+      const { error } = await supabase.from("quiz_sections").insert({
+        quiz_id: managedQuiz.id,
+        title: sectionForm.title,
+        description: sectionForm.description || null,
+        sort_order: mSections.length,
+      });
+      if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+      toast({ title: "সেকশন যোগ হয়েছে" });
+    }
+    setSectionDialogOpen(false);
+    fetchQuizData(managedQuiz.id);
+  };
+
+  const handleDeleteSection = async (secId: string) => {
+    if (!managedQuiz) return;
+    if (!confirm("এই সেকশনটি ডিলিট করবেন? সেকশনের প্রশ্নগুলো আনগ্রুপ হবে।")) return;
+    // Ungroup questions first
+    await supabase.from("quiz_questions").update({ section_id: null }).eq("section_id", secId);
+    await supabase.from("quiz_sections").delete().eq("id", secId);
+    toast({ title: "সেকশন ডিলিট হয়েছে" });
+    fetchQuizData(managedQuiz.id);
+  };
+
+  // Question CRUD
+  const openAddQuestion = (sectionId: string | null) => {
+    setEditingQuestion(null);
+    setQuestionSectionId(sectionId);
+    setQForm({ question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_option: "a", explanation: "" });
+    setQuestionDialogOpen(true);
+  };
+
+  const openEditQuestion = (q: QuizQuestion) => {
+    setEditingQuestion(q);
+    setQuestionSectionId(q.section_id);
+    setQForm({
+      question: q.question,
+      option_a: q.option_a,
+      option_b: q.option_b,
+      option_c: q.option_c,
+      option_d: q.option_d,
+      correct_option: q.correct_option,
+      explanation: q.explanation || "",
+    });
+    setQuestionDialogOpen(true);
+  };
+
+  const handleSaveQuestion = async () => {
+    if (!qForm.question || !qForm.option_a || !qForm.option_b || !qForm.option_c || !qForm.option_d || !managedQuiz) {
+      toast({ title: "প্রশ্ন ও সব অপশন পূরণ করুন", variant: "destructive" });
+      return;
+    }
+    const payload = {
+      quiz_id: managedQuiz.id,
+      section_id: questionSectionId || null,
+      question: qForm.question,
+      option_a: qForm.option_a,
+      option_b: qForm.option_b,
+      option_c: qForm.option_c,
+      option_d: qForm.option_d,
+      correct_option: qForm.correct_option,
+      explanation: qForm.explanation || null,
+      sort_order: editingQuestion ? editingQuestion.sort_order : mQuestions.length,
+    };
+    if (editingQuestion) {
+      const { error } = await supabase.from("quiz_questions").update(payload).eq("id", editingQuestion.id);
+      if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+      toast({ title: "প্রশ্ন আপডেট হয়েছে" });
+    } else {
+      const { error } = await supabase.from("quiz_questions").insert(payload);
+      if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+      toast({ title: "প্রশ্ন যোগ হয়েছে" });
+    }
+    setQuestionDialogOpen(false);
+    fetchQuizData(managedQuiz.id);
+  };
+
+  const handleDeleteQuestion = async (qId: string) => {
+    if (!managedQuiz) return;
+    if (!confirm("এই প্রশ্নটি ডিলিট করবেন?")) return;
+    await supabase.from("quiz_questions").delete().eq("id", qId);
+    toast({ title: "প্রশ্ন ডিলিট হয়েছে" });
+    fetchQuizData(managedQuiz.id);
+  };
+
+  const renderQuestionList = (questions: QuizQuestion[]) => (
+    <div className="space-y-2">
+      {questions.map((q, i) => (
+        <div key={q.id} className="rounded-md border border-border p-3">
+          <div className="flex items-start justify-between gap-2">
+            <p className="flex-1 text-sm font-medium text-foreground">
+              <span className="mr-1 text-muted-foreground">{i + 1}.</span> {q.question}
+            </p>
+            <div className="flex shrink-0 gap-1">
+              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEditQuestion(q)}>
+                <Pencil className="h-3 w-3" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleDeleteQuestion(q.id)}>
+                <Trash2 className="h-3 w-3 text-destructive" />
+              </Button>
+            </div>
+          </div>
+          <div className="mt-2 grid grid-cols-2 gap-1 text-xs">
+            {["a", "b", "c", "d"].map((opt) => (
+              <span key={opt} className={`rounded px-2 py-1 ${q.correct_option === opt ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 font-semibold" : "bg-muted text-muted-foreground"}`}>
+                {opt.toUpperCase()}: {(q as any)[`option_${opt}`]}
+              </span>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  // ---- Helpers ----
   const getLessonIcon = (type: string) => {
     switch (type) {
       case "video": return <Video className="h-4 w-4 text-primary" />;
@@ -445,7 +658,6 @@ const AdminCourseDetail = () => {
     const reordered = arrayMove(lessons, oldIndex, newIndex);
     setLessons(reordered);
 
-    // Update sort_order in DB
     const updates = reordered.map((l, i) =>
       supabase.from("lessons").update({ sort_order: i }).eq("id", l.id)
     );
@@ -455,6 +667,8 @@ const AdminCourseDetail = () => {
 
   if (loading) return <p className="py-12 text-center text-muted-foreground">Loading...</p>;
   if (!course) return <p className="py-12 text-center text-muted-foreground">Course not found.</p>;
+
+  const unsectionedQuestions = mQuestions.filter((q) => !q.section_id);
 
   return (
     <div>
@@ -502,7 +716,7 @@ const AdminCourseDetail = () => {
                   handleDeleteQuiz={handleDeleteQuiz}
                   openEditLesson={openEditLesson}
                   handleDeleteLesson={handleDeleteLesson}
-                  navigate={navigate}
+                  openQuizManager={openQuizManager}
                 />
               ))}
             </Accordion>
@@ -541,35 +755,48 @@ const AdminCourseDetail = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Quiz Dialog */}
+      {/* Quiz Add/Link Dialog */}
       <Dialog open={quizDialogOpen} onOpenChange={setQuizDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>লেসনে কুইজ যুক্ত করুন</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-4">
-            {/* Toggle between select existing and create new */}
             <div className="flex gap-2">
-              <Button variant={quizMode === "select" ? "default" : "outline"} size="sm" className="flex-1" onClick={() => setQuizMode("select")}>
-                বিদ্যমান কুইজ নির্বাচন
-              </Button>
               <Button variant={quizMode === "create" ? "default" : "outline"} size="sm" className="flex-1" onClick={() => setQuizMode("create")}>
                 নতুন কুইজ তৈরি
               </Button>
+              <Button variant={quizMode === "select" ? "default" : "outline"} size="sm" className="flex-1" onClick={() => setQuizMode("select")}>
+                বিদ্যমান কুইজ নির্বাচন
+              </Button>
             </div>
 
-            {/* Pass mark input (shared) */}
-            <div>
-              <Label>পাস মার্ক (0 = পাস মার্ক নেই)</Label>
-              <Input type="number" min="0" step="0.5" value={quizForm.pass_mark} onChange={(e) => setQuizForm({ ...quizForm, pass_mark: e.target.value })} className="mt-1" placeholder="যেমন: 5" />
-              <p className="mt-1 text-xs text-muted-foreground">পরবর্তী লেসনে যেতে এই মার্ক পেতে হবে</p>
-            </div>
-
-            {quizMode === "select" ? (
+            {quizMode === "create" ? (
+              <div className="space-y-4">
+                <div><Label>কুইজের নাম *</Label><Input value={quizForm.title} onChange={(e) => setQuizForm({ ...quizForm, title: e.target.value })} className="mt-1" placeholder="যেমন: লেসন ১ কুইজ" /></div>
+                <div><Label>বিবরণ</Label><div className="mt-1"><RichTextEditor content={quizForm.description} onChange={(html) => setQuizForm({ ...quizForm, description: html })} placeholder="কুইজের বিবরণ..." minHeight="80px" /></div></div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label>সময় (মিনিট)</Label><Input type="number" min="1" value={quizForm.duration_minutes} onChange={(e) => setQuizForm({ ...quizForm, duration_minutes: e.target.value })} className="mt-1" /></div>
+                  <div><Label>পাস মার্ক</Label><Input type="number" min="0" step="0.5" value={quizForm.pass_mark} onChange={(e) => setQuizForm({ ...quizForm, pass_mark: e.target.value })} className="mt-1" /></div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Switch checked={quizForm.negative_marking} onCheckedChange={(v) => setQuizForm({ ...quizForm, negative_marking: v })} />
+                  <Label>নেগেটিভ মার্কিং</Label>
+                  {quizForm.negative_marking && (
+                    <Input type="number" min="0" step="0.25" value={quizForm.negative_mark_value} onChange={(e) => setQuizForm({ ...quizForm, negative_mark_value: e.target.value })} className="w-20" placeholder="0.25" />
+                  )}
+                </div>
+                <Button onClick={handleSaveNewQuiz} className="w-full">কুইজ তৈরি করুন ও প্রশ্ন যোগ করুন</Button>
+              </div>
+            ) : (
               <div>
+                <div className="mb-3">
+                  <Label>পাস মার্ক (0 = পাস মার্ক নেই)</Label>
+                  <Input type="number" min="0" step="0.5" value={quizForm.pass_mark} onChange={(e) => setQuizForm({ ...quizForm, pass_mark: e.target.value })} className="mt-1" />
+                </div>
                 {availableQuizzes.length === 0 ? (
                   <p className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-                    কোনো আনলিংকড কুইজ পাওয়া যায়নি। প্রথমে কুইজ সেকশন থেকে কুইজ তৈরি করুন।
+                    কোনো আনলিংকড কুইজ পাওয়া যায়নি।
                   </p>
                 ) : (
                   <div className="max-h-60 space-y-2 overflow-y-auto">
@@ -585,14 +812,140 @@ const AdminCourseDetail = () => {
                   </div>
                 )}
               </div>
-            ) : (
-              <div className="space-y-4">
-                <div><Label>Quiz Title *</Label><Input value={quizForm.title} onChange={(e) => setQuizForm({ ...quizForm, title: e.target.value })} className="mt-1" /></div>
-                <div><Label>Description</Label><div className="mt-1"><RichTextEditor content={quizForm.description} onChange={(html) => setQuizForm({ ...quizForm, description: html })} placeholder="কুইজের বিবরণ..." minHeight="100px" /></div></div>
-                <p className="text-xs text-muted-foreground">তৈরির পর কুইজ সেকশনে গিয়ে প্রশ্ন যোগ করুন।</p>
-                <Button onClick={handleSaveQuiz} className="w-full">কুইজ তৈরি করুন</Button>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ========== QUIZ MANAGER DIALOG ========== */}
+      <Dialog open={managerOpen} onOpenChange={setManagerOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>📝 কুইজ ম্যানেজ: {managedQuiz?.title}</DialogTitle>
+          </DialogHeader>
+          {managedQuiz && (
+            <div className="space-y-4 pt-2">
+              {/* Stats */}
+              <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+                <span>মোট প্রশ্ন: <strong className="text-foreground">{mQuestions.length}</strong></span>
+                <span>সেকশন: <strong className="text-foreground">{mSections.length}</strong></span>
+                {managedQuiz.pass_mark > 0 && <span>পাস মার্ক: <strong className="text-foreground">{managedQuiz.pass_mark}</strong></span>}
+              </div>
+
+              {/* Sections */}
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-foreground">📖 সেকশনসমূহ</h3>
+                <Button variant="outline" size="sm" onClick={openAddSection}>
+                  <Plus className="mr-1 h-3 w-3" /> সেকশন যোগ
+                </Button>
+              </div>
+
+              {mSections.map((sec) => {
+                const secQuestions = mQuestions.filter((q) => q.section_id === sec.id);
+                return (
+                  <Collapsible key={sec.id} open={expandedSections[sec.id]} onOpenChange={(open) => setExpandedSections({ ...expandedSections, [sec.id]: open })}>
+                    <div className="rounded-lg border border-border">
+                      <CollapsibleTrigger className="flex w-full items-center justify-between px-3 py-2 hover:bg-muted/50">
+                        <div className="flex items-center gap-2">
+                          {expandedSections[sec.id] ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                          <span className="font-medium text-foreground">{sec.title}</span>
+                          <span className="text-xs text-muted-foreground">({secQuestions.length} প্রশ্ন)</span>
+                        </div>
+                        <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEditSection(sec)}>
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleDeleteSection(sec.id)}>
+                            <Trash2 className="h-3 w-3 text-destructive" />
+                          </Button>
+                        </div>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="px-3 pb-3">
+                        {secQuestions.length > 0 && renderQuestionList(secQuestions)}
+                        <Button variant="outline" size="sm" className="mt-2 w-full" onClick={() => openAddQuestion(sec.id)}>
+                          <Plus className="mr-1 h-3 w-3" /> এই সেকশনে প্রশ্ন যোগ
+                        </Button>
+                      </CollapsibleContent>
+                    </div>
+                  </Collapsible>
+                );
+              })}
+
+              {/* Unsectioned questions */}
+              <div>
+                <div className="mb-2 flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-foreground">
+                    {mSections.length > 0 ? "📋 সেকশনবিহীন প্রশ্ন" : "📋 প্রশ্নসমূহ"}
+                  </h3>
+                  <Button variant="outline" size="sm" onClick={() => openAddQuestion(null)}>
+                    <Plus className="mr-1 h-3 w-3" /> প্রশ্ন যোগ
+                  </Button>
+                </div>
+                {unsectionedQuestions.length > 0 ? renderQuestionList(unsectionedQuestions) : (
+                  <p className="rounded-md border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
+                    {mSections.length > 0 ? "কোনো সেকশনবিহীন প্রশ্ন নেই।" : "এখনো কোনো প্রশ্ন যোগ করা হয়নি।"}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Section Dialog */}
+      <Dialog open={sectionDialogOpen} onOpenChange={setSectionDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingSection ? "সেকশন এডিট" : "নতুন সেকশন"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div><Label>সেকশনের নাম *</Label><Input value={sectionForm.title} onChange={(e) => setSectionForm({ ...sectionForm, title: e.target.value })} className="mt-1" placeholder="যেমন: নাউন, ভার্ব" /></div>
+            <div><Label>বিবরণ</Label><Input value={sectionForm.description} onChange={(e) => setSectionForm({ ...sectionForm, description: e.target.value })} className="mt-1" placeholder="ঐচ্ছিক" /></div>
+            <Button onClick={handleSaveSection} className="w-full">{editingSection ? "আপডেট" : "যোগ করুন"}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Question Dialog */}
+      <Dialog open={questionDialogOpen} onOpenChange={setQuestionDialogOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{editingQuestion ? "প্রশ্ন এডিট" : "নতুন প্রশ্ন যোগ"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            {mSections.length > 0 && (
+              <div>
+                <Label>সেকশন (ঐচ্ছিক)</Label>
+                <Select value={questionSectionId || "none"} onValueChange={(v) => setQuestionSectionId(v === "none" ? null : v)}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">— সেকশন নেই —</SelectItem>
+                    {mSections.map((s) => <SelectItem key={s.id} value={s.id}>{s.title}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
             )}
+            <div><Label>প্রশ্ন *</Label><Input value={qForm.question} onChange={(e) => setQForm({ ...qForm, question: e.target.value })} className="mt-1" /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>অপশন A *</Label><Input value={qForm.option_a} onChange={(e) => setQForm({ ...qForm, option_a: e.target.value })} className="mt-1" /></div>
+              <div><Label>অপশন B *</Label><Input value={qForm.option_b} onChange={(e) => setQForm({ ...qForm, option_b: e.target.value })} className="mt-1" /></div>
+              <div><Label>অপশন C *</Label><Input value={qForm.option_c} onChange={(e) => setQForm({ ...qForm, option_c: e.target.value })} className="mt-1" /></div>
+              <div><Label>অপশন D *</Label><Input value={qForm.option_d} onChange={(e) => setQForm({ ...qForm, option_d: e.target.value })} className="mt-1" /></div>
+            </div>
+            <div>
+              <Label>সঠিক উত্তর *</Label>
+              <Select value={qForm.correct_option} onValueChange={(v) => setQForm({ ...qForm, correct_option: v })}>
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="a">A</SelectItem>
+                  <SelectItem value="b">B</SelectItem>
+                  <SelectItem value="c">C</SelectItem>
+                  <SelectItem value="d">D</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div><Label>ব্যাখ্যা (ঐচ্ছিক)</Label><Input value={qForm.explanation} onChange={(e) => setQForm({ ...qForm, explanation: e.target.value })} className="mt-1" placeholder="সঠিক উত্তরের ব্যাখ্যা" /></div>
+            <Button onClick={handleSaveQuestion} className="w-full">{editingQuestion ? "আপডেট" : "প্রশ্ন যোগ করুন"}</Button>
           </div>
         </DialogContent>
       </Dialog>
