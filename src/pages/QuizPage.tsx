@@ -5,7 +5,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CheckCircle, XCircle, Clock, ArrowLeft, AlertTriangle, History, Trophy, Medal, Lock, Smartphone } from "lucide-react";
+import { CheckCircle, XCircle, Clock, ArrowLeft, AlertTriangle, History, Trophy, Medal, Lock, Smartphone, Eye } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -85,6 +86,22 @@ const QuizPage = () => {
   const [mfsMethods, setMfsMethods] = useState<MfsMethod[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [successDialog, setSuccessDialog] = useState<{ open: boolean; orderId: string; message?: string; isFree?: boolean } | null>(null);
+  const [previewQuiz, setPreviewQuiz] = useState<Quiz | null>(null);
+  const [previewQuestions, setPreviewQuestions] = useState<Question[]>([]);
+  const [previewLoading, setPreviewLoading] = useState(false);
+
+  const openPreview = async (quiz: Quiz) => {
+    setPreviewQuiz(quiz);
+    setPreviewLoading(true);
+    const { data } = await supabase
+      .from("quiz_questions")
+      .select("id, question, option_a, option_b, option_c, option_d, correct_option, explanation, sort_order")
+      .eq("quiz_id", quiz.id)
+      .order("sort_order")
+      .limit(3);
+    setPreviewQuestions((data as Question[]) || []);
+    setPreviewLoading(false);
+  };
 
   useEffect(() => {
     const fetchQuizzes = async () => {
@@ -561,8 +578,11 @@ const QuizPage = () => {
                   )}
 
                   {/* Action area */}
-                  <div className="mt-4">
-                    {/* Free or already purchased */}
+                  <div className="mt-4 space-y-2">
+                    {/* Preview button */}
+                    <Button variant="outline" className="w-full" onClick={() => openPreview(quiz)}>
+                      <Eye className="mr-2 h-4 w-4" /> প্রিভিউ দেখুন
+                    </Button>
                     {hasAccess ? (
                       <div className="flex gap-2">
                         <Button onClick={() => startQuiz(quiz)} className="flex-1">কুইজ শুরু করুন</Button>
@@ -669,6 +689,78 @@ const QuizPage = () => {
           </div>
         )}
       </div>
+
+      {/* Quiz Preview Dialog */}
+      <Dialog open={!!previewQuiz} onOpenChange={(open) => { if (!open) { setPreviewQuiz(null); setPreviewQuestions([]); } }}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-xl">{previewQuiz?.title} — প্রিভিউ</DialogTitle>
+          </DialogHeader>
+          {previewQuiz && (
+            <div className="space-y-4 pt-2">
+              {previewQuiz.description && (
+                <p className="text-sm text-muted-foreground" dangerouslySetInnerHTML={{ __html: previewQuiz.description }} />
+              )}
+              <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {previewQuiz.duration_minutes} মিনিট</span>
+                <span>{questionCounts[previewQuiz.id] || 0} টি প্রশ্ন</span>
+                {previewQuiz.negative_marking && (
+                  <span className="text-destructive flex items-center gap-1">
+                    <AlertTriangle className="h-3.5 w-3.5" /> নেগেটিভ মার্কিং ({previewQuiz.negative_mark_value})
+                  </span>
+                )}
+              </div>
+
+              {previewLoading ? (
+                <p className="text-center text-sm text-muted-foreground py-6">লোড হচ্ছে...</p>
+              ) : previewQuestions.length === 0 ? (
+                <p className="text-center text-sm text-muted-foreground py-6">এই কুইজে এখনো কোনো প্রশ্ন নেই।</p>
+              ) : (
+                <div className="space-y-4">
+                  <p className="text-xs font-medium text-muted-foreground">নমুনা প্রশ্ন (প্রথম {previewQuestions.length} টি):</p>
+                  {previewQuestions.map((q, i) => (
+                    <div key={q.id} className="rounded-xl border border-border bg-muted/30 p-4">
+                      <p className="font-medium text-foreground text-sm">
+                        <span className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">{i + 1}</span>
+                        <span dangerouslySetInnerHTML={{ __html: q.question }} />
+                      </p>
+                      <div className="mt-3 space-y-1.5">
+                        {["a", "b", "c", "d"].map((opt) => (
+                          <div key={opt} className="rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground">
+                            <span className="mr-1.5 text-xs font-bold text-muted-foreground">{opt.toUpperCase()})</span>
+                            {(q as any)[`option_${opt}`]}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                  {(questionCounts[previewQuiz.id] || 0) > previewQuestions.length && (
+                    <p className="text-center text-xs text-muted-foreground">
+                      ...আরও {(questionCounts[previewQuiz.id] || 0) - previewQuestions.length} টি প্রশ্ন রয়েছে
+                    </p>
+                  )}
+                </div>
+              )}
+
+              <div className="pt-2">
+                {canAccessQuiz(previewQuiz) ? (
+                  <Button className="w-full" onClick={() => { setPreviewQuiz(null); setPreviewQuestions([]); startQuiz(previewQuiz); }}>
+                    কুইজ শুরু করুন
+                  </Button>
+                ) : previewQuiz.price > 0 ? (
+                  <Button className="w-full" onClick={() => { setPreviewQuiz(null); setPreviewQuestions([]); handlePurchaseQuiz(previewQuiz); }}>
+                    <Lock className="mr-2 h-4 w-4" /> ৳{previewQuiz.price} দিয়ে কিনুন
+                  </Button>
+                ) : (
+                  <Button className="w-full" onClick={() => { setPreviewQuiz(null); setPreviewQuestions([]); handlePurchaseQuiz(previewQuiz); }}>
+                    কুইজ শুরু করুন
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {successDialog && (
         <OrderSuccessDialog
