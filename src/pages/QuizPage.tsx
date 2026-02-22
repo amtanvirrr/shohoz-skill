@@ -83,6 +83,7 @@ const QuizPage = () => {
   const [timeLeft, setTimeLeft] = useState(0);
   const [attempts, setAttempts] = useState<Record<string, QuizAttempt[]>>({});
   const [leaderboard, setLeaderboard] = useState<Record<string, LeaderboardEntry[]>>({});
+  const [sectionCounts, setSectionCounts] = useState<Record<string, number>>({});
   const [showLeaderboard, setShowLeaderboard] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [directQuizStarted, setDirectQuizStarted] = useState(false);
@@ -127,15 +128,18 @@ const QuizPage = () => {
       }
 
       // Public quiz list: only show quizzes NOT linked to any lesson
-      const { data } = await supabase.from("quizzes").select("*, quiz_questions(id)").eq("is_published", true).is("lesson_id", null);
+      const { data } = await supabase.from("quizzes").select("*, quiz_questions(id), quiz_sections(id)").eq("is_published", true).is("lesson_id", null);
       if (data) {
         const counts: Record<string, number> = {};
+        const secCounts: Record<string, number> = {};
         const mapped = data.map((q: any) => {
           counts[q.id] = q.quiz_questions?.length || 0;
-          const { quiz_questions, ...rest } = q;
+          secCounts[q.id] = q.quiz_sections?.length || 0;
+          const { quiz_questions, quiz_sections, ...rest } = q;
           return rest as Quiz;
         });
         setQuestionCounts(counts);
+        setSectionCounts(secCounts);
         setQuizzes(mapped);
       }
     };
@@ -621,6 +625,9 @@ const QuizPage = () => {
                   <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {quiz.duration_minutes} মিনিট</span>
                     <span>{questionCounts[quiz.id] || 0} টি প্রশ্ন</span>
+                    {(sectionCounts[quiz.id] || 0) > 0 && (
+                      <span className="flex items-center gap-1">📖 {sectionCounts[quiz.id]} টি টপিক</span>
+                    )}
                   </div>
 
                   {/* Pricing */}
