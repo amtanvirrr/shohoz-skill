@@ -692,67 +692,103 @@ const QuizPage = () => {
 
       {/* Quiz Preview Dialog */}
       <Dialog open={!!previewQuiz} onOpenChange={(open) => { if (!open) { setPreviewQuiz(null); setPreviewQuestions([]); } }}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="text-xl">{previewQuiz?.title} — প্রিভিউ</DialogTitle>
-          </DialogHeader>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl p-0">
+          <div className="p-6 pb-4 border-b border-border">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-bold">{previewQuiz?.title}</DialogTitle>
+            </DialogHeader>
+          </div>
           {previewQuiz && (
-            <div className="space-y-4 pt-2">
-              {previewQuiz.description && (
-                <p className="text-sm text-muted-foreground" dangerouslySetInnerHTML={{ __html: previewQuiz.description }} />
-              )}
-              <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {previewQuiz.duration_minutes} মিনিট</span>
-                <span>{questionCounts[previewQuiz.id] || 0} টি প্রশ্ন</span>
+            <div className="p-6 space-y-6">
+              {/* Key info badges */}
+              <div className="flex flex-wrap gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary">
+                  <Clock className="h-3.5 w-3.5" /> {previewQuiz.duration_minutes} মিনিট
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs font-medium text-foreground">
+                  {questionCounts[previewQuiz.id] || 0} টি প্রশ্ন
+                </span>
                 {previewQuiz.negative_marking && (
-                  <span className="text-destructive flex items-center gap-1">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-destructive/10 px-3 py-1.5 text-xs font-medium text-destructive">
                     <AlertTriangle className="h-3.5 w-3.5" /> নেগেটিভ মার্কিং ({previewQuiz.negative_mark_value})
                   </span>
                 )}
               </div>
 
-              {previewLoading ? (
-                <p className="text-center text-sm text-muted-foreground py-6">লোড হচ্ছে...</p>
-              ) : previewQuestions.length === 0 ? (
-                <p className="text-center text-sm text-muted-foreground py-6">এই কুইজে এখনো কোনো প্রশ্ন নেই।</p>
-              ) : (
-                <div className="space-y-4">
-                  <p className="text-xs font-medium text-muted-foreground">নমুনা প্রশ্ন (প্রথম {previewQuestions.length} টি):</p>
-                  {previewQuestions.map((q, i) => (
-                    <div key={q.id} className="rounded-xl border border-border bg-muted/30 p-4">
-                      <p className="font-medium text-foreground text-sm">
-                        <span className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">{i + 1}</span>
-                        <span dangerouslySetInnerHTML={{ __html: q.question }} />
-                      </p>
-                      <div className="mt-3 space-y-1.5">
-                        {["a", "b", "c", "d"].map((opt) => (
-                          <div key={opt} className="rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground">
-                            <span className="mr-1.5 text-xs font-bold text-muted-foreground">{opt.toUpperCase()})</span>
-                            {(q as any)[`option_${opt}`]}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                  {(questionCounts[previewQuiz.id] || 0) > previewQuestions.length && (
-                    <p className="text-center text-xs text-muted-foreground">
-                      ...আরও {(questionCounts[previewQuiz.id] || 0) - previewQuestions.length} টি প্রশ্ন রয়েছে
-                    </p>
-                  )}
+              {/* Pricing */}
+              <div className="rounded-xl border border-border bg-muted/30 p-4">
+                {previewQuiz.price > 0 ? (
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl font-bold text-primary">৳{previewQuiz.price}</span>
+                    {previewQuiz.original_price && previewQuiz.original_price > previewQuiz.price && (
+                      <>
+                        <span className="text-base text-muted-foreground line-through">৳{previewQuiz.original_price}</span>
+                        <span className="rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-semibold text-green-600">
+                          {Math.round(((previewQuiz.original_price - previewQuiz.price) / previewQuiz.original_price) * 100)}% ছাড়
+                        </span>
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  <span className="inline-block rounded-full bg-green-500/10 px-4 py-1.5 text-sm font-semibold text-green-600">🎉 সম্পূর্ণ ফ্রি</span>
+                )}
+              </div>
+
+              {/* Description */}
+              {previewQuiz.description && (
+                <div>
+                  <h3 className="text-base font-semibold text-foreground mb-2">বিবরণ</h3>
+                  <div className="prose prose-sm max-w-none text-muted-foreground" dangerouslySetInnerHTML={{ __html: previewQuiz.description }} />
                 </div>
               )}
 
+              {/* Quiz features */}
+              <div>
+                <h3 className="text-base font-semibold text-foreground mb-3">কুইজের বৈশিষ্ট্য</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="flex items-start gap-3 rounded-lg border border-border p-3">
+                    <Clock className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-foreground">সময়সীমা</p>
+                      <p className="text-xs text-muted-foreground">{previewQuiz.duration_minutes} মিনিট</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 rounded-lg border border-border p-3">
+                    <CheckCircle className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-foreground">মোট প্রশ্ন</p>
+                      <p className="text-xs text-muted-foreground">{questionCounts[previewQuiz.id] || 0} টি MCQ প্রশ্ন</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 rounded-lg border border-border p-3">
+                    <AlertTriangle className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-foreground">নেগেটিভ মার্কিং</p>
+                      <p className="text-xs text-muted-foreground">{previewQuiz.negative_marking ? `হ্যাঁ (প্রতি ভুলে -${previewQuiz.negative_mark_value})` : "নেই"}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 rounded-lg border border-border p-3">
+                    <Trophy className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-foreground">লিডারবোর্ড</p>
+                      <p className="text-xs text-muted-foreground">টপ স্কোরারদের তালিকা দেখুন</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* CTA */}
               <div className="pt-2">
                 {canAccessQuiz(previewQuiz) ? (
-                  <Button className="w-full" onClick={() => { setPreviewQuiz(null); setPreviewQuestions([]); startQuiz(previewQuiz); }}>
+                  <Button className="w-full" size="lg" onClick={() => { setPreviewQuiz(null); setPreviewQuestions([]); startQuiz(previewQuiz); }}>
                     কুইজ শুরু করুন
                   </Button>
                 ) : previewQuiz.price > 0 ? (
-                  <Button className="w-full" onClick={() => { setPreviewQuiz(null); setPreviewQuestions([]); handlePurchaseQuiz(previewQuiz); }}>
+                  <Button className="w-full" size="lg" onClick={() => { setPreviewQuiz(null); setPreviewQuestions([]); handlePurchaseQuiz(previewQuiz); }}>
                     <Lock className="mr-2 h-4 w-4" /> ৳{previewQuiz.price} দিয়ে কিনুন
                   </Button>
                 ) : (
-                  <Button className="w-full" onClick={() => { setPreviewQuiz(null); setPreviewQuestions([]); handlePurchaseQuiz(previewQuiz); }}>
+                  <Button className="w-full" size="lg" onClick={() => { setPreviewQuiz(null); setPreviewQuestions([]); handlePurchaseQuiz(previewQuiz); }}>
                     কুইজ শুরু করুন
                   </Button>
                 )}
