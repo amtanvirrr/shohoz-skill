@@ -91,6 +91,8 @@ interface LandingPage {
   stock_limit: number;
   stock_sold: number;
   section_order: string[];
+  hidden_sections: string[];
+  show_coupon: boolean;
 }
 
 interface Product {
@@ -119,16 +121,17 @@ const SECTION_LABELS: Record<string, string> = {
   final_cta: "📢 ফাইনাল CTA",
 };
 
-// Sortable section item
-const SortableSectionItem = ({ id }: { id: string }) => {
+// Sortable section item with toggle
+const SortableSectionItem = ({ id, isHidden, onToggle }: { id: string; isHidden: boolean; onToggle: (id: string) => void }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
   return (
-    <div ref={setNodeRef} style={style} className={`flex items-center gap-3 rounded-lg border px-4 py-3 bg-card ${isDragging ? "shadow-lg" : ""}`}>
+    <div ref={setNodeRef} style={style} className={`flex items-center gap-3 rounded-lg border px-4 py-3 bg-card ${isDragging ? "shadow-lg" : ""} ${isHidden ? "opacity-50" : ""}`}>
       <button type="button" className="cursor-grab text-muted-foreground hover:text-foreground" {...attributes} {...listeners}>
         <GripVertical className="h-5 w-5" />
       </button>
-      <span className="text-sm font-medium">{SECTION_LABELS[id] || id}</span>
+      <span className={`text-sm font-medium flex-1 ${isHidden ? "line-through" : ""}`}>{SECTION_LABELS[id] || id}</span>
+      <Switch checked={!isHidden} onCheckedChange={() => onToggle(id)} />
     </div>
   );
 };
@@ -166,6 +169,8 @@ const AdminLandingPages = () => {
     stock_limit: 100,
     stock_sold: 0,
     section_order: DEFAULT_SECTION_ORDER,
+    hidden_sections: [],
+    show_coupon: true,
   };
 
   const [form, setForm] = useState<Omit<LandingPage, "id" | "created_at">>(emptyPage);
@@ -280,6 +285,8 @@ const AdminLandingPages = () => {
       stock_limit: page.stock_limit || 100,
       stock_sold: page.stock_sold || 0,
       section_order: (page.section_order as any as string[])?.length ? (page.section_order as any as string[]) : DEFAULT_SECTION_ORDER,
+      hidden_sections: (page as any).hidden_sections || [],
+      show_coupon: (page as any).show_coupon !== false,
     });
     setDialogOpen(true);
   };
@@ -588,6 +595,10 @@ const AdminLandingPages = () => {
                   <Switch checked={form.show_quantity} onCheckedChange={v => setForm(f => ({ ...f, show_quantity: v }))} />
                   <Label>কোয়ান্টিটি সিলেক্টর দেখান (ফিজিক্যাল প্রোডাক্ট)</Label>
                 </div>
+                <div className="flex items-center gap-3">
+                  <Switch checked={form.show_coupon} onCheckedChange={v => setForm(f => ({ ...f, show_coupon: v }))} />
+                  <Label>কুপন কোড ইনপুট দেখান</Label>
+                </div>
               </CardContent>
             </Card>
 
@@ -626,7 +637,7 @@ const AdminLandingPages = () => {
 
             {/* Section Order */}
             <Card>
-              <CardHeader><CardTitle className="text-base">📐 সেকশন ক্রম (ড্র্যাগ করে সাজান)</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-base">📐 সেকশন ক্রম ও ভিজিবিলিটি</CardTitle></CardHeader>
               <CardContent>
                 <DndContext
                   sensors={dndSensors}
@@ -645,7 +656,14 @@ const AdminLandingPages = () => {
                   <SortableContext items={form.section_order} strategy={verticalListSortingStrategy}>
                     <div className="space-y-2">
                       {form.section_order.map(id => (
-                        <SortableSectionItem key={id} id={id} />
+                        <SortableSectionItem key={id} id={id} isHidden={form.hidden_sections.includes(id)} onToggle={(sectionId) => {
+                          setForm(f => ({
+                            ...f,
+                            hidden_sections: f.hidden_sections.includes(sectionId)
+                              ? f.hidden_sections.filter(s => s !== sectionId)
+                              : [...f.hidden_sections, sectionId],
+                          }));
+                        }} />
                       ))}
                     </div>
                   </SortableContext>
