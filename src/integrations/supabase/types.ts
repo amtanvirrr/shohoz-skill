@@ -337,6 +337,7 @@ export type Database = {
           hero_images: Json | null
           hero_video_url: string | null
           hero_videos: Json | null
+          hidden_sections: Json
           id: string
           is_published: boolean
           media_items: Json
@@ -345,6 +346,7 @@ export type Database = {
           reviews: Json
           section_order: Json
           show_countdown: boolean
+          show_coupon: boolean
           show_quantity: boolean
           show_stock_badge: boolean
           slug: string
@@ -366,6 +368,7 @@ export type Database = {
           hero_images?: Json | null
           hero_video_url?: string | null
           hero_videos?: Json | null
+          hidden_sections?: Json
           id?: string
           is_published?: boolean
           media_items?: Json
@@ -374,6 +377,7 @@ export type Database = {
           reviews?: Json
           section_order?: Json
           show_countdown?: boolean
+          show_coupon?: boolean
           show_quantity?: boolean
           show_stock_badge?: boolean
           slug: string
@@ -395,6 +399,7 @@ export type Database = {
           hero_images?: Json | null
           hero_video_url?: string | null
           hero_videos?: Json | null
+          hidden_sections?: Json
           id?: string
           is_published?: boolean
           media_items?: Json
@@ -403,6 +408,7 @@ export type Database = {
           reviews?: Json
           section_order?: Json
           show_countdown?: boolean
+          show_coupon?: boolean
           show_quantity?: boolean
           show_stock_badge?: boolean
           slug?: string

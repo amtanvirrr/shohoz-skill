@@ -39,6 +39,8 @@ interface LandingPageData {
   stock_limit: number;
   stock_sold: number;
   section_order: string[];
+  hidden_sections: string[];
+  show_coupon: boolean;
 }
 
 interface ProductInfo {
@@ -366,6 +368,8 @@ const LandingPage = () => {
   };
 
   const theme = page.theme;
+  const hiddenSections = (page as any).hidden_sections || [];
+  const isSectionVisible = (section: string) => !hiddenSections.includes(section);
 
   // ==================== SHARED: Order Form Inner Content ====================
   const renderOrderFormContent = (inputClass = "", labelClass = "", isDark = false) => (
@@ -375,9 +379,22 @@ const LandingPage = () => {
       {isPhysical && <div><Label className={labelClass}>ডেলিভারি ঠিকানা *</Label><Textarea className={`mt-1 ${inputClass}`} rows={2} value={order.address} onChange={e => setOrder(o => ({ ...o, address: e.target.value }))} placeholder="সম্পূর্ণ ঠিকানা" /></div>}
       {isPhysical && shippingZones.length > 0 && (
         <div><Label className={labelClass}>ডেলিভারি জোন *</Label>
-          <Select value={selectedZone} onValueChange={setSelectedZone}><SelectTrigger className={`mt-1 ${inputClass}`}><SelectValue /></SelectTrigger>
-            <SelectContent>{shippingZones.map(z => <SelectItem key={z.zone_name} value={z.zone_name}>{z.zone_label} — ৳{z.shipping_rate} ({z.delivery_time_min}-{z.delivery_time_max} {z.delivery_time_unit})</SelectItem>)}</SelectContent>
-          </Select>
+          <div className="mt-2 grid grid-cols-1 gap-2">
+            {shippingZones.map(z => (
+              <button type="button" key={z.zone_name} onClick={() => setSelectedZone(z.zone_name)}
+                className={`rounded-lg border-2 px-4 py-3 text-left transition-all ${
+                  isDark
+                    ? (selectedZone === z.zone_name ? "border-amber-500 bg-amber-500/10" : "border-zinc-700 hover:border-amber-500/50")
+                    : (selectedZone === z.zone_name ? "border-primary bg-primary/5" : "border-border hover:border-primary/50")
+                }`}>
+                <div className="flex items-center justify-between">
+                  <span className={`font-medium text-sm ${isDark ? "text-white" : ""}`}>{z.zone_label}</span>
+                  <span className={`text-sm font-bold ${isDark ? "text-amber-400" : "text-primary"}`}>৳{z.shipping_rate}</span>
+                </div>
+                <p className={`text-xs mt-0.5 ${isDark ? "text-zinc-400" : "text-muted-foreground"}`}>{z.delivery_time_min}-{z.delivery_time_max} {z.delivery_time_unit}</p>
+              </button>
+            ))}
+          </div>
         </div>
       )}
       {!isPhysical && mfsMethods.length > 0 && (
@@ -407,6 +424,7 @@ const LandingPage = () => {
         </>
       )}
       {/* Coupon */}
+      {page.show_coupon !== false && (
       <div>
         <Label className={labelClass}>কুপন কোড (ঐচ্ছিক)</Label>
         {appliedCoupon ? (
@@ -427,6 +445,7 @@ const LandingPage = () => {
         )}
         {couponError && <p className="text-xs text-destructive mt-1">{couponError}</p>}
       </div>
+      )}
       {/* Price Summary */}
       <div className={`rounded-lg p-4 space-y-2 ${isDark ? "bg-zinc-800/50" : "bg-muted/50"}`}>
         {quantity > 1 && <div className="flex justify-between text-sm"><span>মূল্য ({quantity}×৳{unitPrice})</span><span>৳{subtotal}</span></div>}
@@ -622,7 +641,7 @@ const LandingPage = () => {
         </section>
         </ScrollReveal>
 
-        {benefits.length > 0 && benefits[0].title && (
+        {isSectionVisible("benefits") && benefits.length > 0 && benefits[0].title && (
           <section className="py-16 md:py-24">
             <div className="container mx-auto px-4 max-w-2xl">
               <div className="space-y-8">
@@ -643,7 +662,7 @@ const LandingPage = () => {
         )}
 
         {/* ═══ STAGE 3: DESIRE ═══ Media Gallery (separated) + Reviews + Mid-CTA */}
-        {renderMediaGallery(
+        {isSectionVisible("media_gallery") && renderMediaGallery(
           "py-16",
           "container mx-auto px-4 max-w-3xl",
           "rounded-2xl overflow-hidden border border-border",
@@ -651,7 +670,7 @@ const LandingPage = () => {
           "p-4 text-sm text-center text-muted-foreground"
         )}
 
-        {reviews.length > 0 && (
+        {isSectionVisible("reviews") && reviews.length > 0 && (
           <ScrollReveal>
           <section className="py-16 md:py-24">
             <div className="container mx-auto px-4 max-w-2xl">
@@ -671,6 +690,7 @@ const LandingPage = () => {
           </ScrollReveal>
         )}
 
+        {isSectionVisible("final_cta") && (
         <ScrollReveal direction="scale">
         <section className="py-12">
           <div className="container mx-auto px-4 max-w-xl text-center">
@@ -681,6 +701,7 @@ const LandingPage = () => {
           </div>
         </section>
         </ScrollReveal>
+        )}
 
         {/* ═══ STAGE 4: ACTION ═══ Trust Signal + Order Form */}
         <ScrollReveal>
@@ -713,7 +734,7 @@ const LandingPage = () => {
         </section>
         </ScrollReveal>
 
-        {faqs.length > 0 && faqs[0].question && (
+        {isSectionVisible("faqs") && faqs.length > 0 && faqs[0].question && (
           <ScrollReveal>
           <section className="py-16 md:py-24 border-t border-border">
             <div className="container mx-auto px-4 max-w-2xl">
@@ -853,7 +874,7 @@ const LandingPage = () => {
         </section>
         </ScrollReveal>
 
-        {benefits.length > 0 && benefits[0].title && (
+        {isSectionVisible("benefits") && benefits.length > 0 && benefits[0].title && (
         <ScrollReveal>
         <section className="py-12 md:py-20">
             <div className="container mx-auto px-4 max-w-4xl">
@@ -879,6 +900,7 @@ const LandingPage = () => {
         </ScrollReveal>
         )}
 
+        {isSectionVisible("final_cta") && (
         <ScrollReveal direction="scale">
         <section className="py-12 bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10">
           <div className="container mx-auto px-4 text-center">
@@ -891,9 +913,10 @@ const LandingPage = () => {
           </div>
         </section>
         </ScrollReveal>
+        )}
 
 
-        {renderMediaGallery(
+        {isSectionVisible("media_gallery") && renderMediaGallery(
           "py-16 md:py-20 bg-muted/30",
           "container mx-auto px-4 max-w-4xl",
           "rounded-2xl overflow-hidden shadow-xl ring-1 ring-border",
@@ -901,7 +924,7 @@ const LandingPage = () => {
           "p-4 text-sm text-center text-muted-foreground bg-card"
         )}
 
-        {reviews.length > 0 && (
+        {isSectionVisible("reviews") && reviews.length > 0 && (
           <section className="py-12 md:py-20">
             <div className="container mx-auto px-4 max-w-4xl">
               <ScrollReveal>
@@ -985,7 +1008,7 @@ const LandingPage = () => {
         </section>
         </ScrollReveal>
 
-        {faqs.length > 0 && faqs[0].question && (
+        {isSectionVisible("faqs") && faqs.length > 0 && faqs[0].question && (
           <ScrollReveal>
           <section className="py-16 md:py-20">
             <div className="container mx-auto px-4 max-w-2xl">
@@ -1003,6 +1026,7 @@ const LandingPage = () => {
           </ScrollReveal>
         )}
 
+        {isSectionVisible("final_cta") && (
         <ScrollReveal direction="scale">
         <section className="py-16 bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10">
           <div className="container mx-auto px-4 text-center">
@@ -1013,6 +1037,7 @@ const LandingPage = () => {
           </div>
         </section>
         </ScrollReveal>
+        )}
 
         <footer className="py-6 text-center text-sm text-muted-foreground border-t">
           {settings.copyright_text || `© ${new Date().getFullYear()} ${settings.site_name}`}
@@ -1135,7 +1160,7 @@ const LandingPage = () => {
       </section>
       </ScrollReveal>
 
-      {benefits.length > 0 && benefits[0].title && (
+      {isSectionVisible("benefits") && benefits.length > 0 && benefits[0].title && (
         <section className="py-20 border-t border-zinc-800">
           <div className="container mx-auto px-4 max-w-4xl">
             <ScrollReveal>
@@ -1165,6 +1190,7 @@ const LandingPage = () => {
         </section>
       )}
 
+      {isSectionVisible("final_cta") && (
       <ScrollReveal direction="scale">
       <section className="py-14 bg-gradient-to-r from-zinc-900 via-zinc-800/50 to-zinc-900 border-y border-zinc-800">
         <div className="container mx-auto px-4 text-center">
@@ -1175,9 +1201,10 @@ const LandingPage = () => {
         </div>
       </section>
       </ScrollReveal>
+      )}
 
       {/* ═══ STAGE 3: DESIRE ═══ Cinematic media (separated) + VIP Reviews */}
-      {renderMediaGallery(
+      {isSectionVisible("media_gallery") && renderMediaGallery(
         "py-20 bg-zinc-900/50",
         "container mx-auto px-4 max-w-4xl",
         "rounded-lg overflow-hidden ring-1 ring-zinc-800 shadow-xl hover:ring-amber-500/30 transition-all",
@@ -1185,7 +1212,7 @@ const LandingPage = () => {
         "p-4 text-sm text-center text-zinc-500 bg-zinc-900"
       )}
 
-      {reviews.length > 0 && (
+      {isSectionVisible("reviews") && reviews.length > 0 && (
         <section className="py-12 md:py-20 border-t border-zinc-800">
           <div className="container mx-auto px-4 max-w-4xl">
             <ScrollReveal>
@@ -1266,7 +1293,7 @@ const LandingPage = () => {
       </section>
       </ScrollReveal>
 
-      {faqs.length > 0 && faqs[0].question && (
+      {isSectionVisible("faqs") && faqs.length > 0 && faqs[0].question && (
           <ScrollReveal>
           <section className="py-20 border-t border-zinc-800">
             <div className="container mx-auto px-4 max-w-2xl">
