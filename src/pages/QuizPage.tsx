@@ -97,18 +97,18 @@ const QuizPage = () => {
   const [successDialog, setSuccessDialog] = useState<{ open: boolean; orderId: string; message?: string; isFree?: boolean } | null>(null);
   const [previewQuiz, setPreviewQuiz] = useState<Quiz | null>(null);
   const [previewQuestions, setPreviewQuestions] = useState<Question[]>([]);
+  const [previewSections, setPreviewSections] = useState<QuizSection[]>([]);
   const [previewLoading, setPreviewLoading] = useState(false);
 
   const openPreview = async (quiz: Quiz) => {
     setPreviewQuiz(quiz);
     setPreviewLoading(true);
-    const { data } = await supabase
-      .from("quiz_questions")
-      .select("id, question, option_a, option_b, option_c, option_d, correct_option, explanation, sort_order, section_id")
-      .eq("quiz_id", quiz.id)
-      .order("sort_order")
-      .limit(3);
-    setPreviewQuestions((data as Question[]) || []);
+    const [qRes, secRes] = await Promise.all([
+      supabase.from("quiz_questions").select("id, question, option_a, option_b, option_c, option_d, correct_option, explanation, sort_order, section_id").eq("quiz_id", quiz.id).order("sort_order").limit(3),
+      supabase.from("quiz_sections").select("*").eq("quiz_id", quiz.id).order("sort_order"),
+    ]);
+    setPreviewQuestions((qRes.data as Question[]) || []);
+    setPreviewSections((secRes.data as QuizSection[]) || []);
     setPreviewLoading(false);
   };
 
@@ -757,7 +757,7 @@ const QuizPage = () => {
       </div>
 
       {/* Quiz Preview Dialog */}
-      <Dialog open={!!previewQuiz} onOpenChange={(open) => { if (!open) { setPreviewQuiz(null); setPreviewQuestions([]); } }}>
+      <Dialog open={!!previewQuiz} onOpenChange={(open) => { if (!open) { setPreviewQuiz(null); setPreviewQuestions([]); setPreviewSections([]); } }}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl p-0">
           <div className="p-6 pb-4 border-b border-border">
             <DialogHeader>
@@ -842,6 +842,25 @@ const QuizPage = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Sections / Topics */}
+              {previewSections.length > 0 && (
+                <div>
+                  <h3 className="text-base font-semibold text-foreground mb-3">📖 কুইজের টপিকসমূহ</h3>
+                  <div className="space-y-2">
+                    {previewSections.map((sec, idx) => (
+                        <div key={sec.id} className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3">
+                          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">{idx + 1}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-foreground">{sec.title}</p>
+                            {sec.description && <p className="text-xs text-muted-foreground truncate">{sec.description}</p>}
+                          </div>
+                        </div>
+                    ))}
+
+                  </div>
+                </div>
+              )}
 
               {/* CTA */}
               <div className="pt-2">
