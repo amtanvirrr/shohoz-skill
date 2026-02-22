@@ -187,10 +187,12 @@ const QuizPage = () => {
   }, [user, submitted]);
 
   const fetchLeaderboard = async (quizId: string) => {
-    if (leaderboard[quizId]) {
-      setShowLeaderboard(showLeaderboard === quizId ? null : quizId);
+    // Toggle off if already showing
+    if (showLeaderboard === quizId) {
+      setShowLeaderboard(null);
       return;
     }
+    // Always fetch fresh data
     const { data } = await supabase.rpc("get_quiz_leaderboard", { _quiz_id: quizId, _limit: 10 });
     if (data) {
       setLeaderboard((prev) => ({ ...prev, [quizId]: data as LeaderboardEntry[] }));
@@ -249,13 +251,25 @@ const QuizPage = () => {
     }
 
     if (user) {
-      supabase.from("quiz_attempts").insert({
-        quiz_id: selectedQuiz.id,
-        user_id: user.id,
-        score: finalScore,
-        total_questions: questions.length,
-        answers,
-      });
+      const saveAttempt = async () => {
+        const { error } = await supabase.from("quiz_attempts").insert({
+          quiz_id: selectedQuiz.id,
+          user_id: user.id,
+          score: finalScore,
+          total_questions: questions.length,
+          answers,
+        });
+        if (error) {
+          console.error("Failed to save quiz attempt:", error);
+        } else {
+          // Refresh leaderboard for this quiz after saving
+          const { data: lbData } = await supabase.rpc("get_quiz_leaderboard", { _quiz_id: selectedQuiz.id, _limit: 10 });
+          if (lbData) {
+            setLeaderboard((prev) => ({ ...prev, [selectedQuiz.id]: lbData as LeaderboardEntry[] }));
+          }
+        }
+      };
+      saveAttempt();
     }
   }, [submitted]);
 
