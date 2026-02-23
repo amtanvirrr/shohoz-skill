@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
+import { ScrollReveal } from "@/hooks/useScrollReveal";
 
 interface Order {
   id: string;
@@ -102,7 +103,6 @@ const UserDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [bookmarkedPosts, setBookmarkedPosts] = useState<{ id: string; blog_post_id: string; title: string; slug: string; category: string; cover_image_url: string; created_at: string }[]>([]);
 
-  // Profile state
   const [profileLoading, setProfileLoading] = useState(true);
   const [profileSaving, setProfileSaving] = useState(false);
   const [fullName, setFullName] = useState("");
@@ -113,7 +113,6 @@ const UserDashboard = () => {
   const [avatarUploading, setAvatarUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Order detail modal
   const [detailOrder, setDetailOrder] = useState<Order | null>(null);
 
   useEffect(() => {
@@ -126,7 +125,6 @@ const UserDashboard = () => {
         supabase.from("bookmarks").select("id, blog_post_id, created_at, blog_posts(title, slug, category, cover_image_url)").eq("user_id", user.id).order("created_at", { ascending: false }),
       ]);
 
-      // Bookmarks
       setBookmarkedPosts(
         (bookmarksRes.data || []).map((b: any) => ({
           id: b.id,
@@ -139,7 +137,6 @@ const UserDashboard = () => {
         }))
       );
 
-      // Profile
       if (profileRes.data) {
         setFullName(profileRes.data.full_name || "");
         setPhone(profileRes.data.phone || "");
@@ -271,37 +268,41 @@ const UserDashboard = () => {
   return (
     <div className="py-10 lg:py-16">
       <div className="container mx-auto px-4">
-        <h1 className="text-3xl font-bold text-foreground">আমার ড্যাশবোর্ড</h1>
-        <p className="mt-2 text-muted-foreground">আপনার কেনা ইবুক, কোর্স ও অর্ডার হিস্ট্রি এখান থেকে দেখুন</p>
+        <ScrollReveal>
+          <h1 className="text-3xl font-bold text-foreground">আমার ড্যাশবোর্ড</h1>
+          <p className="mt-2 text-muted-foreground">আপনার কেনা ইবুক, কোর্স ও অর্ডার হিস্ট্রি এখান থেকে দেখুন</p>
+        </ScrollReveal>
 
         <Tabs defaultValue="ebooks" className="mt-6 sm:mt-8">
-          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-            <TabsList className="inline-flex w-auto min-w-full sm:grid sm:w-full sm:max-w-4xl sm:grid-cols-6">
-              <TabsTrigger value="ebooks" className="gap-1 whitespace-nowrap text-xs sm:text-sm">
-                <BookOpen className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> ইবুক ({ebookOrders.length})
-              </TabsTrigger>
-              <TabsTrigger value="courses" className="gap-1 whitespace-nowrap text-xs sm:text-sm">
-                <PlayCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> কোর্স ({courseOrders.length})
-              </TabsTrigger>
-              <TabsTrigger value="quizzes" className="gap-1 whitespace-nowrap text-xs sm:text-sm">
-                <HelpCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> কুইজ ({quizOrders.length})
-              </TabsTrigger>
-              <TabsTrigger value="bookmarks" className="gap-1 whitespace-nowrap text-xs sm:text-sm">
-                <Bookmark className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> বুকমার্ক ({bookmarkedPosts.length})
-              </TabsTrigger>
-              <TabsTrigger value="orders" className="gap-1 whitespace-nowrap text-xs sm:text-sm">
-                <ShoppingBag className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> অর্ডার ({allOrders.length})
-              </TabsTrigger>
-              <TabsTrigger value="profile" className="gap-1 whitespace-nowrap text-xs sm:text-sm">
-                <UserCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> প্রোফাইল
-              </TabsTrigger>
-            </TabsList>
-          </div>
+          <ScrollReveal delay={100}>
+            <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+              <TabsList className="inline-flex w-auto min-w-full sm:grid sm:w-full sm:max-w-4xl sm:grid-cols-6">
+                <TabsTrigger value="ebooks" className="gap-1 whitespace-nowrap text-xs sm:text-sm">
+                  <BookOpen className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> ইবুক ({ebookOrders.length})
+                </TabsTrigger>
+                <TabsTrigger value="courses" className="gap-1 whitespace-nowrap text-xs sm:text-sm">
+                  <PlayCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> কোর্স ({courseOrders.length})
+                </TabsTrigger>
+                <TabsTrigger value="quizzes" className="gap-1 whitespace-nowrap text-xs sm:text-sm">
+                  <HelpCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> কুইজ ({quizOrders.length})
+                </TabsTrigger>
+                <TabsTrigger value="bookmarks" className="gap-1 whitespace-nowrap text-xs sm:text-sm">
+                  <Bookmark className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> বুকমার্ক ({bookmarkedPosts.length})
+                </TabsTrigger>
+                <TabsTrigger value="orders" className="gap-1 whitespace-nowrap text-xs sm:text-sm">
+                  <ShoppingBag className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> অর্ডার ({allOrders.length})
+                </TabsTrigger>
+                <TabsTrigger value="profile" className="gap-1 whitespace-nowrap text-xs sm:text-sm">
+                  <UserCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> প্রোফাইল
+                </TabsTrigger>
+              </TabsList>
+            </div>
+          </ScrollReveal>
 
           {/* Ebook Tab */}
           <TabsContent value="ebooks" className="mt-6">
             {ebookOrders.length === 0 ? (
-              <div className="rounded-xl border border-border bg-card p-10 text-center">
+              <div className="rounded-xl glass-card p-10 text-center">
                 <BookOpen className="mx-auto h-12 w-12 text-muted-foreground/40" />
                 <h3 className="mt-4 text-lg font-semibold text-foreground">কোনো ইবুক নেই</h3>
                 <p className="mt-1 text-sm text-muted-foreground">আপনি এখনো কোনো ইবুক কেনেননি।</p>
@@ -311,32 +312,34 @@ const UserDashboard = () => {
               </div>
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {ebookOrders.map((order) => {
+                {ebookOrders.map((order, idx) => {
                   const book = books.get(order.product_id);
                   if (!book) return null;
                   return (
-                    <div key={order.id} className="overflow-hidden rounded-xl border border-border bg-card">
-                      <div className="aspect-[3/2] overflow-hidden">
-                        <img src={book.image_url} alt={book.title} className="h-full w-full object-cover" />
-                      </div>
-                      <div className="p-4">
-                        <h3 className="font-semibold text-foreground line-clamp-1">{book.title}</h3>
-                        <p className="mt-1 text-sm text-muted-foreground">{book.author}</p>
-                        <div className="mt-3 flex items-center gap-2">
-                          {book.ebook_file_url ? (
-                            <Button size="sm" className="w-full gap-2" asChild>
-                              <Link to={`/read/${book.id}`}>
-                                <Eye className="h-4 w-4" /> পড়ুন
-                              </Link>
-                            </Button>
-                          ) : (
-                            <Button size="sm" variant="secondary" className="w-full" disabled>
-                              শীঘ্রই আসছে
-                            </Button>
-                          )}
+                    <ScrollReveal key={order.id} delay={idx * 80}>
+                      <div className="overflow-hidden rounded-xl glass-card shimmer">
+                        <div className="aspect-[3/2] overflow-hidden">
+                          <img src={book.image_url} alt={book.title} className="h-full w-full object-cover transition-transform duration-500 hover:scale-105" />
+                        </div>
+                        <div className="p-4">
+                          <h3 className="font-semibold text-foreground line-clamp-1">{book.title}</h3>
+                          <p className="mt-1 text-sm text-muted-foreground">{book.author}</p>
+                          <div className="mt-3 flex items-center gap-2">
+                            {book.ebook_file_url ? (
+                              <Button size="sm" className="w-full gap-2" asChild>
+                                <Link to={`/read/${book.id}`}>
+                                  <Eye className="h-4 w-4" /> পড়ুন
+                                </Link>
+                              </Button>
+                            ) : (
+                              <Button size="sm" variant="secondary" className="w-full" disabled>
+                                শীঘ্রই আসছে
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    </ScrollReveal>
                   );
                 })}
               </div>
@@ -346,7 +349,7 @@ const UserDashboard = () => {
           {/* Course Tab */}
           <TabsContent value="courses" className="mt-6">
             {courseOrders.length === 0 ? (
-              <div className="rounded-xl border border-border bg-card p-10 text-center">
+              <div className="rounded-xl glass-card p-10 text-center">
                 <PlayCircle className="mx-auto h-12 w-12 text-muted-foreground/40" />
                 <h3 className="mt-4 text-lg font-semibold text-foreground">কোনো কোর্স নেই</h3>
                 <p className="mt-1 text-sm text-muted-foreground">আপনি এখনো কোনো কোর্স কেনেননি।</p>
@@ -356,24 +359,26 @@ const UserDashboard = () => {
               </div>
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {courseOrders.map((order) => {
+                {courseOrders.map((order, idx) => {
                   const course = courses.get(order.product_id);
                   if (!course) return null;
                   return (
-                    <div key={order.id} className="overflow-hidden rounded-xl border border-border bg-card">
-                      <div className="aspect-video overflow-hidden">
-                        <img src={course.image_url} alt={course.title} className="h-full w-full object-cover" />
+                    <ScrollReveal key={order.id} delay={idx * 80}>
+                      <div className="overflow-hidden rounded-xl glass-card shimmer">
+                        <div className="aspect-video overflow-hidden">
+                          <img src={course.image_url} alt={course.title} className="h-full w-full object-cover transition-transform duration-500 hover:scale-105" />
+                        </div>
+                        <div className="p-4">
+                          <h3 className="font-semibold text-foreground line-clamp-1">{course.title}</h3>
+                          <p className="mt-1 text-sm text-muted-foreground">{course.instructor} • {course.duration}</p>
+                          <Button size="sm" className="mt-3 w-full gap-2" asChild>
+                            <Link to={`/enrolled/${course.id}`}>
+                              <PlayCircle className="h-4 w-4" /> কোর্স শুরু করুন
+                            </Link>
+                          </Button>
+                        </div>
                       </div>
-                      <div className="p-4">
-                        <h3 className="font-semibold text-foreground line-clamp-1">{course.title}</h3>
-                        <p className="mt-1 text-sm text-muted-foreground">{course.instructor} • {course.duration}</p>
-                        <Button size="sm" className="mt-3 w-full gap-2" asChild>
-                          <Link to={`/enrolled/${course.id}`}>
-                            <PlayCircle className="h-4 w-4" /> কোর্স শুরু করুন
-                          </Link>
-                        </Button>
-                      </div>
-                    </div>
+                    </ScrollReveal>
                   );
                 })}
               </div>
@@ -383,7 +388,7 @@ const UserDashboard = () => {
           {/* Quiz Tab */}
           <TabsContent value="quizzes" className="mt-6">
             {quizOrders.length === 0 ? (
-              <div className="rounded-xl border border-border bg-card p-10 text-center">
+              <div className="rounded-xl glass-card p-10 text-center">
                 <HelpCircle className="mx-auto h-12 w-12 text-muted-foreground/40" />
                 <h3 className="mt-4 text-lg font-semibold text-foreground">কোনো কুইজ অর্ডার নেই</h3>
                 <p className="mt-1 text-sm text-muted-foreground">আপনি এখনো কোনো কুইজ কেনেননি।</p>
@@ -393,42 +398,44 @@ const UserDashboard = () => {
               </div>
             ) : (
               <div className="space-y-3">
-                {quizOrders.map((order) => {
+                {quizOrders.map((order, idx) => {
                   const sc = statusConfig[order.status] || statusConfig.pending;
                   const StatusIcon = sc.icon;
                   const hasAccess = ["confirmed", "delivered"].includes(order.status);
                   return (
-                    <div key={order.id} className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-mono text-xs text-muted-foreground">{order.order_id}</span>
-                          <Badge variant={sc.variant} className="gap-1 text-xs">
-                            <StatusIcon className="h-3 w-3" /> {sc.label}
-                          </Badge>
-                          {order.price === 0 && <Badge variant="secondary" className="text-xs">ফ্রি</Badge>}
+                    <ScrollReveal key={order.id} delay={idx * 60}>
+                      <div className="flex flex-col gap-3 rounded-xl glass-card p-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-mono text-xs text-muted-foreground">{order.order_id}</span>
+                            <Badge variant={sc.variant} className="gap-1 text-xs">
+                              <StatusIcon className="h-3 w-3" /> {sc.label}
+                            </Badge>
+                            {order.price === 0 && <Badge variant="secondary" className="text-xs">ফ্রি</Badge>}
+                          </div>
+                          <h4 className="mt-1 font-semibold text-foreground line-clamp-1">{order.product_title}</h4>
+                          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                            {order.price > 0 && <span>৳{order.price}</span>}
+                            {order.price > 0 && <span>{paymentMethodLabels[order.payment_method] || order.payment_method}</span>}
+                            <span>{new Date(order.created_at).toLocaleDateString("bn-BD")}</span>
+                          </div>
                         </div>
-                        <h4 className="mt-1 font-semibold text-foreground line-clamp-1">{order.product_title}</h4>
-                        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                          {order.price > 0 && <span>৳{order.price}</span>}
-                          {order.price > 0 && <span>{paymentMethodLabels[order.payment_method] || order.payment_method}</span>}
-                          <span>{new Date(order.created_at).toLocaleDateString("bn-BD")}</span>
-                        </div>
-                      </div>
-                      <div className="flex shrink-0 gap-2">
-                        {hasAccess ? (
-                          <Button size="sm" className="gap-1" asChild>
-                            <Link to={`/quizzes?id=${order.product_id}`}>
-                              <HelpCircle className="h-3.5 w-3.5" /> কুইজ দিন
-                            </Link>
+                        <div className="flex shrink-0 gap-2">
+                          {hasAccess ? (
+                            <Button size="sm" className="gap-1" asChild>
+                              <Link to={`/quizzes?id=${order.product_id}`}>
+                                <HelpCircle className="h-3.5 w-3.5" /> কুইজ দিন
+                              </Link>
+                            </Button>
+                          ) : order.status === "pending" ? (
+                            <Badge variant="outline" className="text-xs">⏳ যাচাই অপেক্ষমাণ</Badge>
+                          ) : null}
+                          <Button size="sm" variant="outline" className="gap-1" onClick={() => setDetailOrder(order)}>
+                            <Eye className="h-3.5 w-3.5" /> বিস্তারিত
                           </Button>
-                        ) : order.status === "pending" ? (
-                          <Badge variant="outline" className="text-xs">⏳ যাচাই অপেক্ষমাণ</Badge>
-                        ) : null}
-                        <Button size="sm" variant="outline" className="gap-1" onClick={() => setDetailOrder(order)}>
-                          <Eye className="h-3.5 w-3.5" /> বিস্তারিত
-                        </Button>
+                        </div>
                       </div>
-                    </div>
+                    </ScrollReveal>
                   );
                 })}
               </div>
@@ -438,7 +445,7 @@ const UserDashboard = () => {
           {/* Bookmarks Tab */}
           <TabsContent value="bookmarks" className="mt-6">
             {bookmarkedPosts.length === 0 ? (
-              <div className="rounded-xl border border-border bg-card p-10 text-center">
+              <div className="rounded-xl glass-card p-10 text-center">
                 <Bookmark className="mx-auto h-12 w-12 text-muted-foreground/40" />
                 <h3 className="mt-4 text-lg font-semibold text-foreground">কোনো বুকমার্ক নেই</h3>
                 <p className="mt-1 text-sm text-muted-foreground">আপনি এখনো কোনো ব্লগ পোস্ট বুকমার্ক করেননি।</p>
@@ -448,38 +455,40 @@ const UserDashboard = () => {
               </div>
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {bookmarkedPosts.map((bp) => (
-                  <div key={bp.id} className="group overflow-hidden rounded-xl border border-border bg-card">
-                    {bp.cover_image_url && (
-                      <Link to={`/blog/${bp.slug}`}>
-                        <div className="aspect-video overflow-hidden">
-                          <img src={bp.cover_image_url} alt={bp.title} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                {bookmarkedPosts.map((bp, idx) => (
+                  <ScrollReveal key={bp.id} delay={idx * 80}>
+                    <div className="group overflow-hidden rounded-xl glass-card shimmer">
+                      {bp.cover_image_url && (
+                        <Link to={`/blog/${bp.slug}`}>
+                          <div className="aspect-video overflow-hidden">
+                            <img src={bp.cover_image_url} alt={bp.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                          </div>
+                        </Link>
+                      )}
+                      <div className="p-4">
+                        {bp.category && <Badge variant="secondary" className="mb-2 text-xs">{bp.category}</Badge>}
+                        <Link to={`/blog/${bp.slug}`}>
+                          <h3 className="font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors">{bp.title}</h3>
+                        </Link>
+                        <div className="mt-3 flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(bp.created_at).toLocaleDateString("bn-BD")}
+                          </span>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 gap-1 text-xs text-destructive hover:text-destructive"
+                            onClick={async () => {
+                              await supabase.from("bookmarks").delete().eq("id", bp.id);
+                              setBookmarkedPosts((prev) => prev.filter((p) => p.id !== bp.id));
+                            }}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" /> সরান
+                          </Button>
                         </div>
-                      </Link>
-                    )}
-                    <div className="p-4">
-                      {bp.category && <Badge variant="secondary" className="mb-2 text-xs">{bp.category}</Badge>}
-                      <Link to={`/blog/${bp.slug}`}>
-                        <h3 className="font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors">{bp.title}</h3>
-                      </Link>
-                      <div className="mt-3 flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(bp.created_at).toLocaleDateString("bn-BD")}
-                        </span>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-7 gap-1 text-xs text-destructive hover:text-destructive"
-                          onClick={async () => {
-                            await supabase.from("bookmarks").delete().eq("id", bp.id);
-                            setBookmarkedPosts((prev) => prev.filter((p) => p.id !== bp.id));
-                          }}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" /> সরান
-                        </Button>
                       </div>
                     </div>
-                  </div>
+                  </ScrollReveal>
                 ))}
               </div>
             )}
@@ -488,39 +497,41 @@ const UserDashboard = () => {
           {/* Order History Tab */}
           <TabsContent value="orders" className="mt-6">
             {allOrders.length === 0 ? (
-              <div className="rounded-xl border border-border bg-card p-10 text-center">
+              <div className="rounded-xl glass-card p-10 text-center">
                 <ShoppingBag className="mx-auto h-12 w-12 text-muted-foreground/40" />
                 <h3 className="mt-4 text-lg font-semibold text-foreground">কোনো অর্ডার নেই</h3>
                 <p className="mt-1 text-sm text-muted-foreground">আপনি এখনো কোনো অর্ডার করেননি।</p>
               </div>
             ) : (
               <div className="space-y-3">
-                {allOrders.map((order) => {
+                {allOrders.map((order, idx) => {
                   const sc = statusConfig[order.status] || statusConfig.pending;
                   const StatusIcon = sc.icon;
                   return (
-                    <div key={order.id} className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-mono text-xs text-muted-foreground">{order.order_id}</span>
-                          <Badge variant={sc.variant} className="gap-1 text-xs">
-                            <StatusIcon className="h-3 w-3" /> {sc.label}
-                          </Badge>
+                    <ScrollReveal key={order.id} delay={idx * 60}>
+                      <div className="flex flex-col gap-3 rounded-xl glass-card p-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-mono text-xs text-muted-foreground">{order.order_id}</span>
+                            <Badge variant={sc.variant} className="gap-1 text-xs">
+                              <StatusIcon className="h-3 w-3" /> {sc.label}
+                            </Badge>
+                          </div>
+                          <h4 className="mt-1 font-semibold text-foreground line-clamp-1">{order.product_title}</h4>
+                          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                            <span>{order.product_type === "book" ? "বই" : order.product_type === "course" ? "কোর্স" : "কুইজ"}</span>
+                            <span>৳{order.price}</span>
+                            <span>{paymentMethodLabels[order.payment_method] || order.payment_method}</span>
+                            <span>{new Date(order.created_at).toLocaleDateString("bn-BD")}</span>
+                          </div>
                         </div>
-                        <h4 className="mt-1 font-semibold text-foreground line-clamp-1">{order.product_title}</h4>
-                        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                          <span>{order.product_type === "book" ? "বই" : order.product_type === "course" ? "কোর্স" : "কুইজ"}</span>
-                          <span>৳{order.price}</span>
-                          <span>{paymentMethodLabels[order.payment_method] || order.payment_method}</span>
-                          <span>{new Date(order.created_at).toLocaleDateString("bn-BD")}</span>
+                        <div className="flex shrink-0 gap-2">
+                          <Button size="sm" variant="outline" className="gap-1" onClick={() => setDetailOrder(order)}>
+                            <Eye className="h-3.5 w-3.5" /> বিস্তারিত
+                          </Button>
                         </div>
                       </div>
-                      <div className="flex shrink-0 gap-2">
-                        <Button size="sm" variant="outline" className="gap-1" onClick={() => setDetailOrder(order)}>
-                          <Eye className="h-3.5 w-3.5" /> বিস্তারিত
-                        </Button>
-                      </div>
-                    </div>
+                    </ScrollReveal>
                   );
                 })}
               </div>
@@ -529,91 +540,93 @@ const UserDashboard = () => {
 
           {/* Profile Tab */}
           <TabsContent value="profile" className="mt-6">
-            <div className="mx-auto max-w-lg rounded-xl border border-border bg-card p-6">
-              <h3 className="text-lg font-semibold text-foreground mb-4">প্রোফাইল তথ্য</h3>
-              {profileLoading ? (
-                <div className="flex justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {/* Avatar Upload */}
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="relative group">
-                      <Avatar className="h-24 w-24 border-2 border-border">
-                        <AvatarImage src={avatarUrl || undefined} alt={fullName} />
-                        <AvatarFallback className="text-2xl bg-primary/10 text-primary">
-                          {fullName ? fullName.charAt(0).toUpperCase() : "U"}
-                        </AvatarFallback>
-                      </Avatar>
-                      <button
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={avatarUploading}
-                        className="absolute inset-0 flex items-center justify-center rounded-full bg-background/60 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                      >
-                        {avatarUploading ? (
-                          <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                        ) : (
-                          <Camera className="h-6 w-6 text-foreground" />
-                        )}
-                      </button>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleAvatarUpload}
+            <ScrollReveal>
+              <div className="mx-auto max-w-lg rounded-xl glass-card p-6 glow-hover">
+                <h3 className="text-lg font-semibold text-foreground mb-4">প্রোফাইল তথ্য</h3>
+                {profileLoading ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Avatar Upload */}
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="relative group">
+                        <Avatar className="h-24 w-24 border-2 border-border">
+                          <AvatarImage src={avatarUrl || undefined} alt={fullName} />
+                          <AvatarFallback className="text-2xl bg-primary/10 text-primary">
+                            {fullName ? fullName.charAt(0).toUpperCase() : "U"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <button
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={avatarUploading}
+                          className="absolute inset-0 flex items-center justify-center rounded-full bg-background/60 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                        >
+                          {avatarUploading ? (
+                            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                          ) : (
+                            <Camera className="h-6 w-6 text-foreground" />
+                          )}
+                        </button>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleAvatarUpload}
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground">ছবি আপলোড করুন (স্বয়ংক্রিয়ভাবে WebP এ কনভার্ট হবে)</p>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="email">ইমেইল</Label>
+                      <Input id="email" value={email} disabled className="mt-1 bg-muted" />
+                      <p className="text-xs text-muted-foreground mt-1">ইমেইল পরিবর্তন করা যায় না</p>
+                    </div>
+                    <div>
+                      <Label htmlFor="fullName">পুরো নাম *</Label>
+                      <Input
+                        id="fullName"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        maxLength={100}
+                        placeholder="আপনার নাম"
+                        className="mt-1 glass-input"
                       />
                     </div>
-                    <p className="text-xs text-muted-foreground">ছবি আপলোড করুন (স্বয়ংক্রিয়ভাবে WebP এ কনভার্ট হবে)</p>
+                    <div>
+                      <Label htmlFor="phone">মোবাইল নম্বর</Label>
+                      <Input
+                        id="phone"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        maxLength={20}
+                        placeholder="01XXXXXXXXX"
+                        className="mt-1 glass-input"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="address">ঠিকানা</Label>
+                      <Textarea
+                        id="address"
+                        value={address}
+                        onChange={(e) => setAddress(e.target.value)}
+                        maxLength={500}
+                        placeholder="আপনার ঠিকানা লিখুন"
+                        className="mt-1"
+                        rows={3}
+                      />
+                    </div>
+                    <Button onClick={handleProfileSave} disabled={profileSaving} className="w-full gap-2">
+                      {profileSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                      {profileSaving ? "সেভ হচ্ছে..." : "প্রোফাইল আপডেট করুন"}
+                    </Button>
                   </div>
-
-                  <div>
-                    <Label htmlFor="email">ইমেইল</Label>
-                    <Input id="email" value={email} disabled className="mt-1 bg-muted" />
-                    <p className="text-xs text-muted-foreground mt-1">ইমেইল পরিবর্তন করা যায় না</p>
-                  </div>
-                  <div>
-                    <Label htmlFor="fullName">পুরো নাম *</Label>
-                    <Input
-                      id="fullName"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      maxLength={100}
-                      placeholder="আপনার নাম"
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="phone">মোবাইল নম্বর</Label>
-                    <Input
-                      id="phone"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      maxLength={20}
-                      placeholder="01XXXXXXXXX"
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="address">ঠিকানা</Label>
-                    <Textarea
-                      id="address"
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                      maxLength={500}
-                      placeholder="আপনার ঠিকানা লিখুন"
-                      className="mt-1"
-                      rows={3}
-                    />
-                  </div>
-                  <Button onClick={handleProfileSave} disabled={profileSaving} className="w-full gap-2">
-                    {profileSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                    {profileSaving ? "সেভ হচ্ছে..." : "প্রোফাইল আপডেট করুন"}
-                  </Button>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            </ScrollReveal>
           </TabsContent>
         </Tabs>
       </div>
@@ -632,7 +645,6 @@ const UserDashboard = () => {
             const StatusIcon = sc.icon;
             return (
               <div className="space-y-4">
-                {/* Status */}
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant={sc.variant} className="gap-1">
                     <StatusIcon className="h-3.5 w-3.5" /> {sc.label}
@@ -642,7 +654,6 @@ const UserDashboard = () => {
 
                 <Separator />
 
-                {/* Product Info */}
                 <div>
                   <h4 className="text-sm font-semibold text-foreground mb-2">প্রোডাক্ট তথ্য</h4>
                   <div className="grid grid-cols-2 gap-2 text-sm">
@@ -654,7 +665,6 @@ const UserDashboard = () => {
 
                 <Separator />
 
-                {/* Payment Info */}
                 <div>
                   <h4 className="text-sm font-semibold text-foreground mb-2">পেমেন্ট তথ্য</h4>
                   <div className="grid grid-cols-2 gap-2 text-sm">
@@ -664,7 +674,6 @@ const UserDashboard = () => {
                   </div>
                 </div>
 
-                {/* Shipping Info */}
                 {detailOrder.customer_address && (
                   <>
                     <Separator />
@@ -680,7 +689,6 @@ const UserDashboard = () => {
                   </>
                 )}
 
-                {/* Courier Info */}
                 {detailOrder.courier_provider && (
                   <>
                     <Separator />
@@ -695,7 +703,6 @@ const UserDashboard = () => {
                   </>
                 )}
 
-                {/* Notes */}
                 {detailOrder.notes && (
                   <>
                     <Separator />
