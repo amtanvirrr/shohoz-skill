@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -71,6 +71,7 @@ interface MfsMethod {
 const QuizPage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const directQuizId = searchParams.get("id");
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
@@ -589,6 +590,12 @@ const QuizPage = () => {
           {!submitted && (
             <Button onClick={handleSubmit} size="lg" className="mt-8 w-full" disabled={Object.keys(answers).length === 0}>
               কুইজ জমা দিন
+            </Button>
+          )}
+
+          {submitted && (
+            <Button onClick={() => navigate(-1)} size="lg" className="mt-8 w-full" variant="default">
+              <CheckCircle className="mr-2 h-5 w-5" /> কুইজ সম্পন্ন — ফিরে যান
             </Button>
           )}
         </div>
