@@ -52,7 +52,7 @@ const Header = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-card/80 backdrop-blur-lg">
+    <header className="sticky top-0 z-50 glass-header transition-all duration-300">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link to="/" className="flex items-center gap-2 font-display text-xl font-bold text-foreground">
           <img src={settings.logo_url || "/favicon.webp"} alt={settings.site_name} className="h-9 w-9 rounded-lg" />
@@ -64,10 +64,10 @@ const Header = () => {
             <Link
               key={link.to}
               to={link.to}
-              className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+              className={`rounded-lg px-4 py-2 text-sm font-medium transition-all duration-300 ${
                 location.pathname === link.to
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  ? "bg-primary/10 text-primary shadow-sm"
+                  : "text-muted-foreground hover:bg-secondary/80 hover:text-foreground hover:translate-y-[-1px]"
               }`}
             >
               {link.label}
@@ -128,7 +128,7 @@ const Header = () => {
       </div>
 
       {mobileOpen && (
-        <div className="border-t border-border bg-card px-4 py-4 md:hidden">
+        <div className="border-t border-border/50 glass px-4 py-4 md:hidden animate-slide-up-fade">
           {user && (
             <Link to="/dashboard" onClick={() => setMobileOpen(false)} className="mb-3 flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-secondary">
               <Avatar className="h-9 w-9 border border-border">

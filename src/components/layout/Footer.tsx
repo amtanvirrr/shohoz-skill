@@ -37,9 +37,9 @@ const Footer = () => {
   };
 
   return (
-    <footer className="border-t border-border bg-card">
+    <footer className="border-t border-border/50 bg-card/80 backdrop-blur-sm">
       {/* Newsletter Section */}
-      <div className="border-b border-border bg-primary/5">
+      <div className="border-b border-border/50 bg-primary/5">
         <div className="container mx-auto px-4 py-12">
           <div className="mx-auto max-w-2xl text-center">
             <div className="mb-4 inline-flex items-center justify-center rounded-full bg-primary/10 p-3">
