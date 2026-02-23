@@ -73,7 +73,7 @@ const AdminQuizzes = () => {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
 
   const fetchQuizzes = async () => {
-    const { data } = await supabase.from("quizzes").select("*, quiz_questions(id)").order("created_at", { ascending: false });
+    const { data } = await supabase.from("quizzes").select("*, quiz_questions(id)").is("lesson_id", null).order("created_at", { ascending: false });
     if (data) {
       const counts: Record<string, number> = {};
       const mapped = data.map((q: any) => {
