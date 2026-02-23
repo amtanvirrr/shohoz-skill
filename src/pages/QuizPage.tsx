@@ -11,6 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import OrderSuccessDialog from "@/components/OrderSuccessDialog";
+import { ScrollReveal } from "@/hooks/useScrollReveal";
 
 interface QuizAttempt {
   id: string;
@@ -116,7 +117,6 @@ const QuizPage = () => {
 
   useEffect(() => {
     const fetchQuizzes = async () => {
-      // If accessing via direct ID (from enrolled course), load that specific quiz
       if (directQuizId && !directQuizStarted) {
         const { data } = await supabase.from("quizzes").select("*, quiz_questions(id)").eq("id", directQuizId).eq("is_published", true).single();
         if (data) {
@@ -128,7 +128,6 @@ const QuizPage = () => {
         return;
       }
 
-      // Public quiz list: only show quizzes NOT linked to any lesson
       const { data } = await supabase.from("quizzes").select("*, quiz_questions(id), quiz_sections(id)").eq("is_published", true).is("lesson_id", null);
       if (data) {
         const counts: Record<string, number> = {};
@@ -147,7 +146,6 @@ const QuizPage = () => {
     fetchQuizzes();
   }, [directQuizId]);
 
-  // Fetch MFS methods
   useEffect(() => {
     supabase.from("payment_methods").select("*").eq("is_active", true).order("sort_order").then(({ data }) => {
       const methods = (data as MfsMethod[]) || [];
@@ -156,7 +154,6 @@ const QuizPage = () => {
     });
   }, []);
 
-  // Fetch user's purchase status for paid quizzes
   useEffect(() => {
     if (!user || quizzes.length === 0) return;
     const paidQuizIds = quizzes.filter(q => q.price > 0).map(q => q.id);
@@ -180,7 +177,6 @@ const QuizPage = () => {
       });
   }, [user, quizzes]);
 
-  // Fetch user's past attempts
   useEffect(() => {
     if (!user) return;
     supabase
@@ -201,12 +197,10 @@ const QuizPage = () => {
   }, [user, submitted]);
 
   const fetchLeaderboard = async (quizId: string) => {
-    // Toggle off if already showing
     if (showLeaderboard === quizId) {
       setShowLeaderboard(null);
       return;
     }
-    // Always fetch fresh data
     const { data } = await supabase.rpc("get_quiz_leaderboard", { _quiz_id: quizId, _limit: 10 });
     if (data) {
       setLeaderboard((prev) => ({ ...prev, [quizId]: data as LeaderboardEntry[] }));
@@ -214,7 +208,6 @@ const QuizPage = () => {
     setShowLeaderboard(quizId);
   };
 
-  // Timer
   useEffect(() => {
     if (!selectedQuiz || submitted) return;
     if (timeLeft <= 0 && selectedQuiz) {
@@ -252,7 +245,6 @@ const QuizPage = () => {
     setSubmitted(true);
   }, [submitted]);
 
-  // Save attempt after submission
   useEffect(() => {
     if (!submitted || !selectedQuiz || questions.length === 0) return;
     let correct = 0;
@@ -280,7 +272,6 @@ const QuizPage = () => {
         if (error) {
           console.error("Failed to save quiz attempt:", error);
         } else {
-          // Refresh leaderboard for this quiz after saving
           const { data: lbData } = await supabase.rpc("get_quiz_leaderboard", { _quiz_id: selectedQuiz.id, _limit: 10 });
           if (lbData) {
             setLeaderboard((prev) => ({ ...prev, [selectedQuiz.id]: lbData as LeaderboardEntry[] }));
@@ -311,14 +302,12 @@ const QuizPage = () => {
     return { correct, wrong, skipped, score };
   };
 
-  // Handle quiz purchase
   const handlePurchaseQuiz = async (quiz: Quiz) => {
     if (!user) {
       toast({ title: "লগইন করুন", description: "কুইজ কিনতে আগে লগইন করুন।", variant: "destructive" });
       return;
     }
 
-    // Free quiz: auto-approve
     if (quiz.price === 0) {
       const { data, error } = await supabase.from("orders").insert({
         customer_name: user.user_metadata?.full_name || "User",
@@ -339,7 +328,6 @@ const QuizPage = () => {
       return;
     }
 
-    // Paid quiz: show payment form
     setPurchasingQuiz(quiz.id);
     setTransactionId("");
   };
@@ -400,7 +388,7 @@ const QuizPage = () => {
     const userAnswer = answers[q.id];
     const isCorrect = userAnswer === q.correct_option;
     return (
-      <div key={q.id} className={`rounded-xl border bg-card p-5 sm:p-6 ${submitted ? (userAnswer ? (isCorrect ? "border-success/30" : "border-destructive/30") : "border-border") : "border-border"}`}>
+      <div key={q.id} className={`rounded-xl glass-card p-5 sm:p-6 ${submitted ? (userAnswer ? (isCorrect ? "border-success/30" : "border-destructive/30") : "") : ""}`}>
         <p className="font-medium text-foreground">
           <span className="mr-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">{i + 1}</span>
           <span dangerouslySetInnerHTML={{ __html: q.question }} />
@@ -418,7 +406,7 @@ const QuizPage = () => {
               classes = "border-primary bg-primary/5";
             }
             return (
-              <label key={opt} className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 px-4 py-3 transition-all ${classes} ${submitted ? "pointer-events-none" : ""}`}>
+              <label key={opt} className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 px-4 py-3 transition-all duration-200 ${classes} ${submitted ? "pointer-events-none" : ""}`}>
                 <input type="radio" name={q.id} value={opt} checked={isSelected} onChange={() => setAnswers({ ...answers, [q.id]: opt })} className="accent-primary" disabled={submitted} />
                 <span className="mr-1 text-xs font-bold text-muted-foreground">{opt.toUpperCase()})</span>
                 <span className="flex-1 text-sm text-foreground">{(q as any)[`option_${opt}`]}</span>
@@ -452,7 +440,7 @@ const QuizPage = () => {
               <ArrowLeft className="mr-2 h-4 w-4" /> ফিরে যান
             </Button>
             {!submitted && (
-              <div className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-bold ${isLowTime ? "border-destructive bg-destructive/10 text-destructive animate-pulse" : "border-border bg-card text-foreground"}`}>
+              <div className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-bold ${isLowTime ? "border-destructive bg-destructive/10 text-destructive animate-pulse" : "border-border glass-card text-foreground"}`}>
                 <Clock className="h-4 w-4" />
                 {formatTime(timeLeft)}
               </div>
@@ -473,7 +461,7 @@ const QuizPage = () => {
 
           {/* Result summary */}
           {submitted && results && (
-            <div className="mt-6 rounded-xl border border-border bg-card p-6">
+            <div className="mt-6 rounded-xl glass-card p-6">
               <h2 className="text-center text-2xl font-bold text-foreground">
                 আপনার স্কোর: {results.score.toFixed(results.score % 1 !== 0 ? 2 : 0)}/{questions.length}
               </h2>
@@ -509,7 +497,7 @@ const QuizPage = () => {
                 const diff = results.score - lastAttempt.score;
 
                 return (
-                  <div className="mt-4 rounded-xl border border-border bg-card p-5">
+                  <div className="mt-4 rounded-xl glass-card p-5">
                     <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
                       <History className="h-4 w-4" /> পূর্ববর্তী অ্যাটেম্পটের সাথে তুলনা
                     </h3>
@@ -543,7 +531,7 @@ const QuizPage = () => {
             </div>
           )}
 
-          {/* Questions - grouped by sections if sections exist */}
+          {/* Questions */}
           <div className="mt-8 space-y-6">
             {quizSections.length > 0 ? (
               <>
@@ -565,7 +553,6 @@ const QuizPage = () => {
                     </div>
                   );
                 })}
-                {/* Unsectioned questions */}
                 {(() => {
                   const unsectioned = questions.filter(q => !q.section_id);
                   if (unsectioned.length === 0) return null;
@@ -616,161 +603,163 @@ const QuizPage = () => {
   return (
     <div className="py-16">
       <div className="container mx-auto px-4">
-        <h1 className="text-4xl font-bold text-foreground">কুইজ</h1>
-        <p className="mt-2 text-muted-foreground">আপনার জ্ঞান পরীক্ষা করুন</p>
+        <ScrollReveal>
+          <h1 className="text-4xl font-bold text-foreground">কুইজ</h1>
+          <p className="mt-2 text-muted-foreground">আপনার জ্ঞান পরীক্ষা করুন</p>
+        </ScrollReveal>
 
         {quizzes.length === 0 ? (
           <p className="mt-10 text-center text-muted-foreground">এখন কোনো কুইজ পাওয়া যাচ্ছে না।</p>
         ) : (
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {quizzes.map((quiz) => {
+            {quizzes.map((quiz, idx) => {
               const isPaid = quiz.price > 0;
               const hasAccess = canAccessQuiz(quiz);
               const statusBadge = getQuizStatusBadge(quiz);
               const orderSt = quizOrderStatus[quiz.id];
 
               return (
-                <div key={quiz.id} className="rounded-xl border border-border bg-card p-6 transition-shadow hover:shadow-md">
-                  <div className="flex items-start justify-between gap-2">
-                    <h3 className="font-display text-lg font-semibold text-foreground">{quiz.title}</h3>
-                    {statusBadge}
-                  </div>
-                  {quiz.description && <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{quiz.description}</p>}
-                  <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {quiz.duration_minutes} মিনিট</span>
-                    <span>{questionCounts[quiz.id] || 0} টি প্রশ্ন</span>
-                    {(sectionCounts[quiz.id] || 0) > 0 && (
-                      <span className="flex items-center gap-1">📖 {sectionCounts[quiz.id]} টি টপিক</span>
+                <ScrollReveal key={quiz.id} delay={idx * 80}>
+                  <div className="rounded-xl glass-card shimmer p-6 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="font-display text-lg font-semibold text-foreground">{quiz.title}</h3>
+                      {statusBadge}
+                    </div>
+                    {quiz.description && <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{quiz.description}</p>}
+                    <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {quiz.duration_minutes} মিনিট</span>
+                      <span>{questionCounts[quiz.id] || 0} টি প্রশ্ন</span>
+                      {(sectionCounts[quiz.id] || 0) > 0 && (
+                        <span className="flex items-center gap-1">📖 {sectionCounts[quiz.id]} টি টপিক</span>
+                      )}
+                    </div>
+
+                    {/* Pricing */}
+                    <div className="mt-3">
+                      {isPaid ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg font-bold text-primary">৳{quiz.price}</span>
+                          {quiz.original_price && quiz.original_price > quiz.price && (
+                            <span className="text-sm text-muted-foreground line-through">৳{quiz.original_price}</span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="inline-block rounded-full bg-green-500/10 px-3 py-1 text-sm font-semibold text-green-600">ফ্রি</span>
+                      )}
+                    </div>
+
+                    {quiz.negative_marking && (
+                      <p className="mt-2 flex items-center gap-1 text-xs text-destructive">
+                        <AlertTriangle className="h-3.5 w-3.5" /> নেগেটিভ মার্কিং ({quiz.negative_mark_value})
+                      </p>
                     )}
-                  </div>
 
-                  {/* Pricing */}
-                  <div className="mt-3">
-                    {isPaid ? (
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg font-bold text-primary">৳{quiz.price}</span>
-                        {quiz.original_price && quiz.original_price > quiz.price && (
-                          <span className="text-sm text-muted-foreground line-through">৳{quiz.original_price}</span>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="inline-block rounded-full bg-green-500/10 px-3 py-1 text-sm font-semibold text-green-600">ফ্রি</span>
-                    )}
-                  </div>
-
-                  {quiz.negative_marking && (
-                    <p className="mt-2 flex items-center gap-1 text-xs text-destructive">
-                      <AlertTriangle className="h-3.5 w-3.5" /> নেগেটিভ মার্কিং ({quiz.negative_mark_value})
-                    </p>
-                  )}
-
-                  {/* Action area */}
-                  <div className="mt-4 space-y-2">
-                    {/* Preview button */}
-                    <Button variant="outline" className="w-full" onClick={() => openPreview(quiz)}>
-                      <Eye className="mr-2 h-4 w-4" /> প্রিভিউ দেখুন
-                    </Button>
-                    {hasAccess ? (
-                      <div className="flex gap-2">
-                        <Button onClick={() => startQuiz(quiz)} className="flex-1">কুইজ শুরু করুন</Button>
-                        <Button variant="outline" size="icon" onClick={() => fetchLeaderboard(quiz.id)} title="লিডারবোর্ড">
-                          <Trophy className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ) : orderSt === "pending" ? (
-                      <Button disabled className="w-full" variant="outline">
-                        ⏳ পেমেন্ট যাচাই অপেক্ষমাণ
+                    {/* Action area */}
+                    <div className="mt-4 space-y-2">
+                      <Button variant="outline" className="w-full" onClick={() => openPreview(quiz)}>
+                        <Eye className="mr-2 h-4 w-4" /> প্রিভিউ দেখুন
                       </Button>
-                    ) : purchasingQuiz === quiz.id ? (
-                      /* Payment form */
-                      <div className="space-y-3 rounded-lg border border-border p-3">
-                        <div>
-                          <Label className="text-xs">পেমেন্ট মেথড</Label>
-                          <div className="mt-1 flex flex-wrap gap-2">
-                            {mfsMethods.map((m) => (
-                              <button
-                                key={m.id}
-                                onClick={() => setPaymentMethod(m.provider)}
-                                className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${paymentMethod === m.provider ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-primary/40"}`}
-                              >
-                                {m.display_name}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                        {selectedMfs && (
-                          <div className="rounded-md bg-muted/50 p-2 text-xs text-muted-foreground">
-                            <p><Smartphone className="mr-1 inline h-3 w-3" /> {selectedMfs.mfs_type}: <strong>{selectedMfs.phone_number}</strong></p>
-                            {selectedMfs.payment_instruction && <p className="mt-1">{selectedMfs.payment_instruction}</p>}
-                          </div>
-                        )}
-                        <div>
-                          <Label className="text-xs">ট্রানজেকশন আইডি *</Label>
-                          <Input value={transactionId} onChange={(e) => setTransactionId(e.target.value)} placeholder="ট্রানজেকশন আইডি" className="mt-1" />
-                        </div>
+                      {hasAccess ? (
                         <div className="flex gap-2">
-                          <Button size="sm" variant="outline" onClick={() => setPurchasingQuiz(null)} className="flex-1">বাতিল</Button>
-                          <Button size="sm" onClick={() => submitPurchase(quiz)} disabled={submitting} className="flex-1">
-                            {submitting ? "..." : "জমা দিন"}
+                          <Button onClick={() => startQuiz(quiz)} className="flex-1">কুইজ শুরু করুন</Button>
+                          <Button variant="outline" size="icon" onClick={() => fetchLeaderboard(quiz.id)} title="লিডারবোর্ড">
+                            <Trophy className="h-4 w-4" />
                           </Button>
                         </div>
-                      </div>
-                    ) : (
-                      <Button onClick={() => handlePurchaseQuiz(quiz)} className="w-full">
-                        <Lock className="mr-2 h-4 w-4" /> ৳{quiz.price} দিয়ে কিনুন
-                      </Button>
-                    )}
-                  </div>
-
-                  {/* Leaderboard */}
-                  {showLeaderboard === quiz.id && leaderboard[quiz.id] && (
-                    <div className="mt-4 border-t border-border pt-3">
-                      <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-foreground">
-                        <Trophy className="h-3.5 w-3.5 text-primary" /> টপ স্কোরার
-                      </p>
-                      {leaderboard[quiz.id].length === 0 ? (
-                        <p className="text-xs text-muted-foreground">এখনো কেউ অ্যাটেম্পট করেনি।</p>
+                      ) : orderSt === "pending" ? (
+                        <Button disabled className="w-full" variant="outline">
+                          ⏳ পেমেন্ট যাচাই অপেক্ষমাণ
+                        </Button>
+                      ) : purchasingQuiz === quiz.id ? (
+                        <div className="space-y-3 rounded-lg border border-border/50 p-3 bg-background/50 backdrop-blur-sm">
+                          <div>
+                            <Label className="text-xs">পেমেন্ট মেথড</Label>
+                            <div className="mt-1 flex flex-wrap gap-2">
+                              {mfsMethods.map((m) => (
+                                <button
+                                  key={m.id}
+                                  onClick={() => setPaymentMethod(m.provider)}
+                                  className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-all duration-200 ${paymentMethod === m.provider ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-primary/40"}`}
+                                >
+                                  {m.display_name}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                          {selectedMfs && (
+                            <div className="rounded-md bg-muted/50 p-2 text-xs text-muted-foreground">
+                              <p><Smartphone className="mr-1 inline h-3 w-3" /> {selectedMfs.mfs_type}: <strong>{selectedMfs.phone_number}</strong></p>
+                              {selectedMfs.payment_instruction && <p className="mt-1">{selectedMfs.payment_instruction}</p>}
+                            </div>
+                          )}
+                          <div>
+                            <Label className="text-xs">ট্রানজেকশন আইডি *</Label>
+                            <Input value={transactionId} onChange={(e) => setTransactionId(e.target.value)} placeholder="ট্রানজেকশন আইডি" className="mt-1 glass-input" />
+                          </div>
+                          <div className="flex gap-2">
+                            <Button size="sm" variant="outline" onClick={() => setPurchasingQuiz(null)} className="flex-1">বাতিল</Button>
+                            <Button size="sm" onClick={() => submitPurchase(quiz)} disabled={submitting} className="flex-1">
+                              {submitting ? "..." : "জমা দিন"}
+                            </Button>
+                          </div>
+                        </div>
                       ) : (
-                        <div className="space-y-1.5">
-                          {leaderboard[quiz.id].map((entry, idx) => (
-                            <div key={entry.user_id} className={`flex items-center gap-2 rounded-md px-3 py-2 text-xs ${idx < 3 ? "bg-primary/5" : "bg-muted/50"}`}>
-                              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold">
-                                {idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `#${idx + 1}`}
+                        <Button onClick={() => handlePurchaseQuiz(quiz)} className="w-full">
+                          <Lock className="mr-2 h-4 w-4" /> ৳{quiz.price} দিয়ে কিনুন
+                        </Button>
+                      )}
+                    </div>
+
+                    {/* Leaderboard */}
+                    {showLeaderboard === quiz.id && leaderboard[quiz.id] && (
+                      <div className="mt-4 border-t border-border/50 pt-3">
+                        <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                          <Trophy className="h-3.5 w-3.5 text-primary" /> টপ স্কোরার
+                        </p>
+                        {leaderboard[quiz.id].length === 0 ? (
+                          <p className="text-xs text-muted-foreground">এখনো কেউ অ্যাটেম্পট করেনি।</p>
+                        ) : (
+                          <div className="space-y-1.5">
+                            {leaderboard[quiz.id].map((entry, idx) => (
+                              <div key={entry.user_id} className={`flex items-center gap-2 rounded-md px-3 py-2 text-xs ${idx < 3 ? "bg-primary/5" : "bg-muted/50"}`}>
+                                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold">
+                                  {idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `#${idx + 1}`}
+                                </span>
+                                <span className="flex-1 truncate font-medium text-foreground">
+                                  {entry.full_name}
+                                  {user && entry.user_id === user.id && <span className="ml-1 text-primary">(আপনি)</span>}
+                                </span>
+                                <span className="font-bold text-primary">{entry.best_score}</span>
+                                <span className="text-muted-foreground">({entry.attempts_count}×)</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Attempt History */}
+                    {user && attempts[quiz.id] && attempts[quiz.id].length > 0 && (
+                      <div className="mt-4 border-t border-border/50 pt-3">
+                        <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+                          <History className="h-3.5 w-3.5" /> আগের অ্যাটেম্পট ({attempts[quiz.id].length})
+                        </p>
+                        <div className="max-h-32 space-y-1.5 overflow-y-auto">
+                          {attempts[quiz.id].slice(0, 5).map((att, idx) => (
+                            <div key={att.id} className="flex items-center justify-between rounded-md bg-muted/50 px-3 py-1.5 text-xs">
+                              <span className="text-muted-foreground">
+                                #{attempts[quiz.id].length - idx} · {format(new Date(att.created_at), "dd MMM yyyy, hh:mm a")}
                               </span>
-                              <span className="flex-1 truncate font-medium text-foreground">
-                                {entry.full_name}
-                                {user && entry.user_id === user.id && <span className="ml-1 text-primary">(আপনি)</span>}
+                              <span className={`font-bold ${att.score >= att.total_questions * 0.5 ? "text-success" : "text-destructive"}`}>
+                                {att.score}/{att.total_questions}
                               </span>
-                              <span className="font-bold text-primary">{entry.best_score}</span>
-                              <span className="text-muted-foreground">({entry.attempts_count}×)</span>
                             </div>
                           ))}
                         </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Attempt History */}
-                  {user && attempts[quiz.id] && attempts[quiz.id].length > 0 && (
-                    <div className="mt-4 border-t border-border pt-3">
-                      <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
-                        <History className="h-3.5 w-3.5" /> আগের অ্যাটেম্পট ({attempts[quiz.id].length})
-                      </p>
-                      <div className="max-h-32 space-y-1.5 overflow-y-auto">
-                        {attempts[quiz.id].slice(0, 5).map((att, idx) => (
-                          <div key={att.id} className="flex items-center justify-between rounded-md bg-muted/50 px-3 py-1.5 text-xs">
-                            <span className="text-muted-foreground">
-                              #{attempts[quiz.id].length - idx} · {format(new Date(att.created_at), "dd MMM yyyy, hh:mm a")}
-                            </span>
-                            <span className={`font-bold ${att.score >= att.total_questions * 0.5 ? "text-success" : "text-destructive"}`}>
-                              {att.score}/{att.total_questions}
-                            </span>
-                          </div>
-                        ))}
                       </div>
-                    </div>
-                  )}
-                </div>
+                    )}
+                  </div>
+                </ScrollReveal>
               );
             })}
           </div>
@@ -787,7 +776,6 @@ const QuizPage = () => {
           </div>
           {previewQuiz && (
             <div className="p-6 space-y-6">
-              {/* Key info badges */}
               <div className="flex flex-wrap gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary">
                   <Clock className="h-3.5 w-3.5" /> {previewQuiz.duration_minutes} মিনিট
@@ -802,8 +790,7 @@ const QuizPage = () => {
                 )}
               </div>
 
-              {/* Pricing */}
-              <div className="rounded-xl border border-border bg-muted/30 p-4">
+              <div className="rounded-xl glass-card p-4">
                 {previewQuiz.price > 0 ? (
                   <div className="flex items-center gap-3">
                     <span className="text-2xl font-bold text-primary">৳{previewQuiz.price}</span>
@@ -821,7 +808,6 @@ const QuizPage = () => {
                 )}
               </div>
 
-              {/* Description */}
               {previewQuiz.description && (
                 <div>
                   <h3 className="text-base font-semibold text-foreground mb-2">বিবরণ</h3>
@@ -829,32 +815,31 @@ const QuizPage = () => {
                 </div>
               )}
 
-              {/* Quiz features */}
               <div>
                 <h3 className="text-base font-semibold text-foreground mb-3">কুইজের বৈশিষ্ট্য</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="flex items-start gap-3 rounded-lg border border-border p-3">
+                  <div className="flex items-start gap-3 rounded-lg glass-card p-3">
                     <Clock className="h-5 w-5 text-primary mt-0.5 shrink-0" />
                     <div>
                       <p className="text-sm font-medium text-foreground">সময়সীমা</p>
                       <p className="text-xs text-muted-foreground">{previewQuiz.duration_minutes} মিনিট</p>
                     </div>
                   </div>
-                  <div className="flex items-start gap-3 rounded-lg border border-border p-3">
+                  <div className="flex items-start gap-3 rounded-lg glass-card p-3">
                     <CheckCircle className="h-5 w-5 text-primary mt-0.5 shrink-0" />
                     <div>
                       <p className="text-sm font-medium text-foreground">মোট প্রশ্ন</p>
                       <p className="text-xs text-muted-foreground">{questionCounts[previewQuiz.id] || 0} টি MCQ প্রশ্ন</p>
                     </div>
                   </div>
-                  <div className="flex items-start gap-3 rounded-lg border border-border p-3">
+                  <div className="flex items-start gap-3 rounded-lg glass-card p-3">
                     <AlertTriangle className="h-5 w-5 text-primary mt-0.5 shrink-0" />
                     <div>
                       <p className="text-sm font-medium text-foreground">নেগেটিভ মার্কিং</p>
                       <p className="text-xs text-muted-foreground">{previewQuiz.negative_marking ? `হ্যাঁ (প্রতি ভুলে -${previewQuiz.negative_mark_value})` : "নেই"}</p>
                     </div>
                   </div>
-                  <div className="flex items-start gap-3 rounded-lg border border-border p-3">
+                  <div className="flex items-start gap-3 rounded-lg glass-card p-3">
                     <Trophy className="h-5 w-5 text-primary mt-0.5 shrink-0" />
                     <div>
                       <p className="text-sm font-medium text-foreground">লিডারবোর্ড</p>
@@ -864,13 +849,12 @@ const QuizPage = () => {
                 </div>
               </div>
 
-              {/* Sections / Topics */}
               {previewSections.length > 0 && (
                 <div>
                   <h3 className="text-base font-semibold text-foreground mb-3">📖 কুইজের টপিকসমূহ</h3>
                   <div className="space-y-2">
                     {previewSections.map((sec, idx) => (
-                        <div key={sec.id} className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3">
+                        <div key={sec.id} className="flex items-center gap-3 rounded-lg glass-card px-4 py-3">
                           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">{idx + 1}</span>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-foreground">{sec.title}</p>
@@ -878,12 +862,10 @@ const QuizPage = () => {
                           </div>
                         </div>
                     ))}
-
                   </div>
                 </div>
               )}
 
-              {/* CTA */}
               <div className="pt-2">
                 {canAccessQuiz(previewQuiz) ? (
                   <Button className="w-full" size="lg" onClick={() => { setPreviewQuiz(null); setPreviewQuestions([]); startQuiz(previewQuiz); }}>
