@@ -8,6 +8,7 @@ import { MetaPixelProvider } from "@/components/MetaPixelProvider";
 import Layout from "@/components/layout/Layout";
 import AdminLayout from "@/components/admin/AdminLayout";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import ScrollToTop from "@/components/ScrollToTop";
 import Index from "./pages/Index";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
@@ -55,6 +56,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <MetaPixelProvider>
+          <ScrollToTop />
           <Routes>
             {/* Public routes with Layout */}
             <Route path="/" element={<Layout><Index /></Layout>} />
