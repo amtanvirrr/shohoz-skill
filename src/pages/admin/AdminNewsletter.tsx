@@ -147,7 +147,7 @@ const AdminNewsletter = () => {
           <p className="text-muted-foreground">কোনো সাবস্ক্রাইবার পাওয়া যায়নি</p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-border">
+        <div className="overflow-hidden rounded-xl glass-card">
           <table className="w-full">
             <thead>
               <tr className="border-b border-border bg-muted/50">

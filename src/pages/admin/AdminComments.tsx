@@ -91,7 +91,7 @@ const AdminComments = () => {
           <p className="text-muted-foreground">কোনো মন্তব্য নেই</p>
         </div>
       ) : (
-        <div className="rounded-lg border border-border">
+        <div className="rounded-lg glass-card overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>

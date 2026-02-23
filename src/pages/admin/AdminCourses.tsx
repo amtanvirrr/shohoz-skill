@@ -233,7 +233,7 @@ const AdminCourses = () => {
           {/* Mobile cards */}
           <div className="mt-4 space-y-3 md:hidden">
             {courses.map((course) => (
-              <div key={course.id} className="rounded-xl border border-border bg-card p-3 space-y-2">
+              <div key={course.id} className="rounded-xl glass-card p-3 space-y-2">
                 <div className="flex items-center gap-3">
                   {course.image_url && <img src={course.image_url} alt="" className="h-14 w-14 shrink-0 rounded object-cover" />}
                   <div className="flex-1 min-w-0">

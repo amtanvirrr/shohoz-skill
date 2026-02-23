@@ -164,7 +164,7 @@ const AdminHero = () => {
       <div className="mt-6 grid gap-6 sm:mt-8 lg:grid-cols-2 lg:gap-8">
         {/* Left: Text & Buttons & Stats */}
         <div className="space-y-4 sm:space-y-6">
-          <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+          <div className="rounded-xl glass-card p-6 space-y-4">
             <h3 className="font-display text-lg font-semibold text-foreground">টেক্সট</h3>
             <div>
               <Label>শিরোনাম</Label>
@@ -176,7 +176,7 @@ const AdminHero = () => {
             </div>
           </div>
 
-          <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+          <div className="rounded-xl glass-card p-6 space-y-4">
             <h3 className="font-display text-lg font-semibold text-foreground">বাটন</h3>
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -198,7 +198,7 @@ const AdminHero = () => {
             </div>
           </div>
 
-          <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+          <div className="rounded-xl glass-card p-6 space-y-4">
             <h3 className="font-display text-lg font-semibold text-foreground">স্ট্যাটিস্টিকস</h3>
             {[1, 2, 3].map((n) => (
               <div key={n} className="grid grid-cols-2 gap-3">
@@ -232,7 +232,7 @@ const AdminHero = () => {
           )}
 
           {slides.map((slide, idx) => (
-            <div key={slide.id} className="rounded-xl border border-border bg-card p-4 space-y-3">
+            <div key={slide.id} className="rounded-xl glass-card p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-foreground">স্লাইড #{idx + 1}</span>
                 <div className="flex gap-1">

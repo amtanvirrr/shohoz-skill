@@ -339,7 +339,7 @@ const AdminBooks = () => {
           {/* Mobile cards */}
           <div className="mt-4 space-y-3 md:hidden">
             {books.map((book) => (
-              <div key={book.id} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
+              <div key={book.id} className="flex items-center gap-3 rounded-xl glass-card p-3">
                 {book.image_url && <img src={book.image_url} alt="" className="h-16 w-12 shrink-0 rounded object-cover" />}
                 <div className="flex-1 min-w-0">
                   <h4 className="font-medium text-foreground text-sm line-clamp-1">{book.title}</h4>

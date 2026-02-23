@@ -128,13 +128,13 @@ const AdminShipping = () => {
 
       <div className="mt-6 space-y-4">
         {zones.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border bg-card p-12 text-center">
+          <div className="rounded-xl border border-dashed border-border/50 bg-card/50 backdrop-blur-sm p-12 text-center">
             <Package className="mx-auto h-12 w-12 text-muted-foreground/50" />
             <p className="mt-3 text-muted-foreground">কোনো শিপিং জোন নেই। নতুন জোন যোগ করুন।</p>
           </div>
         ) : (
           zones.map((zone, idx) => (
-            <div key={zone.id} className="rounded-xl border border-border bg-card p-6 space-y-4">
+            <div key={zone.id} className="rounded-xl glass-card p-6 space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
                   <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">

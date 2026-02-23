@@ -161,7 +161,7 @@ const AdminUsers = () => {
           <p className="text-muted-foreground">{searchQuery ? "কোনো ইউজার পাওয়া যায়নি" : "No users yet."}</p>
         </div>
       ) : (
-        <div className="mt-4 overflow-x-auto rounded-lg border border-border">
+        <div className="mt-4 overflow-x-auto rounded-lg glass-card">
           <table className="w-full text-left text-sm">
             <thead className="border-b border-border bg-muted/30">
               <tr>

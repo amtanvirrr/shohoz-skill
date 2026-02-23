@@ -204,7 +204,7 @@ const AdminSettings = () => {
       <div className="mt-6 max-w-2xl">
         {/* Site Branding */}
         {activeSection === "branding" && (
-          <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+          <div className="rounded-xl glass-card p-6 space-y-4">
             <h3 className="font-display text-lg font-semibold text-foreground">সাইট ব্র্যান্ডিং</h3>
             <p className="text-sm text-muted-foreground">সাইটের নাম, বর্ণনা এবং কপিরাইট টেক্সট পরিবর্তন করুন।</p>
             <div>
@@ -253,7 +253,7 @@ const AdminSettings = () => {
 
         {/* Homepage Sections */}
         {activeSection === "homepage" && (
-          <div className="rounded-xl border border-border bg-card p-6 space-y-6">
+          <div className="rounded-xl glass-card p-6 space-y-6">
             <h3 className="font-display text-lg font-semibold text-foreground">হোমপেজ সেকশন</h3>
             <p className="text-sm text-muted-foreground">হোমপেজের প্রতিটি সেকশনের টাইটেল, সাবটাইটেল এবং ফিচার্ড প্রোডাক্ট নির্বাচন করুন।</p>
 
@@ -341,7 +341,7 @@ const AdminSettings = () => {
 
         {/* Logos */}
         {activeSection === "logos" && (
-          <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+          <div className="rounded-xl glass-card p-6 space-y-4">
             <h3 className="font-display text-lg font-semibold text-foreground">লোগো ও আইকন</h3>
             <p className="text-sm text-muted-foreground">ইমেজ URL দিন। Storage বা যেকোনো CDN URL ব্যবহার করতে পারেন।</p>
             <div>
@@ -369,7 +369,7 @@ const AdminSettings = () => {
 
         {/* Meta Pixel */}
         {activeSection === "pixel" && (
-          <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+          <div className="rounded-xl glass-card p-6 space-y-4">
             <h3 className="font-display text-lg font-semibold text-foreground">Meta Pixel & Conversions API</h3>
             <p className="text-sm text-muted-foreground">ক্লায়েন্ট-সাইড Pixel এবং সার্ভার-সাইড Conversions API এর মাধ্যমে ইভেন্ট ট্র্যাকিং করুন।</p>
             <div>
@@ -401,7 +401,7 @@ const AdminSettings = () => {
 
         {/* Contact Information */}
         {activeSection === "contact" && (
-          <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+          <div className="rounded-xl glass-card p-6 space-y-4">
             <h3 className="font-display text-lg font-semibold text-foreground">যোগাযোগ তথ্য</h3>
             <p className="text-sm text-muted-foreground">কন্টাক্ট পেজ এবং ফুটারে প্রদর্শিত যোগাযোগের তথ্য পরিবর্তন করুন।</p>
             <div>
@@ -421,7 +421,7 @@ const AdminSettings = () => {
 
         {/* Contact Page */}
         {activeSection === "contact-page" && (
-          <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+          <div className="rounded-xl glass-card p-6 space-y-4">
             <h3 className="font-display text-lg font-semibold text-foreground">কন্টাক্ট পেজ</h3>
             <p className="text-sm text-muted-foreground">কন্টাক্ট পেজের টাইটেল ও সাবটাইটেল পরিবর্তন করুন।</p>
             <div>
@@ -437,7 +437,7 @@ const AdminSettings = () => {
 
         {/* Newsletter */}
         {activeSection === "newsletter-settings" && (
-          <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+          <div className="rounded-xl glass-card p-6 space-y-4">
             <h3 className="font-display text-lg font-semibold text-foreground">নিউজলেটার</h3>
             <p className="text-sm text-muted-foreground">ফুটারে প্রদর্শিত নিউজলেটার সেকশনের টাইটেল পরিবর্তন করুন।</p>
             <div>
@@ -449,7 +449,7 @@ const AdminSettings = () => {
 
         {/* About Page */}
         {activeSection === "about" && (
-          <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+          <div className="rounded-xl glass-card p-6 space-y-4">
             <h3 className="font-display text-lg font-semibold text-foreground">About পেজ</h3>
             <p className="text-sm text-muted-foreground">About পেজে প্রদর্শিত কন্টেন্ট পরিবর্তন করুন।</p>
             <div>
@@ -464,7 +464,7 @@ const AdminSettings = () => {
         {/* Courier Settings */}
         {activeSection === "courier" && (
           <div className="space-y-6">
-            <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+            <div className="rounded-xl glass-card p-6 space-y-4">
               <h3 className="font-display text-lg font-semibold text-foreground">Steadfast Courier</h3>
               <p className="text-sm text-muted-foreground">Steadfast Portal থেকে API Key এবং Secret Key সংগ্রহ করুন।</p>
               <div>
@@ -477,7 +477,7 @@ const AdminSettings = () => {
               </div>
             </div>
 
-            <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+            <div className="rounded-xl glass-card p-6 space-y-4">
               <h3 className="font-display text-lg font-semibold text-foreground">Pathao Courier</h3>
               <p className="text-sm text-muted-foreground">Pathao Merchant Panel থেকে API credentials সংগ্রহ করুন।</p>
               <div>
@@ -502,7 +502,7 @@ const AdminSettings = () => {
               </div>
             </div>
 
-            <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+            <div className="rounded-xl glass-card p-6 space-y-4">
               <h3 className="font-display text-lg font-semibold text-foreground">RedX Courier</h3>
               <p className="text-sm text-muted-foreground">RedX Developer Panel থেকে API Access Token সংগ্রহ করুন।</p>
               <div>
@@ -519,7 +519,7 @@ const AdminSettings = () => {
 
         {/* SMTP */}
         {activeSection === "smtp" && (
-          <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+          <div className="rounded-xl glass-card p-6 space-y-4">
             <h3 className="font-display text-lg font-semibold text-foreground">Email Notifications (SMTP)</h3>
             <p className="text-sm text-muted-foreground">নতুন অর্ডার আসলে অ্যাডমিনকে ইমেইলে নোটিফিকেশন পাঠাতে SMTP কনফিগার করুন।</p>
             <div>

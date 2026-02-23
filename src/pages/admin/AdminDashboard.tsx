@@ -37,7 +37,7 @@ const AdminDashboard = () => {
         {cards.map((card) => {
           const Icon = card.icon;
           return (
-            <div key={card.label} className="rounded-xl border border-border bg-card p-5">
+            <div key={card.label} className="rounded-xl glass-card p-5 transition-all duration-300 hover:-translate-y-0.5">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">{card.label}</span>
                 <Icon className={`h-5 w-5 ${card.color}`} />
