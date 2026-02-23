@@ -169,7 +169,7 @@ const AdminPayments = () => {
       ) : (
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           {methods.map((m) => (
-            <div key={m.id} className={`rounded-xl border border-border bg-card p-5 ${!m.is_active ? "opacity-50" : ""}`}>
+            <div key={m.id} className={`rounded-xl glass-card p-5 transition-all duration-300 hover:-translate-y-0.5 ${!m.is_active ? "opacity-50" : ""}`}>
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
                   <span className={`rounded-lg px-3 py-1.5 text-xs font-bold uppercase ${getProviderColor(m.provider)}`}>

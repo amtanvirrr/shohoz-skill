@@ -56,7 +56,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="flex min-h-screen bg-background">
       {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-64 border-r border-border bg-card transition-transform lg:relative lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
+      <aside className={`fixed inset-y-0 left-0 z-50 w-64 border-r border-border/50 bg-card/80 backdrop-blur-xl transition-transform lg:relative lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="flex h-16 items-center justify-between border-b border-border px-4">
           <Link to="/admin" className="flex items-center gap-2 font-display text-lg font-bold text-foreground">
             <img src={settings.admin_logo_url || "/favicon.webp"} alt={settings.site_name} className="h-8 w-8 rounded-lg" />
@@ -145,7 +145,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
 
       {/* Main */}
       <div className="flex-1">
-        <header className="flex h-16 items-center border-b border-border bg-card px-4 lg:px-6">
+        <header className="flex h-16 items-center border-b border-border/50 bg-card/80 backdrop-blur-xl px-4 lg:px-6">
           <button onClick={() => setSidebarOpen(true)} className="mr-4 lg:hidden">
             <Menu className="h-5 w-5" />
           </button>
