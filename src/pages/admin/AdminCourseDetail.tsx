@@ -855,7 +855,7 @@ const AdminCourseDetail = () => {
           </DialogHeader>
           <div className="space-y-4 pt-4">
             <div><Label>সেকশনের নাম *</Label><Input value={sectionForm.title} onChange={(e) => setSectionForm({ ...sectionForm, title: e.target.value })} className="mt-1" placeholder="যেমন: নাউন, ভার্ব" /></div>
-            <div><Label>বিবরণ</Label><Input value={sectionForm.description} onChange={(e) => setSectionForm({ ...sectionForm, description: e.target.value })} className="mt-1" placeholder="ঐচ্ছিক" /></div>
+            <div><Label>বিবরণ</Label><div className="mt-1"><RichTextEditor content={sectionForm.description} onChange={(html) => setSectionForm({ ...sectionForm, description: html })} placeholder="ঐচ্ছিক বিবরণ..." minHeight="80px" /></div></div>
             <Button onClick={handleSaveSection} className="w-full">{editingSection ? "আপডেট" : "যোগ করুন"}</Button>
           </div>
         </DialogContent>
@@ -880,13 +880,11 @@ const AdminCourseDetail = () => {
                 </Select>
               </div>
             )}
-            <div><Label>প্রশ্ন *</Label><Input value={qForm.question} onChange={(e) => setQForm({ ...qForm, question: e.target.value })} className="mt-1" /></div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><Label>অপশন A *</Label><Input value={qForm.option_a} onChange={(e) => setQForm({ ...qForm, option_a: e.target.value })} className="mt-1" /></div>
-              <div><Label>অপশন B *</Label><Input value={qForm.option_b} onChange={(e) => setQForm({ ...qForm, option_b: e.target.value })} className="mt-1" /></div>
-              <div><Label>অপশন C *</Label><Input value={qForm.option_c} onChange={(e) => setQForm({ ...qForm, option_c: e.target.value })} className="mt-1" /></div>
-              <div><Label>অপশন D *</Label><Input value={qForm.option_d} onChange={(e) => setQForm({ ...qForm, option_d: e.target.value })} className="mt-1" /></div>
-            </div>
+            <div><Label>প্রশ্ন *</Label><div className="mt-1"><RichTextEditor content={qForm.question} onChange={(html) => setQForm({ ...qForm, question: html })} placeholder="প্রশ্ন লিখুন..." minHeight="80px" /></div></div>
+            <div><Label>অপশন A *</Label><div className="mt-1"><RichTextEditor content={qForm.option_a} onChange={(html) => setQForm({ ...qForm, option_a: html })} placeholder="অপশন A" minHeight="60px" /></div></div>
+            <div><Label>অপশন B *</Label><div className="mt-1"><RichTextEditor content={qForm.option_b} onChange={(html) => setQForm({ ...qForm, option_b: html })} placeholder="অপশন B" minHeight="60px" /></div></div>
+            <div><Label>অপশন C *</Label><div className="mt-1"><RichTextEditor content={qForm.option_c} onChange={(html) => setQForm({ ...qForm, option_c: html })} placeholder="অপশন C" minHeight="60px" /></div></div>
+            <div><Label>অপশন D *</Label><div className="mt-1"><RichTextEditor content={qForm.option_d} onChange={(html) => setQForm({ ...qForm, option_d: html })} placeholder="অপশন D" minHeight="60px" /></div></div>
             <div>
               <Label>সঠিক উত্তর *</Label>
               <Select value={qForm.correct_option} onValueChange={(v) => setQForm({ ...qForm, correct_option: v })}>
@@ -899,7 +897,7 @@ const AdminCourseDetail = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div><Label>ব্যাখ্যা (ঐচ্ছিক)</Label><Input value={qForm.explanation} onChange={(e) => setQForm({ ...qForm, explanation: e.target.value })} className="mt-1" placeholder="সঠিক উত্তরের ব্যাখ্যা" /></div>
+            <div><Label>ব্যাখ্যা (ঐচ্ছিক)</Label><div className="mt-1"><RichTextEditor content={qForm.explanation} onChange={(html) => setQForm({ ...qForm, explanation: html })} placeholder="সঠিক উত্তরের ব্যাখ্যা" minHeight="60px" /></div></div>
             <Button onClick={handleSaveQuestion} className="w-full">{editingQuestion ? "আপডেট" : "প্রশ্ন যোগ করুন"}</Button>
           </div>
         </DialogContent>
