@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, ShoppingBag, Smartphone, BookOpen, Clock, Eye } from "lucide-react";
+import { ScrollReveal } from "@/hooks/useScrollReveal";
 import { useToast } from "@/hooks/use-toast";
 import { usePixel } from "@/components/MetaPixelProvider";
 import OrderSuccessDialog from "@/components/OrderSuccessDialog";
@@ -192,41 +193,50 @@ const BookDetail = () => {
   return (
     <div className="py-10 lg:py-16">
       <div className="container mx-auto px-4">
-        <Link to="/books" className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary">
+        <Link to="/books" className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors">
           <ArrowLeft className="h-4 w-4" /> বইয়ের তালিকায় ফিরে যান
         </Link>
 
         <div className="mt-4 grid gap-10 lg:grid-cols-2">
-          <div className="overflow-hidden rounded-xl border border-border bg-card flex items-center justify-center lg:max-h-[75vh]">
-            {book.image_url && <img src={book.image_url} alt={book.title} className="w-full h-full object-contain" style={{ aspectRatio: '3/4' }} />}
-          </div>
+          <ScrollReveal>
+            <div className="overflow-hidden rounded-xl glass-card flex items-center justify-center lg:max-h-[75vh]">
+              {book.image_url && <img src={book.image_url} alt={book.title} className="w-full h-full object-contain" style={{ aspectRatio: '3/4' }} />}
+            </div>
+          </ScrollReveal>
 
           <div>
-            <div className="flex flex-wrap gap-2">
-              <span className="inline-block rounded-full bg-accent/15 px-3 py-1 text-xs font-medium text-accent">{book.category}</span>
-              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
-                isEbook
-                  ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-                  : "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
-              }`}>
-                {isEbook ? "📱 ইবুক" : "📦 ফিজিক্যাল বই"}
-              </span>
-            </div>
-            <h1 className="mt-3 text-3xl font-bold text-foreground lg:text-4xl">{book.title}</h1>
-            <p className="mt-2 text-muted-foreground">লেখক: {book.author}</p>
+            <ScrollReveal direction="right" delay={100}>
+              <div className="flex flex-wrap gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/15 px-3 py-1 text-xs font-medium text-accent">
+                  <BookOpen className="h-3.5 w-3.5" />
+                  {book.category}
+                </span>
+                <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
+                  isEbook
+                    ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                    : "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
+                }`}>
+                  {isEbook ? "📱 ইবুক" : "📦 ফিজিক্যাল বই"}
+                </span>
+              </div>
+              <h1 className="mt-3 text-3xl font-bold text-foreground lg:text-4xl">{book.title}</h1>
+              <p className="mt-2 text-muted-foreground">লেখক: {book.author}</p>
 
-            <div className="mt-4 flex items-baseline gap-3">
-              {book.price === 0 ? (
-                <span className="text-3xl font-bold text-green-600">ফ্রি</span>
-              ) : (
-                <>
-                  <span className="text-3xl font-bold text-foreground">৳{book.price}</span>
-                  {book.original_price && <span className="text-lg text-muted-foreground line-through">৳{book.original_price}</span>}
-                </>
-              )}
-            </div>
+              <div className="mt-4 flex items-baseline gap-3">
+                {book.price === 0 ? (
+                  <span className="text-3xl font-bold text-green-600">ফ্রি</span>
+                ) : (
+                  <>
+                    <span className="text-3xl font-bold text-foreground">৳{book.price}</span>
+                    {book.original_price && <span className="text-lg text-muted-foreground line-through">৳{book.original_price}</span>}
+                  </>
+                )}
+              </div>
+            </ScrollReveal>
 
-            <div className="mt-6 leading-relaxed text-muted-foreground prose prose-sm dark:prose-invert max-w-none prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground" dangerouslySetInnerHTML={{ __html: book.description }} />
+            <ScrollReveal delay={200}>
+              <div className="mt-6 glass-card rounded-xl p-5 leading-relaxed text-muted-foreground prose prose-sm dark:prose-invert max-w-none prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground" dangerouslySetInnerHTML={{ __html: book.description }} />
+            </ScrollReveal>
 
             {/* Demo Preview Button */}
             {book.demo_pdf_url && (
@@ -245,9 +255,9 @@ const BookDetail = () => {
               </button>
             )}
 
-            {/* Already purchased ebook - show read button */}
+            <ScrollReveal delay={300}>
             {isEbook && orderStatus && ["confirmed", "delivered"].includes(orderStatus) ? (
-              <div className="mt-8 rounded-xl border border-border bg-card p-6">
+              <div className="mt-8 rounded-xl glass-card p-6">
                 <h3 className="flex items-center gap-2 font-display text-lg font-semibold text-foreground">
                   <BookOpen className="h-5 w-5 text-primary" /> আপনি এই বইটি কিনেছেন
                 </h3>
@@ -257,7 +267,7 @@ const BookDetail = () => {
                 </Button>
               </div>
             ) : isEbook && orderStatus === "pending" ? (
-              <div className="mt-8 rounded-xl border border-border bg-card p-6">
+              <div className="mt-8 rounded-xl glass-card p-6">
                 <h3 className="flex items-center gap-2 font-display text-lg font-semibold text-foreground">
                   <Clock className="h-5 w-5 text-yellow-500" /> পেমেন্ট যাচাই অপেক্ষমাণ
                 </h3>
@@ -269,7 +279,7 @@ const BookDetail = () => {
                 </div>
               </div>
             ) : book.price === 0 ? (
-              <div className="mt-8 rounded-xl border border-border bg-card p-6">
+              <div className="mt-8 rounded-xl glass-card p-6">
                 <h3 className="flex items-center gap-2 font-display text-lg font-semibold text-foreground">
                   <ShoppingBag className="h-5 w-5 text-primary" /> ফ্রি বই
                 </h3>
@@ -315,7 +325,7 @@ const BookDetail = () => {
                 </Button>
               </div>
             ) : (
-              <div className="mt-8 rounded-xl border border-border bg-card p-6">
+              <div className="mt-8 rounded-xl glass-card p-6 glow-hover">
                 <h3 className="flex items-center gap-2 font-display text-lg font-semibold text-foreground">
                   <ShoppingBag className="h-5 w-5 text-primary" /> {isPhysical ? "এখনই অর্ডার করুন" : "এখনই কিনুন"}
                 </h3>
@@ -451,6 +461,7 @@ const BookDetail = () => {
                 </form>
               </div>
             )}
+            </ScrollReveal>
           </div>
         </div>
       </div>
