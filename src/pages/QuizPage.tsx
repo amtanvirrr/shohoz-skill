@@ -594,7 +594,14 @@ const QuizPage = () => {
           )}
 
           {submitted && (
-            <Button onClick={() => navigate(-1)} size="lg" className="mt-8 w-full" variant="default">
+            <Button onClick={() => {
+              if (directQuizId) {
+                navigate(-1);
+              } else {
+                setSelectedQuiz(null);
+                setSubmitted(false);
+              }
+            }} size="lg" className="mt-8 w-full" variant="default">
               <CheckCircle className="mr-2 h-5 w-5" /> কুইজ সম্পন্ন — ফিরে যান
             </Button>
           )}
