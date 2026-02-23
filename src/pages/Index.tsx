@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Star, Search, ArrowRight, BookOpen, GraduationCap, Clock, Users, CheckCircle, Package, Truck } from "lucide-react";
+import { Star, Search, ArrowRight, BookOpen, GraduationCap, Clock, Users, CheckCircle, Package, Truck, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { ScrollReveal } from "@/hooks/useScrollReveal";
 
 import HeroBanner from "@/components/HeroBanner";
 
@@ -205,53 +206,73 @@ const Index = () => {
   };
 
   return (
-    <div>
+    <div className="overflow-hidden">
       {/* Hero */}
       <HeroBanner />
 
       {/* Featured Courses */}
-      <section className="py-10 sm:py-16 lg:py-20">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-foreground sm:text-3xl">{settings.homepage_courses_title || "ফিচার্ড কোর্স"}</h2>
-              <p className="mt-1 text-sm text-muted-foreground sm:mt-2 sm:text-base">{settings.homepage_courses_subtitle || "ক্যারিয়ার গড়তে সেরা কোর্সগুলো"}</p>
+      <section className="relative py-10 sm:py-16 lg:py-20">
+        {/* Subtle gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-b from-background via-primary/[0.02] to-background pointer-events-none" />
+        <div className="container relative mx-auto px-4">
+          <ScrollReveal>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                  <GraduationCap className="h-3.5 w-3.5" />
+                  কোর্স
+                </div>
+                <h2 className="text-2xl font-bold text-foreground sm:text-3xl">{settings.homepage_courses_title || "ফিচার্ড কোর্স"}</h2>
+                <p className="mt-1 text-sm text-muted-foreground sm:mt-2 sm:text-base">{settings.homepage_courses_subtitle || "ক্যারিয়ার গড়তে সেরা কোর্সগুলো"}</p>
+              </div>
+              <Link to="/courses" className="hidden items-center gap-1 text-sm font-medium text-primary hover:underline sm:flex group">
+                সব দেখুন <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </Link>
             </div>
-            <Link to="/courses" className="hidden items-center gap-1 text-sm font-medium text-primary hover:underline sm:flex">
-              সব দেখুন <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
+          </ScrollReveal>
           {dbCourses.length > 0 ? (
             <div className="mt-6 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 sm:gap-6 sm:mt-8">
-              {dbCourses.map((course) => (
-                <Link key={course.id} to={`/course/${(course as any).slug || course.id}`} className="group relative overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all hover:shadow-md">
-                  {renderCourseBadge(course.id)}
-                  {course.image_url && <div className="aspect-video overflow-hidden"><img src={course.image_url} alt={course.title} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" /></div>}
-                  <div className="p-5">
-                    <div className="flex flex-wrap gap-2">
-                      <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">{course.category}</span>
-                      <span className="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2.5 py-1 text-xs font-medium text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">🎓 অনলাইন কোর্স</span>
+              {dbCourses.map((course, idx) => (
+                <ScrollReveal key={course.id} delay={idx * 100}>
+                  <Link to={`/course/${(course as any).slug || course.id}`} className="group relative block overflow-hidden rounded-xl glass-card shimmer">
+                    {renderCourseBadge(course.id)}
+                    {course.image_url && (
+                      <div className="aspect-video overflow-hidden">
+                        <img src={course.image_url} alt={course.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                      </div>
+                    )}
+                    <div className="p-5">
+                      <div className="flex flex-wrap gap-2">
+                        <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">{course.category}</span>
+                        <span className="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2.5 py-1 text-xs font-medium text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">🎓 অনলাইন কোর্স</span>
+                      </div>
+                      <h3 className="mt-3 font-display text-lg font-semibold text-card-foreground line-clamp-2 transition-colors group-hover:text-primary">{course.title}</h3>
+                      <p className="mt-1 text-sm text-muted-foreground">{course.instructor}</p>
+                      <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {course.duration}</span>
+                      </div>
+                      <div className="mt-4 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          {course.price === 0 ? (
+                            <>
+                              <span className="text-lg font-bold text-green-600">ফ্রি</span>
+                              {course.original_price && course.original_price > 0 && <span className="text-sm text-muted-foreground line-through">৳{course.original_price.toLocaleString()}</span>}
+                            </>
+                          ) : (
+                            <>
+                              <span className="text-lg font-bold text-foreground">৳{course.price.toLocaleString()}</span>
+                              {course.original_price && <span className="text-sm text-muted-foreground line-through">৳{course.original_price.toLocaleString()}</span>}
+                            </>
+                          )}
+                        </div>
+                        <span className="text-xs font-medium text-primary opacity-0 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 translate-x-2">
+                          বিস্তারিত →
+                        </span>
+                      </div>
                     </div>
-                    <h3 className="mt-3 font-display text-lg font-semibold text-card-foreground line-clamp-2">{course.title}</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">{course.instructor}</p>
-                    <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {course.duration}</span>
-                    </div>
-                    <div className="mt-4 flex items-center gap-2">
-                      {course.price === 0 ? (
-                        <>
-                          <span className="text-lg font-bold text-green-600">ফ্রি</span>
-                          {course.original_price && course.original_price > 0 && <span className="text-sm text-muted-foreground line-through">৳{course.original_price.toLocaleString()}</span>}
-                        </>
-                      ) : (
-                        <>
-                          <span className="text-lg font-bold text-foreground">৳{course.price.toLocaleString()}</span>
-                          {course.original_price && <span className="text-sm text-muted-foreground line-through">৳{course.original_price.toLocaleString()}</span>}
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </Link>
+                  </Link>
+                </ScrollReveal>
               ))}
             </div>
           ) : (
@@ -264,49 +285,70 @@ const Index = () => {
       </section>
 
       {/* Featured Books */}
-      <section className="bg-secondary/50 py-10 sm:py-16 lg:py-20">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-foreground sm:text-3xl">{settings.homepage_books_title || "ফিচার্ড বই"}</h2>
-              <p className="mt-1 text-sm text-muted-foreground sm:mt-2 sm:text-base">{settings.homepage_books_subtitle || "নিজেকে এক ধাপ এগিয়ে নিন"}</p>
+      <section className="relative py-10 sm:py-16 lg:py-20 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-secondary/60 via-primary/[0.03] to-secondary/60 pointer-events-none" />
+        <div className="container relative mx-auto px-4">
+          <ScrollReveal>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-accent/15 px-3 py-1 text-xs font-medium text-accent">
+                  <BookOpen className="h-3.5 w-3.5" />
+                  বই
+                </div>
+                <h2 className="text-2xl font-bold text-foreground sm:text-3xl">{settings.homepage_books_title || "ফিচার্ড বই"}</h2>
+                <p className="mt-1 text-sm text-muted-foreground sm:mt-2 sm:text-base">{settings.homepage_books_subtitle || "নিজেকে এক ধাপ এগিয়ে নিন"}</p>
+              </div>
+              <Link to="/books" className="hidden items-center gap-1 text-sm font-medium text-primary hover:underline sm:flex group">
+                সব দেখুন <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </Link>
             </div>
-            <Link to="/books" className="hidden items-center gap-1 text-sm font-medium text-primary hover:underline sm:flex">সব দেখুন <ArrowRight className="h-4 w-4" /></Link>
-          </div>
+          </ScrollReveal>
           {dbBooks.length > 0 ? (
             <div className="mt-6 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 sm:gap-6 sm:mt-8">
-              {dbBooks.map((book) => (
-                <Link key={book.id} to={`/book/${(book as any).slug || book.id}`} className="group relative overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all hover:shadow-md">
-                  {renderBookBadge(book)}
-                  {book.image_url && <div className="aspect-[3/4] overflow-hidden"><img src={book.image_url} alt={book.title} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" /></div>}
-                  <div className="p-5">
-                    <div className="flex flex-wrap gap-2">
-                      <span className="inline-block rounded-full bg-accent/15 px-3 py-1 text-xs font-medium text-accent">{book.category}</span>
-                      <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
-                        book.book_type === "ebook"
-                          ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-                          : "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
-                      }`}>
-                        {book.book_type === "ebook" ? "📱 ইবুক" : "📦 ফিজিক্যাল বই"}
-                      </span>
+              {dbBooks.map((book, idx) => (
+                <ScrollReveal key={book.id} delay={idx * 100}>
+                  <Link to={`/book/${(book as any).slug || book.id}`} className="group relative block overflow-hidden rounded-xl glass-card shimmer">
+                    {renderBookBadge(book)}
+                    {book.image_url && (
+                      <div className="aspect-[3/4] overflow-hidden">
+                        <img src={book.image_url} alt={book.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                      </div>
+                    )}
+                    <div className="p-5">
+                      <div className="flex flex-wrap gap-2">
+                        <span className="inline-block rounded-full bg-accent/15 px-3 py-1 text-xs font-medium text-accent">{book.category}</span>
+                        <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
+                          book.book_type === "ebook"
+                            ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                            : "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
+                        }`}>
+                          {book.book_type === "ebook" ? "📱 ইবুক" : "📦 ফিজিক্যাল বই"}
+                        </span>
+                      </div>
+                      <h3 className="mt-3 font-display text-lg font-semibold text-card-foreground transition-colors group-hover:text-primary">{book.title}</h3>
+                      <p className="mt-1 text-sm text-muted-foreground">{book.author}</p>
+                      <div className="mt-3 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          {book.price === 0 ? (
+                            <>
+                              <span className="text-lg font-bold text-green-600">ফ্রি</span>
+                              {book.original_price && book.original_price > 0 && <span className="text-sm text-muted-foreground line-through">৳{book.original_price}</span>}
+                            </>
+                          ) : (
+                            <>
+                              <span className="text-lg font-bold text-foreground">৳{book.price}</span>
+                              {book.original_price && <span className="text-sm text-muted-foreground line-through">৳{book.original_price}</span>}
+                            </>
+                          )}
+                        </div>
+                        <span className="text-xs font-medium text-primary opacity-0 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 translate-x-2">
+                          বিস্তারিত →
+                        </span>
+                      </div>
                     </div>
-                    <h3 className="mt-3 font-display text-lg font-semibold text-card-foreground">{book.title}</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">{book.author}</p>
-                    <div className="mt-3 flex items-center gap-2">
-                      {book.price === 0 ? (
-                        <>
-                          <span className="text-lg font-bold text-green-600">ফ্রি</span>
-                          {book.original_price && book.original_price > 0 && <span className="text-sm text-muted-foreground line-through">৳{book.original_price}</span>}
-                        </>
-                      ) : (
-                        <>
-                          <span className="text-lg font-bold text-foreground">৳{book.price}</span>
-                          {book.original_price && <span className="text-sm text-muted-foreground line-through">৳{book.original_price}</span>}
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </Link>
+                  </Link>
+                </ScrollReveal>
               ))}
             </div>
           ) : (
@@ -317,24 +359,35 @@ const Index = () => {
 
       {/* Reviews */}
       {dbReviews.length > 0 && (
-      <section className="py-10 sm:py-16 lg:py-20">
-          <div className="container mx-auto px-4">
-            <h2 className="text-center text-2xl font-bold text-foreground sm:text-3xl">{settings.homepage_reviews_title || "আমাদের শিক্ষার্থীরা যা বলেন"}</h2>
-            <p className="mx-auto mt-2 text-center text-muted-foreground">{settings.homepage_reviews_subtitle || "আমাদের শিক্ষার্থীদের মতামত"}</p>
-            <div className="mt-6 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 sm:mt-10 sm:gap-6">
-              {dbReviews.map((review) => (
-                <div key={review.id} className="rounded-xl border border-border bg-card p-5 shadow-sm">
-                  <div className="flex gap-0.5">
-                    {Array.from({ length: review.rating }).map((_, i) => (
-                      <Star key={i} className="h-4 w-4 fill-accent text-accent" />
-                    ))}
-                  </div>
-                  <p className="mt-3 text-sm text-card-foreground leading-relaxed">"{review.comment}"</p>
-                  <div className="mt-4 border-t border-border pt-3">
-                    <p className="text-sm font-semibold text-foreground">{review.reviewer_name}</p>
-                    {review.course_title && <p className="text-xs text-muted-foreground">{review.course_title}</p>}
-                  </div>
+      <section className="relative py-10 sm:py-16 lg:py-20">
+        <div className="absolute inset-0 bg-gradient-to-b from-background via-accent/[0.02] to-background pointer-events-none" />
+          <div className="container relative mx-auto px-4">
+            <ScrollReveal>
+              <div className="text-center">
+                <div className="mx-auto mb-3 inline-flex items-center gap-1.5 rounded-full bg-accent/15 px-3 py-1 text-xs font-medium text-accent">
+                  <Star className="h-3.5 w-3.5 fill-accent" />
+                  রিভিউ
                 </div>
+                <h2 className="text-2xl font-bold text-foreground sm:text-3xl">{settings.homepage_reviews_title || "আমাদের শিক্ষার্থীরা যা বলেন"}</h2>
+                <p className="mx-auto mt-2 text-muted-foreground max-w-md">{settings.homepage_reviews_subtitle || "আমাদের শিক্ষার্থীদের মতামত"}</p>
+              </div>
+            </ScrollReveal>
+            <div className="mt-6 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 sm:mt-10 sm:gap-6">
+              {dbReviews.map((review, idx) => (
+                <ScrollReveal key={review.id} delay={idx * 80}>
+                  <div className="glass-card rounded-xl p-5 h-full">
+                    <div className="flex gap-0.5">
+                      {Array.from({ length: review.rating }).map((_, i) => (
+                        <Star key={i} className="h-4 w-4 fill-accent text-accent" />
+                      ))}
+                    </div>
+                    <p className="mt-3 text-sm text-card-foreground leading-relaxed">"{review.comment}"</p>
+                    <div className="mt-4 border-t border-border/50 pt-3">
+                      <p className="text-sm font-semibold text-foreground">{review.reviewer_name}</p>
+                      {review.course_title && <p className="text-xs text-muted-foreground">{review.course_title}</p>}
+                    </div>
+                  </div>
+                </ScrollReveal>
               ))}
             </div>
           </div>
@@ -342,30 +395,39 @@ const Index = () => {
       )}
 
       {/* Track Order */}
-      <section className="bg-secondary/50 py-10 sm:py-16">
-        <div className="container mx-auto px-4">
-          <div className="mx-auto max-w-lg text-center">
-            <Search className="mx-auto h-10 w-10 text-primary" />
-            <h2 className="mt-4 text-2xl font-bold text-foreground">{settings.homepage_track_title || "আপনার অর্ডার ট্র্যাক করুন"}</h2>
-            <p className="mt-2 text-sm text-muted-foreground">{settings.homepage_track_subtitle || "আপনার অর্ডারের বর্তমান অবস্থা জানুন"}</p>
-            <div className="mt-6 flex gap-3">
-              <Input placeholder="অর্ডার আইডি অথবা ফোন নম্বর" value={trackQuery} onChange={(e) => setTrackQuery(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleTrack()} />
-              <Button className="shrink-0" onClick={handleTrack}>ট্র্যাক করুন</Button>
-            </div>
-            <p className="mt-2 text-xs text-muted-foreground">অর্ডার আইডি বা ফোন নম্বর দিয়ে অর্ডার খুঁজুন</p>
-            {trackResult && (
-              <div className="mt-4 space-y-3">
-                {trackResult.map((order: any, idx: number) => (
-                  <div key={idx} className="rounded-lg border border-border bg-card p-4 text-left">
-                    <p className="text-sm"><span className="font-medium">অর্ডার:</span> {order.order_id}</p>
-                    <p className="text-sm"><span className="font-medium">প্রোডাক্ট:</span> {order.product_title}</p>
-                    <p className="text-sm"><span className="font-medium">স্ট্যাটাস:</span> {statusLabels[order.status] || order.status}</p>
-                    <p className="text-xs text-muted-foreground mt-1">অর্ডারের তারিখ: {new Date(order.created_at).toLocaleDateString("bn-BD")}</p>
+      <section className="relative py-10 sm:py-16 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-secondary/60 via-primary/[0.04] to-secondary/60 pointer-events-none" />
+        <div className="container relative mx-auto px-4">
+          <ScrollReveal>
+            <div className="mx-auto max-w-lg">
+              <div className="glass-card rounded-2xl p-6 sm:p-8 text-center">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
+                  <Search className="h-7 w-7 text-primary" />
+                </div>
+                <h2 className="text-2xl font-bold text-foreground">{settings.homepage_track_title || "আপনার অর্ডার ট্র্যাক করুন"}</h2>
+                <p className="mt-2 text-sm text-muted-foreground">{settings.homepage_track_subtitle || "আপনার অর্ডারের বর্তমান অবস্থা জানুন"}</p>
+                <div className="mt-6 flex gap-3">
+                  <Input className="glass-input" placeholder="অর্ডার আইডি অথবা ফোন নম্বর" value={trackQuery} onChange={(e) => setTrackQuery(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleTrack()} />
+                  <Button className="shrink-0 glow-hover" onClick={handleTrack}>ট্র্যাক করুন</Button>
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">অর্ডার আইডি বা ফোন নম্বর দিয়ে অর্ডার খুঁজুন</p>
+                {trackResult && (
+                  <div className="mt-4 space-y-3">
+                    {trackResult.map((order: any, idx: number) => (
+                      <ScrollReveal key={idx} delay={idx * 100}>
+                        <div className="rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm p-4 text-left transition-all hover:border-primary/20">
+                          <p className="text-sm"><span className="font-medium">অর্ডার:</span> {order.order_id}</p>
+                          <p className="text-sm"><span className="font-medium">প্রোডাক্ট:</span> {order.product_title}</p>
+                          <p className="text-sm"><span className="font-medium">স্ট্যাটাস:</span> {statusLabels[order.status] || order.status}</p>
+                          <p className="text-xs text-muted-foreground mt-1">অর্ডারের তারিখ: {new Date(order.created_at).toLocaleDateString("bn-BD")}</p>
+                        </div>
+                      </ScrollReveal>
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
-            )}
-          </div>
+            </div>
+          </ScrollReveal>
         </div>
       </section>
     </div>
