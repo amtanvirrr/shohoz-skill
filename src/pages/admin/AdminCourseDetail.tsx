@@ -255,8 +255,6 @@ const AdminCourseDetail = () => {
   const [quizDialogOpen, setQuizDialogOpen] = useState(false);
   const [quizLessonId, setQuizLessonId] = useState<string | null>(null);
   const [quizForm, setQuizForm] = useState({ title: "", description: "", pass_mark: "0", duration_minutes: "10", negative_marking: false, negative_mark_value: "0.25" });
-  const [availableQuizzes, setAvailableQuizzes] = useState<Quiz[]>([]);
-  const [quizMode, setQuizMode] = useState<"select" | "create">("create");
 
   // Quiz Manager dialog (sections + questions)
   const [managerOpen, setManagerOpen] = useState(false);
@@ -420,20 +418,11 @@ const AdminCourseDetail = () => {
   const openAddQuiz = async (lessonId: string) => {
     setQuizLessonId(lessonId);
     setQuizForm({ title: "", description: "", pass_mark: "0", duration_minutes: "10", negative_marking: false, negative_mark_value: "0.25" });
-    setQuizMode("create");
-    const { data } = await supabase.from("quizzes").select("*").is("lesson_id", null).eq("is_published", true);
-    setAvailableQuizzes((data as Quiz[]) || []);
     setQuizDialogOpen(true);
   };
 
-  const handleLinkExistingQuiz = async (quizId: string, passMark: number) => {
-    if (!quizLessonId) return;
-    const { error } = await supabase.from("quizzes").update({ lesson_id: quizLessonId, pass_mark: passMark }).eq("id", quizId);
-    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "কুইজ লেসনে যুক্ত করা হয়েছে" });
-    setQuizDialogOpen(false);
-    fetchAll();
-  };
+
+
 
   const handleSaveNewQuiz = async () => {
     if (!quizForm.title || !quizLessonId) {
@@ -463,9 +452,12 @@ const AdminCourseDetail = () => {
   };
 
   const handleDeleteQuiz = async (quizId: string) => {
-    if (!confirm("এই কুইজটি লেসন থেকে সরাতে চান? (কুইজটি ডিলিট হবে না, শুধু আনলিংক হবে)")) return;
-    await supabase.from("quizzes").update({ lesson_id: null }).eq("id", quizId);
-    toast({ title: "কুইজ লেসন থেকে সরানো হয়েছে" });
+    if (!confirm("এই কুইজটি ডিলিট করতে চান? কুইজের সব প্রশ্ন ও সেকশনও মুছে যাবে।")) return;
+    // Delete questions, sections, then quiz
+    await supabase.from("quiz_questions").delete().eq("quiz_id", quizId);
+    await supabase.from("quiz_sections").delete().eq("quiz_id", quizId);
+    await supabase.from("quizzes").delete().eq("id", quizId);
+    toast({ title: "কুইজ ডিলিট হয়েছে" });
     fetchAll();
   };
 
@@ -755,64 +747,27 @@ const AdminCourseDetail = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Quiz Add/Link Dialog */}
+      {/* Quiz Create Dialog */}
       <Dialog open={quizDialogOpen} onOpenChange={setQuizDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>লেসনে কুইজ যুক্ত করুন</DialogTitle>
+            <DialogTitle>লেসনে নতুন কুইজ তৈরি করুন</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-4">
-            <div className="flex gap-2">
-              <Button variant={quizMode === "create" ? "default" : "outline"} size="sm" className="flex-1" onClick={() => setQuizMode("create")}>
-                নতুন কুইজ তৈরি
-              </Button>
-              <Button variant={quizMode === "select" ? "default" : "outline"} size="sm" className="flex-1" onClick={() => setQuizMode("select")}>
-                বিদ্যমান কুইজ নির্বাচন
-              </Button>
+            <div><Label>কুইজের নাম *</Label><Input value={quizForm.title} onChange={(e) => setQuizForm({ ...quizForm, title: e.target.value })} className="mt-1" placeholder="যেমন: লেসন ১ কুইজ" /></div>
+            <div><Label>বিবরণ</Label><div className="mt-1"><RichTextEditor content={quizForm.description} onChange={(html) => setQuizForm({ ...quizForm, description: html })} placeholder="কুইজের বিবরণ..." minHeight="80px" /></div></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>সময় (মিনিট)</Label><Input type="number" min="1" value={quizForm.duration_minutes} onChange={(e) => setQuizForm({ ...quizForm, duration_minutes: e.target.value })} className="mt-1" /></div>
+              <div><Label>পাস মার্ক</Label><Input type="number" min="0" step="0.5" value={quizForm.pass_mark} onChange={(e) => setQuizForm({ ...quizForm, pass_mark: e.target.value })} className="mt-1" /></div>
             </div>
-
-            {quizMode === "create" ? (
-              <div className="space-y-4">
-                <div><Label>কুইজের নাম *</Label><Input value={quizForm.title} onChange={(e) => setQuizForm({ ...quizForm, title: e.target.value })} className="mt-1" placeholder="যেমন: লেসন ১ কুইজ" /></div>
-                <div><Label>বিবরণ</Label><div className="mt-1"><RichTextEditor content={quizForm.description} onChange={(html) => setQuizForm({ ...quizForm, description: html })} placeholder="কুইজের বিবরণ..." minHeight="80px" /></div></div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label>সময় (মিনিট)</Label><Input type="number" min="1" value={quizForm.duration_minutes} onChange={(e) => setQuizForm({ ...quizForm, duration_minutes: e.target.value })} className="mt-1" /></div>
-                  <div><Label>পাস মার্ক</Label><Input type="number" min="0" step="0.5" value={quizForm.pass_mark} onChange={(e) => setQuizForm({ ...quizForm, pass_mark: e.target.value })} className="mt-1" /></div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Switch checked={quizForm.negative_marking} onCheckedChange={(v) => setQuizForm({ ...quizForm, negative_marking: v })} />
-                  <Label>নেগেটিভ মার্কিং</Label>
-                  {quizForm.negative_marking && (
-                    <Input type="number" min="0" step="0.25" value={quizForm.negative_mark_value} onChange={(e) => setQuizForm({ ...quizForm, negative_mark_value: e.target.value })} className="w-20" placeholder="0.25" />
-                  )}
-                </div>
-                <Button onClick={handleSaveNewQuiz} className="w-full">কুইজ তৈরি করুন ও প্রশ্ন যোগ করুন</Button>
-              </div>
-            ) : (
-              <div>
-                <div className="mb-3">
-                  <Label>পাস মার্ক (0 = পাস মার্ক নেই)</Label>
-                  <Input type="number" min="0" step="0.5" value={quizForm.pass_mark} onChange={(e) => setQuizForm({ ...quizForm, pass_mark: e.target.value })} className="mt-1" />
-                </div>
-                {availableQuizzes.length === 0 ? (
-                  <p className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-                    কোনো আনলিংকড কুইজ পাওয়া যায়নি।
-                  </p>
-                ) : (
-                  <div className="max-h-60 space-y-2 overflow-y-auto">
-                    {availableQuizzes.map((q) => (
-                      <div key={q.id} className="flex items-center justify-between rounded-lg border border-border p-3">
-                        <div>
-                          <p className="text-sm font-medium text-foreground">{q.title}</p>
-                          {q.description && <p className="text-xs text-muted-foreground line-clamp-1">{q.description}</p>}
-                        </div>
-                        <Button size="sm" onClick={() => handleLinkExistingQuiz(q.id, parseFloat(quizForm.pass_mark) || 0)}>যুক্ত করুন</Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+            <div className="flex items-center gap-3">
+              <Switch checked={quizForm.negative_marking} onCheckedChange={(v) => setQuizForm({ ...quizForm, negative_marking: v })} />
+              <Label>নেগেটিভ মার্কিং</Label>
+              {quizForm.negative_marking && (
+                <Input type="number" min="0" step="0.25" value={quizForm.negative_mark_value} onChange={(e) => setQuizForm({ ...quizForm, negative_mark_value: e.target.value })} className="w-20" placeholder="0.25" />
+              )}
+            </div>
+            <Button onClick={handleSaveNewQuiz} className="w-full">কুইজ তৈরি করুন ও প্রশ্ন যোগ করুন</Button>
           </div>
         </DialogContent>
       </Dialog>
