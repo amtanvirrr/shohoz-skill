@@ -21,11 +21,27 @@ Deno.serve(async (req) => {
     const tranId = payload.tran_id;
     const valId = payload.val_id;
     const status = payload.status;
+    const ipnStoreId = payload.store_id;
     if (!tranId) return new Response("missing tran_id", { status: 400, headers: corsHeaders });
 
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const admin = createClient(SUPABASE_URL, SERVICE);
+
+    // Load credentials FIRST so we can verify store_id matches before trusting payload
+    const { data: settingsRows } = await admin
+      .from("site_settings")
+      .select("key, value")
+      .in("key", ["sslcz_store_id", "sslcz_store_password", "sslcz_mode"]);
+    const settings: Record<string, string> = {};
+    (settingsRows || []).forEach((r: any) => (settings[r.key] = r.value));
+
+    if (!settings.sslcz_store_id || !settings.sslcz_store_password) {
+      return new Response("gateway not configured", { status: 503, headers: corsHeaders });
+    }
+    if (ipnStoreId && ipnStoreId !== settings.sslcz_store_id) {
+      return new Response("store_id mismatch", { status: 401, headers: corsHeaders });
+    }
 
     const { data: order } = await admin
       .from("orders")
@@ -47,14 +63,7 @@ Deno.serve(async (req) => {
 
     if (!valId) return new Response("missing val_id", { status: 400, headers: corsHeaders });
 
-    // Server-side validation
-    const { data: settingsRows } = await admin
-      .from("site_settings")
-      .select("key, value")
-      .in("key", ["sslcz_store_id", "sslcz_store_password", "sslcz_mode"]);
-    const settings: Record<string, string> = {};
-    (settingsRows || []).forEach((r: any) => (settings[r.key] = r.value));
-
+    // Server-side validation against SSLCOMMERZ validator
     const isLive = settings.sslcz_mode === "live";
     const baseUrl = isLive ? "https://securepay.sslcommerz.com" : "https://sandbox.sslcommerz.com";
 
