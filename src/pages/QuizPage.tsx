@@ -11,6 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import OrderSuccessDialog from "@/components/OrderSuccessDialog";
+import SslczPayButton from "@/components/SslczPayButton";
 import { ScrollReveal } from "@/hooks/useScrollReveal";
 
 interface QuizAttempt {
@@ -702,6 +703,17 @@ const QuizPage = () => {
                               {submitting ? "..." : "জমা দিন"}
                             </Button>
                           </div>
+                          <div className="flex items-center gap-3 pt-2">
+                            <div className="h-px flex-1 bg-border" />
+                            <span className="text-xs text-muted-foreground">অথবা</span>
+                            <div className="h-px flex-1 bg-border" />
+                          </div>
+                          <SslczPayButton
+                            productType="quiz"
+                            productId={quiz.id}
+                            productTitle={quiz.title}
+                            price={quiz.price}
+                          />
                         </div>
                       ) : (
                         <Button onClick={() => handlePurchaseQuiz(quiz)} className="w-full">
