@@ -107,14 +107,14 @@ const AdminPayments = () => {
     setSavingSslcz(true);
     // Sensitive keys go to admin-only site_settings; public flags also mirror to public_site_settings
     const publicKeys = new Set(["sslcz_enabled", "sslcz_display_name"]);
-    const ops: Promise<any>[] = [];
+    const ops: any[] = [];
     Object.entries(sslcz).forEach(([key, value]) => {
-      ops.push(supabase.from("site_settings").upsert({ key, value }, { onConflict: "key" }));
+      ops.push(supabase.from("site_settings").upsert({ key, value }, { onConflict: "key" }).then((r) => r));
       if (publicKeys.has(key)) {
-        ops.push((supabase as any).from("public_site_settings").upsert({ key, value }, { onConflict: "key" }));
+        ops.push((supabase as any).from("public_site_settings").upsert({ key, value }, { onConflict: "key" }).then((r: any) => r));
       }
     });
-    const results = await Promise.all(ops);
+    const results: any[] = await Promise.all(ops);
     setSavingSslcz(false);
     const err = results.find((r) => r.error);
     if (err?.error) {
