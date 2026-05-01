@@ -1,8 +1,23 @@
 import { useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { CheckCircle2, XCircle, AlertCircle, Loader2 } from "lucide-react";
+import { CheckCircle2, XCircle, AlertCircle, Loader2, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+
+interface OrderSummary {
+  order_id: string;
+  product_title: string;
+  product_type: string;
+  price: number;
+  customer_name: string;
+  customer_phone: string;
+  customer_email: string | null;
+  payment_method: string;
+  payment_verified: boolean;
+  status: string;
+  gateway_tran_id: string | null;
+  created_at: string;
+}
 
 const PaymentResult = () => {
   const { status } = useParams<{ status: string }>();
@@ -10,28 +25,45 @@ const PaymentResult = () => {
   const orderId = params.get("order");
   const [loading, setLoading] = useState(true);
   const [verified, setVerified] = useState(false);
+  const [order, setOrder] = useState<OrderSummary | null>(null);
+  const [timedOut, setTimedOut] = useState(false);
 
   useEffect(() => {
     if (status !== "success" || !orderId) {
       setLoading(false);
       return;
     }
+    let cancelled = false;
     let attempts = 0;
+    const MAX_ATTEMPTS = 20; // ~40s total
     const poll = async () => {
+      if (cancelled) return;
       const { data } = await supabase
         .from("orders")
-        .select("payment_verified, status")
+        .select(
+          "order_id, product_title, product_type, price, customer_name, customer_phone, customer_email, payment_method, payment_verified, status, gateway_tran_id, created_at"
+        )
         .eq("order_id", orderId)
         .maybeSingle();
+      if (cancelled) return;
+      if (data) setOrder(data as OrderSummary);
       if (data?.payment_verified) {
         setVerified(true);
         setLoading(false);
         return;
       }
-      if (++attempts < 8) setTimeout(poll, 1500);
-      else setLoading(false);
+      attempts++;
+      if (attempts < MAX_ATTEMPTS) {
+        setTimeout(poll, 2000);
+      } else {
+        setTimedOut(true);
+        setLoading(false);
+      }
     };
     poll();
+    return () => {
+      cancelled = true;
+    };
   }, [status, orderId]);
 
   const config = {
@@ -41,7 +73,9 @@ const PaymentResult = () => {
       title: "পেমেন্ট সফল!",
       message: verified
         ? "আপনার পেমেন্ট ভেরিফাই হয়েছে। অর্ডার কনফার্ম করা হয়েছে।"
-        : "পেমেন্ট ভেরিফিকেশন প্রসেস হচ্ছে। ড্যাশবোর্ডে স্ট্যাটাস দেখুন।",
+        : timedOut
+          ? "ভেরিফিকেশন এখনো সম্পন্ন হয়নি। কয়েক মিনিট পর ড্যাশবোর্ডে স্ট্যাটাস দেখুন।"
+          : "পেমেন্ট ভেরিফিকেশন চলছে...",
     },
     fail: {
       Icon: XCircle,
@@ -58,10 +92,12 @@ const PaymentResult = () => {
   }[status === "success" || status === "fail" || status === "cancel" ? status : "fail"];
 
   const Icon = config.Icon;
+  const showReceipt = status === "success" && verified && order;
+  const formatBdt = (n: number) => `৳${n.toLocaleString("bn-BD")}`;
 
   return (
     <div className="container mx-auto flex min-h-[70vh] items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md rounded-2xl glass-card p-8 text-center">
+      <div className="w-full max-w-lg rounded-2xl glass-card p-8 text-center">
         {loading && status === "success" ? (
           <Loader2 className="mx-auto h-16 w-16 animate-spin text-primary" />
         ) : (
@@ -69,10 +105,64 @@ const PaymentResult = () => {
         )}
         <h1 className="mt-4 text-2xl font-bold text-foreground">{config.title}</h1>
         <p className="mt-2 text-muted-foreground">{config.message}</p>
-        {orderId && (
+        {orderId && !showReceipt && (
           <p className="mt-3 text-sm text-muted-foreground">
             অর্ডার আইডি: <span className="font-mono font-semibold text-foreground">{orderId}</span>
           </p>
+        )}
+        {showReceipt && (
+          <div className="mt-6 rounded-xl border border-border/50 bg-background/40 p-5 text-left">
+            <div className="mb-4 flex items-center gap-2 border-b border-border/50 pb-3">
+              <Receipt className="h-5 w-5 text-primary" />
+              <h2 className="text-lg font-semibold text-foreground">রিসিট সারাংশ</h2>
+            </div>
+            <dl className="space-y-2 text-sm">
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted-foreground">অর্ডার আইডি</dt>
+                <dd className="font-mono font-semibold text-foreground">{order!.order_id}</dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted-foreground">প্রোডাক্ট</dt>
+                <dd className="text-right font-medium text-foreground">{order!.product_title}</dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted-foreground">কাস্টমার</dt>
+                <dd className="text-right text-foreground">{order!.customer_name}</dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted-foreground">ফোন</dt>
+                <dd className="text-foreground">{order!.customer_phone}</dd>
+              </div>
+              {order!.customer_email && (
+                <div className="flex justify-between gap-3">
+                  <dt className="text-muted-foreground">ইমেইল</dt>
+                  <dd className="break-all text-right text-foreground">{order!.customer_email}</dd>
+                </div>
+              )}
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted-foreground">পেমেন্ট মেথড</dt>
+                <dd className="uppercase text-foreground">{order!.payment_method}</dd>
+              </div>
+              {order!.gateway_tran_id && (
+                <div className="flex justify-between gap-3">
+                  <dt className="text-muted-foreground">ট্রানজ্যাকশন আইডি</dt>
+                  <dd className="break-all text-right font-mono text-xs text-foreground">
+                    {order!.gateway_tran_id}
+                  </dd>
+                </div>
+              )}
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted-foreground">তারিখ</dt>
+                <dd className="text-foreground">
+                  {new Date(order!.created_at).toLocaleString("bn-BD")}
+                </dd>
+              </div>
+              <div className="mt-2 flex justify-between gap-3 border-t border-border/50 pt-3">
+                <dt className="text-base font-semibold text-foreground">মোট পরিশোধ</dt>
+                <dd className="text-base font-bold text-success">{formatBdt(order!.price)}</dd>
+              </div>
+            </dl>
+          </div>
         )}
         <div className="mt-6 flex flex-col gap-2">
           <Button asChild>
