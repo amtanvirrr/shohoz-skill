@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { CheckCircle2, XCircle, AlertCircle, Loader2, Receipt } from "lucide-react";
+import { CheckCircle2, XCircle, AlertCircle, Loader2, Receipt, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -27,17 +27,22 @@ const PaymentResult = () => {
   const [verified, setVerified] = useState(false);
   const [order, setOrder] = useState<OrderSummary | null>(null);
   const [timedOut, setTimedOut] = useState(false);
+  const cancelRef = useRef<{ cancelled: boolean }>({ cancelled: false });
 
-  useEffect(() => {
+  const startPolling = useCallback(() => {
     if (status !== "success" || !orderId) {
       setLoading(false);
       return;
     }
-    let cancelled = false;
+    cancelRef.current.cancelled = true;
+    const token = { cancelled: false };
+    cancelRef.current = token;
+    setLoading(true);
+    setTimedOut(false);
     let attempts = 0;
     const MAX_ATTEMPTS = 20; // ~40s total
     const poll = async () => {
-      if (cancelled) return;
+      if (token.cancelled) return;
       const { data } = await supabase
         .from("orders")
         .select(
@@ -45,7 +50,7 @@ const PaymentResult = () => {
         )
         .eq("order_id", orderId)
         .maybeSingle();
-      if (cancelled) return;
+      if (token.cancelled) return;
       if (data) setOrder(data as OrderSummary);
       if (data?.payment_verified) {
         setVerified(true);
@@ -61,10 +66,14 @@ const PaymentResult = () => {
       }
     };
     poll();
-    return () => {
-      cancelled = true;
-    };
   }, [status, orderId]);
+
+  useEffect(() => {
+    startPolling();
+    return () => {
+      cancelRef.current.cancelled = true;
+    };
+  }, [startPolling]);
 
   const config = {
     success: {
@@ -165,6 +174,12 @@ const PaymentResult = () => {
           </div>
         )}
         <div className="mt-6 flex flex-col gap-2">
+          {status === "success" && timedOut && !verified && (
+            <Button onClick={startPolling} variant="secondary">
+              <RefreshCw className="mr-2 h-4 w-4" />
+              আবার ভেরিফাই করুন
+            </Button>
+          )}
           <Button asChild>
             <Link to="/dashboard">ড্যাশবোর্ডে যান</Link>
           </Button>
