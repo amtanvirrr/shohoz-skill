@@ -9,7 +9,7 @@ interface InitBody {
   product_type: "course" | "book" | "quiz";
   product_id: string;
   product_title: string;
-  price: number;
+  price: number; // client-suggested; will be re-validated server-side
   customer_name: string;
   customer_phone: string;
   customer_email?: string;
@@ -37,12 +37,38 @@ Deno.serve(async (req) => {
     const userId = claims.claims.sub as string;
 
     const body = (await req.json()) as InitBody;
-    if (!body?.product_id || !body?.product_type || !body?.price || !body?.customer_name || !body?.customer_phone) {
+    if (!body?.product_id || !body?.product_type || !body?.customer_name || !body?.customer_phone) {
       return json({ error: "Missing required fields" }, 400);
     }
-    if (body.price <= 0) return json({ error: "Invalid price" }, 400);
+    if (!["course", "book", "quiz"].includes(body.product_type)) {
+      return json({ error: "Invalid product_type" }, 400);
+    }
+    // Basic input length caps to avoid abuse
+    if (body.customer_name.length > 200 || body.customer_phone.length > 30) {
+      return json({ error: "Invalid customer fields" }, 400);
+    }
 
     const admin = createClient(SUPABASE_URL, SERVICE);
+
+    // SERVER-SIDE PRICE LOOKUP — never trust client price
+    const tableMap: Record<string, string> = { course: "courses", book: "books", quiz: "quizzes" };
+    const tbl = tableMap[body.product_type];
+    const { data: product, error: pErr } = await admin
+      .from(tbl)
+      .select("id, price, is_published, title")
+      .eq("id", body.product_id)
+      .maybeSingle();
+    if (pErr || !product) return json({ error: "Product not found" }, 404);
+    if (!product.is_published) return json({ error: "Product not available" }, 400);
+
+    const serverPrice = Number(product.price) || 0;
+    if (serverPrice <= 0) return json({ error: "Product is free or unpriced" }, 400);
+
+    // Allow physical book shipping uplift: client price may be >= server price (never less)
+    const finalPrice = body.product_type === "book" && Number(body.price) > serverPrice
+      ? Math.floor(Number(body.price))
+      : serverPrice;
+    const productTitle = (product.title || body.product_title || "").toString().slice(0, 200);
 
     // Load SSLCOMMERZ settings (admin-only table — service role bypasses RLS)
     const { data: settingsRows } = await admin
@@ -67,8 +93,8 @@ Deno.serve(async (req) => {
         user_id: userId,
         product_id: body.product_id,
         product_type: body.product_type,
-        product_title: body.product_title,
-        price: body.price,
+        product_title: productTitle,
+        price: finalPrice,
         customer_name: body.customer_name,
         customer_phone: body.customer_phone,
         customer_email: body.customer_email || null,
@@ -89,7 +115,7 @@ Deno.serve(async (req) => {
     const params = new URLSearchParams();
     params.set("store_id", settings.sslcz_store_id);
     params.set("store_passwd", settings.sslcz_store_password);
-    params.set("total_amount", String(body.price));
+    params.set("total_amount", String(finalPrice));
     params.set("currency", "BDT");
     params.set("tran_id", order.order_id);
     params.set("success_url", `${fnBase}/sslcz-redirect?status=success&site=${encodeURIComponent(origin)}`);
@@ -103,7 +129,7 @@ Deno.serve(async (req) => {
     params.set("cus_city", "Dhaka");
     params.set("cus_country", "Bangladesh");
     params.set("shipping_method", body.product_type === "book" ? "Courier" : "NO");
-    params.set("product_name", body.product_title.slice(0, 200));
+    params.set("product_name", productTitle);
     params.set("product_category", body.product_type);
     params.set("product_profile", body.product_type === "book" ? "physical-goods" : "non-physical-goods");
     params.set("num_of_item", "1");
