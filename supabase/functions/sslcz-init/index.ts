@@ -147,7 +147,7 @@ Deno.serve(async (req) => {
         status: "cancelled",
         gateway_response: data,
       }).eq("id", order.id);
-      return json({ error: data.failedreason || "Gateway init failed", details: data }, 502);
+      return json({ error: data.failedreason || "Gateway init failed", details: data }, 200);
     }
 
     await admin.from("orders").update({
