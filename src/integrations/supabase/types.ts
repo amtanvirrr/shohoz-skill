@@ -580,6 +580,10 @@ export type Database = {
           customer_email: string | null
           customer_name: string
           customer_phone: string
+          gateway_response: Json | null
+          gateway_session_key: string | null
+          gateway_tran_id: string | null
+          gateway_val_id: string | null
           id: string
           is_fraud_flagged: boolean
           notes: string | null
@@ -606,6 +610,10 @@ export type Database = {
           customer_email?: string | null
           customer_name: string
           customer_phone: string
+          gateway_response?: Json | null
+          gateway_session_key?: string | null
+          gateway_tran_id?: string | null
+          gateway_val_id?: string | null
           id?: string
           is_fraud_flagged?: boolean
           notes?: string | null
@@ -632,6 +640,10 @@ export type Database = {
           customer_email?: string | null
           customer_name?: string
           customer_phone?: string
+          gateway_response?: Json | null
+          gateway_session_key?: string | null
+          gateway_tran_id?: string | null
+          gateway_val_id?: string | null
           id?: string
           is_fraud_flagged?: boolean
           notes?: string | null
@@ -1132,7 +1144,13 @@ export type Database = {
         | "shipped"
         | "delivered"
         | "cancelled"
-      payment_method: "cod" | "bkash" | "nagad" | "rocket" | "upay"
+      payment_method:
+        | "cod"
+        | "bkash"
+        | "nagad"
+        | "rocket"
+        | "upay"
+        | "sslcommerz"
       product_type: "book" | "course" | "quiz"
     }
     CompositeTypes: {
@@ -1269,7 +1287,7 @@ export const Constants = {
         "delivered",
         "cancelled",
       ],
-      payment_method: ["cod", "bkash", "nagad", "rocket", "upay"],
+      payment_method: ["cod", "bkash", "nagad", "rocket", "upay", "sslcommerz"],
       product_type: ["book", "course", "quiz"],
     },
   },
