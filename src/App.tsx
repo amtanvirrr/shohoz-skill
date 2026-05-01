@@ -45,6 +45,7 @@ import BlogPage from "./pages/BlogPage";
 import BlogDetailPage from "./pages/BlogDetailPage";
 import LandingPage from "./pages/LandingPage";
 import NotFound from "./pages/NotFound";
+import PaymentResult from "./pages/PaymentResult";
 
 const queryClient = new QueryClient();
 
@@ -98,6 +99,9 @@ const App = () => (
 
             {/* Landing pages - no layout wrapper */}
             <Route path="/lp/:slug" element={<LandingPage />} />
+
+            {/* Payment gateway result */}
+            <Route path="/payment/:status" element={<Layout><PaymentResult /></Layout>} />
 
             <Route path="*" element={<Layout><NotFound /></Layout>} />
           </Routes>
