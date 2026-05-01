@@ -12,6 +12,7 @@ import { ScrollReveal } from "@/hooks/useScrollReveal";
 import { useToast } from "@/hooks/use-toast";
 import { usePixel } from "@/components/MetaPixelProvider";
 import OrderSuccessDialog from "@/components/OrderSuccessDialog";
+import SslczPayButton from "@/components/SslczPayButton";
 
 interface DbBook {
   id: string;
@@ -458,6 +459,24 @@ const BookDetail = () => {
             )}
 
                   <Button type="submit" size="lg" className="w-full" disabled={submitting}>{submitting ? "অর্ডার হচ্ছে..." : isPhysical ? `অর্ডার করুন — ৳${totalPrice}` : "এখনই কিনুন"}</Button>
+
+                  <div className="flex items-center gap-3 pt-1">
+                    <div className="h-px flex-1 bg-border" />
+                    <span className="text-xs text-muted-foreground">অথবা</span>
+                    <div className="h-px flex-1 bg-border" />
+                  </div>
+
+                  <SslczPayButton
+                    productType="book"
+                    productId={book.id}
+                    productTitle={book.title}
+                    price={totalPrice}
+                    customerName={order.name}
+                    customerPhone={order.phone}
+                    customerEmail={order.email}
+                    customerAddress={isPhysical ? order.address : undefined}
+                    requireCustomerFields={isPhysical}
+                  />
                 </form>
               </div>
             )}

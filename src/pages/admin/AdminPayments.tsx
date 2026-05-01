@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Smartphone, QrCode, Save, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Smartphone, QrCode, Save, X, Globe, Copy, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface PaymentMethod {
@@ -57,6 +57,25 @@ const AdminPayments = () => {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
 
+  // SSLCOMMERZ state
+  const [sslcz, setSslcz] = useState({
+    sslcz_store_id: "",
+    sslcz_store_password: "",
+    sslcz_mode: "sandbox",
+    sslcz_enabled: "false",
+    sslcz_display_name: "অনলাইন পেমেন্ট (কার্ড / মোবাইল ব্যাংকিং)",
+  });
+  const [showPwd, setShowPwd] = useState(false);
+  const [savingSslcz, setSavingSslcz] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ ok: boolean; msg: string } | null>(null);
+
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const ipnUrl = `${supabaseUrl}/functions/v1/sslcz-ipn`;
+  const successUrl = `${supabaseUrl}/functions/v1/sslcz-redirect?status=success`;
+  const failUrl = `${supabaseUrl}/functions/v1/sslcz-redirect?status=fail`;
+  const cancelUrl = `${supabaseUrl}/functions/v1/sslcz-redirect?status=cancel`;
+
   const fetchMethods = async () => {
     const { data } = await supabase
       .from("payment_methods")
@@ -66,7 +85,99 @@ const AdminPayments = () => {
     setLoading(false);
   };
 
-  useEffect(() => { fetchMethods(); }, []);
+  const fetchSslcz = async () => {
+    const keys = ["sslcz_store_id", "sslcz_store_password", "sslcz_mode", "sslcz_enabled", "sslcz_display_name"];
+    const { data } = await supabase.from("site_settings").select("key, value").in("key", keys);
+    if (data) {
+      const next = { ...sslcz };
+      data.forEach((row: any) => {
+        if (row.key in next) (next as any)[row.key] = row.value;
+      });
+      setSslcz(next);
+    }
+  };
+
+  useEffect(() => { fetchMethods(); fetchSslcz(); }, []);
+
+  const saveSslcz = async () => {
+    if (sslcz.sslcz_enabled === "true" && (!sslcz.sslcz_store_id.trim() || !sslcz.sslcz_store_password.trim())) {
+      toast({ title: "Store ID এবং Password দিন", variant: "destructive" });
+      return;
+    }
+    setSavingSslcz(true);
+    // Sensitive keys go to admin-only site_settings; public flags also mirror to public_site_settings
+    const publicKeys = new Set(["sslcz_enabled", "sslcz_display_name"]);
+    const ops: any[] = [];
+    Object.entries(sslcz).forEach(([key, value]) => {
+      ops.push(supabase.from("site_settings").upsert({ key, value }, { onConflict: "key" }).then((r) => r));
+      if (publicKeys.has(key)) {
+        ops.push((supabase as any).from("public_site_settings").upsert({ key, value }, { onConflict: "key" }).then((r: any) => r));
+      }
+    });
+    const results: any[] = await Promise.all(ops);
+    setSavingSslcz(false);
+    const err = results.find((r) => r.error);
+    if (err?.error) {
+      toast({ title: "Error", description: err.error.message, variant: "destructive" });
+    } else {
+      toast({ title: "SSLCOMMERZ সেটিংস সেভ হয়েছে" });
+    }
+  };
+
+  const testConnection = async () => {
+    if (!sslcz.sslcz_store_id.trim() || !sslcz.sslcz_store_password.trim()) {
+      toast({ title: "আগে Store ID ও Password দিন", variant: "destructive" });
+      return;
+    }
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const baseUrl = sslcz.sslcz_mode === "live"
+        ? "https://securepay.sslcommerz.com"
+        : "https://sandbox.sslcommerz.com";
+      const params = new URLSearchParams({
+        store_id: sslcz.sslcz_store_id,
+        store_passwd: sslcz.sslcz_store_password,
+        total_amount: "10",
+        currency: "BDT",
+        tran_id: `TEST-${Date.now()}`,
+        success_url: successUrl,
+        fail_url: failUrl,
+        cancel_url: cancelUrl,
+        cus_name: "Test",
+        cus_email: "test@test.com",
+        cus_phone: "01700000000",
+        cus_add1: "Dhaka",
+        cus_city: "Dhaka",
+        cus_country: "Bangladesh",
+        shipping_method: "NO",
+        product_name: "Connection Test",
+        product_category: "test",
+        product_profile: "non-physical-goods",
+        num_of_item: "1",
+      });
+      const resp = await fetch(`${baseUrl}/gwprocess/v4/api.php`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: params.toString(),
+      });
+      const data = await resp.json();
+      if (data.status === "SUCCESS") {
+        setTestResult({ ok: true, msg: "✅ কানেকশন সফল! ক্রেডেনশিয়াল সঠিক।" });
+      } else {
+        setTestResult({ ok: false, msg: `❌ ব্যর্থ: ${data.failedreason || data.status || "Unknown"}` });
+      }
+    } catch (e) {
+      setTestResult({ ok: false, msg: `❌ ত্রুটি: ${(e as Error).message}` });
+    } finally {
+      setTesting(false);
+    }
+  };
+
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast({ title: `${label} কপি হয়েছে` });
+  };
 
   const openNew = () => {
     setEditingId(null);
@@ -153,9 +264,123 @@ const AdminPayments = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">পেমেন্ট মেথড</h1>
-          <p className="mt-1 text-sm text-muted-foreground">সেলফ MFS পেমেন্ট অপশন ম্যানেজ করুন</p>
+          <p className="mt-1 text-sm text-muted-foreground">পেমেন্ট গেটওয়ে ও ম্যানুয়াল MFS অপশন ম্যানেজ করুন</p>
         </div>
         <Button onClick={openNew}><Plus className="mr-2 h-4 w-4" /> নতুন যোগ করুন</Button>
+      </div>
+
+      {/* SSLCOMMERZ Gateway Section */}
+      <div className="mt-6 rounded-xl glass-card p-6">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-primary/10 p-2.5">
+              <Globe className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-foreground">SSLCOMMERZ গেটওয়ে</h2>
+              <p className="text-sm text-muted-foreground">কার্ড, bKash, Nagad, Rocket — সব একসাথে স্বয়ংক্রিয় ভেরিফিকেশন সহ</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Label className="text-sm">সক্রিয়</Label>
+            <Switch
+              checked={sslcz.sslcz_enabled === "true"}
+              onCheckedChange={(v) => setSslcz({ ...sslcz, sslcz_enabled: v ? "true" : "false" })}
+            />
+          </div>
+        </div>
+
+        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+          <div>
+            <Label>Store ID *</Label>
+            <Input
+              className="mt-1"
+              value={sslcz.sslcz_store_id}
+              onChange={(e) => setSslcz({ ...sslcz, sslcz_store_id: e.target.value })}
+              placeholder="yourstore"
+            />
+          </div>
+          <div>
+            <Label>Store Password *</Label>
+            <div className="relative mt-1">
+              <Input
+                type={showPwd ? "text" : "password"}
+                value={sslcz.sslcz_store_password}
+                onChange={(e) => setSslcz({ ...sslcz, sslcz_store_password: e.target.value })}
+                placeholder="••••••••"
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPwd(!showPwd)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                {showPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+          <div>
+            <Label>Mode *</Label>
+            <Select value={sslcz.sslcz_mode} onValueChange={(v) => setSslcz({ ...sslcz, sslcz_mode: v })}>
+              <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="sandbox">Sandbox (টেস্টিং)</SelectItem>
+                <SelectItem value="live">Live (প্রোডাকশন)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>ডিসপ্লে নাম</Label>
+            <Input
+              className="mt-1"
+              value={sslcz.sslcz_display_name}
+              onChange={(e) => setSslcz({ ...sslcz, sslcz_display_name: e.target.value })}
+              placeholder="অনলাইন পেমেন্ট (কার্ড/MFS)"
+            />
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Button onClick={saveSslcz} disabled={savingSslcz}>
+            <Save className="mr-2 h-4 w-4" /> {savingSslcz ? "সেভ হচ্ছে..." : "সেটিংস সেভ করুন"}
+          </Button>
+          <Button variant="outline" onClick={testConnection} disabled={testing}>
+            <CheckCircle2 className="mr-2 h-4 w-4" /> {testing ? "টেস্ট হচ্ছে..." : "Test Connection"}
+          </Button>
+        </div>
+
+        {testResult && (
+          <div className={`mt-3 rounded-lg border p-3 text-sm ${testResult.ok ? "border-success/30 bg-success/5 text-success" : "border-destructive/30 bg-destructive/5 text-destructive"}`}>
+            {testResult.msg}
+          </div>
+        )}
+
+        <div className="mt-6 rounded-lg border border-border/50 bg-muted/30 p-4">
+          <p className="text-sm font-semibold text-foreground">SSLCOMMERZ মার্চেন্ট প্যানেলে এই URL গুলো সেট করুন:</p>
+          <div className="mt-3 space-y-2">
+            {[
+              { label: "IPN URL", url: ipnUrl },
+              { label: "Success URL", url: successUrl },
+              { label: "Fail URL", url: failUrl },
+              { label: "Cancel URL", url: cancelUrl },
+            ].map((item) => (
+              <div key={item.label} className="flex items-center gap-2 rounded-md border border-border/50 bg-background/50 p-2">
+                <span className="text-xs font-semibold text-muted-foreground min-w-[80px]">{item.label}:</span>
+                <code className="flex-1 truncate text-xs text-foreground">{item.url}</code>
+                <Button size="sm" variant="ghost" onClick={() => copyToClipboard(item.url, item.label)}>
+                  <Copy className="h-3 w-3" />
+                </Button>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 text-xs text-muted-foreground">
+            💡 প্রোডাকশনে যাওয়ার আগে SSLCOMMERZ থেকে Live store credentials নিন এবং Mode "Live" করে দিন।
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-8 flex items-center justify-between">
+        <h2 className="text-lg font-bold text-foreground">ম্যানুয়াল MFS অপশন</h2>
       </div>
 
       {loading ? (

@@ -20,3 +20,9 @@ verify_jwt = false
 
 [functions.meta-capi]
 verify_jwt = false
+
+[functions.sslcz-ipn]
+verify_jwt = false
+
+[functions.sslcz-redirect]
+verify_jwt = false
