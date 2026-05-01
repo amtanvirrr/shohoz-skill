@@ -32,9 +32,10 @@ Deno.serve(async (req) => {
     const userClient = createClient(SUPABASE_URL, ANON, {
       global: { headers: { Authorization: authHeader } },
     });
-    const { data: claims, error: cErr } = await userClient.auth.getClaims(authHeader.replace("Bearer ", ""));
-    if (cErr || !claims?.claims) return json({ error: "Unauthorized" }, 401);
-    const userId = claims.claims.sub as string;
+    const token = authHeader.replace("Bearer ", "");
+    const { data: userData, error: uErr } = await userClient.auth.getUser(token);
+    if (uErr || !userData?.user) return json({ error: "Unauthorized" }, 401);
+    const userId = userData.user.id;
 
     const body = (await req.json()) as InitBody;
     if (!body?.product_id || !body?.product_type || !body?.customer_name || !body?.customer_phone) {
