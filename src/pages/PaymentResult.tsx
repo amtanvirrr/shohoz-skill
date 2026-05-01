@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { CheckCircle2, XCircle, AlertCircle, Loader2, Receipt, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 
 interface OrderSummary {
@@ -27,7 +28,13 @@ const PaymentResult = () => {
   const [verified, setVerified] = useState(false);
   const [order, setOrder] = useState<OrderSummary | null>(null);
   const [timedOut, setTimedOut] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const [secondsLeft, setSecondsLeft] = useState(0);
   const cancelRef = useRef<{ cancelled: boolean }>({ cancelled: false });
+
+  const POLL_INTERVAL = 2; // seconds
+  const MAX_ATTEMPTS = 20; // ~40s total
+  const TOTAL_SECONDS = POLL_INTERVAL * MAX_ATTEMPTS;
 
   const startPolling = useCallback(() => {
     if (status !== "success" || !orderId) {
@@ -39,8 +46,20 @@ const PaymentResult = () => {
     cancelRef.current = token;
     setLoading(true);
     setTimedOut(false);
+    setAttempt(0);
+    setSecondsLeft(TOTAL_SECONDS);
     let attempts = 0;
-    const MAX_ATTEMPTS = 20; // ~40s total
+
+    // 1Hz countdown ticker
+    const tickerId = window.setInterval(() => {
+      if (token.cancelled) {
+        window.clearInterval(tickerId);
+        return;
+      }
+      setSecondsLeft((s) => (s > 0 ? s - 1 : 0));
+    }, 1000);
+    (token as { cancelled: boolean; tickerId?: number }).tickerId = tickerId;
+
     const poll = async () => {
       if (token.cancelled) return;
       const { data } = await supabase
@@ -55,23 +74,28 @@ const PaymentResult = () => {
       if (data?.payment_verified) {
         setVerified(true);
         setLoading(false);
+        window.clearInterval(tickerId);
         return;
       }
       attempts++;
+      setAttempt(attempts);
       if (attempts < MAX_ATTEMPTS) {
-        setTimeout(poll, 2000);
+        setTimeout(poll, POLL_INTERVAL * 1000);
       } else {
         setTimedOut(true);
         setLoading(false);
+        window.clearInterval(tickerId);
       }
     };
     poll();
-  }, [status, orderId]);
+  }, [status, orderId, TOTAL_SECONDS]);
 
   useEffect(() => {
     startPolling();
     return () => {
-      cancelRef.current.cancelled = true;
+      const t = cancelRef.current as { cancelled: boolean; tickerId?: number };
+      t.cancelled = true;
+      if (t.tickerId) window.clearInterval(t.tickerId);
     };
   }, [startPolling]);
 
@@ -114,6 +138,15 @@ const PaymentResult = () => {
         )}
         <h1 className="mt-4 text-2xl font-bold text-foreground">{config.title}</h1>
         <p className="mt-2 text-muted-foreground">{config.message}</p>
+        {status === "success" && loading && !verified && (
+          <div className="mx-auto mt-5 max-w-xs">
+            <Progress value={((TOTAL_SECONDS - secondsLeft) / TOTAL_SECONDS) * 100} className="h-2" />
+            <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+              <span>প্রচেষ্টা {attempt + 1}/{MAX_ATTEMPTS}</span>
+              <span>আনুমানিক {secondsLeft} সেকেন্ড বাকি</span>
+            </div>
+          </div>
+        )}
         {orderId && !showReceipt && (
           <p className="mt-3 text-sm text-muted-foreground">
             অর্ডার আইডি: <span className="font-mono font-semibold text-foreground">{orderId}</span>
