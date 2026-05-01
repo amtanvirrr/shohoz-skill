@@ -64,6 +64,7 @@ const AdminPayments = () => {
     sslcz_mode: "sandbox",
     sslcz_enabled: "false",
     sslcz_display_name: "অনলাইন পেমেন্ট (কার্ড / মোবাইল ব্যাংকিং)",
+    sslcz_min_amount: "10",
   });
   const [showPwd, setShowPwd] = useState(false);
   const [savingSslcz, setSavingSslcz] = useState(false);
@@ -86,7 +87,7 @@ const AdminPayments = () => {
   };
 
   const fetchSslcz = async () => {
-    const keys = ["sslcz_store_id", "sslcz_store_password", "sslcz_mode", "sslcz_enabled", "sslcz_display_name"];
+    const keys = ["sslcz_store_id", "sslcz_store_password", "sslcz_mode", "sslcz_enabled", "sslcz_display_name", "sslcz_min_amount"];
     const { data } = await supabase.from("site_settings").select("key, value").in("key", keys);
     if (data) {
       const next = { ...sslcz };
@@ -106,7 +107,7 @@ const AdminPayments = () => {
     }
     setSavingSslcz(true);
     // Sensitive keys go to admin-only site_settings; public flags also mirror to public_site_settings
-    const publicKeys = new Set(["sslcz_enabled", "sslcz_display_name"]);
+    const publicKeys = new Set(["sslcz_enabled", "sslcz_display_name", "sslcz_min_amount"]);
     const ops: any[] = [];
     Object.entries(sslcz).forEach(([key, value]) => {
       ops.push(supabase.from("site_settings").upsert({ key, value }, { onConflict: "key" }).then((r) => r));
@@ -337,6 +338,21 @@ const AdminPayments = () => {
               onChange={(e) => setSslcz({ ...sslcz, sslcz_display_name: e.target.value })}
               placeholder="অনলাইন পেমেন্ট (কার্ড/MFS)"
             />
+          </div>
+          <div>
+            <Label>ন্যূনতম পেমেন্ট পরিমাণ (৳)</Label>
+            <Input
+              type="number"
+              min={1}
+              step={1}
+              className="mt-1"
+              value={sslcz.sslcz_min_amount}
+              onChange={(e) => setSslcz({ ...sslcz, sslcz_min_amount: e.target.value })}
+              placeholder="10"
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              SSLCOMMERZ অ্যাডমিন কনফিগারেশনের ন্যূনতম ট্রানজেকশন সীমা। এই মূল্যের নিচে অনলাইন পেমেন্ট বাটন নিষ্ক্রিয় থাকবে এবং ব্যবহারকারীকে বার্তা দেখানো হবে।
+            </p>
           </div>
         </div>
 
