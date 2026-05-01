@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { usePixel } from "@/components/MetaPixelProvider";
 import OrderSuccessDialog from "@/components/OrderSuccessDialog";
+import SslczPayButton from "@/components/SslczPayButton";
 
 interface DbCourse {
   id: string;
@@ -550,6 +551,19 @@ const CourseDetail = () => {
                   <Button onClick={handlePurchase} size="lg" className="mt-4 w-full" disabled={submitting}>
                     {submitting ? "প্রসেস হচ্ছে..." : "কোর্স কিনুন"}
                   </Button>
+
+                  <div className="my-4 flex items-center gap-3">
+                    <div className="h-px flex-1 bg-border" />
+                    <span className="text-xs text-muted-foreground">অথবা</span>
+                    <div className="h-px flex-1 bg-border" />
+                  </div>
+
+                  <SslczPayButton
+                    productType="course"
+                    productId={course.id}
+                    productTitle={course.title}
+                    price={course.price}
+                  />
                 </>
               )}
               <ul className="mt-6 space-y-2 text-xs text-muted-foreground">
