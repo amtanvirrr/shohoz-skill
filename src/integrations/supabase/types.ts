@@ -52,6 +52,27 @@ export type Database = {
           },
         ]
       }
+      blog_post_views: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          session_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          session_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          session_id?: string
+        }
+        Relationships: []
+      }
       blog_posts: {
         Row: {
           author_name: string
@@ -1114,7 +1135,57 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      quiz_questions_public: {
+        Row: {
+          id: string | null
+          option_a: string | null
+          option_b: string | null
+          option_c: string | null
+          option_d: string | null
+          question: string | null
+          quiz_id: string | null
+          section_id: string | null
+          sort_order: number | null
+        }
+        Insert: {
+          id?: string | null
+          option_a?: string | null
+          option_b?: string | null
+          option_c?: string | null
+          option_d?: string | null
+          question?: string | null
+          quiz_id?: string | null
+          section_id?: string | null
+          sort_order?: number | null
+        }
+        Update: {
+          id?: string | null
+          option_a?: string | null
+          option_b?: string | null
+          option_c?: string | null
+          option_d?: string | null
+          question?: string | null
+          quiz_id?: string | null
+          section_id?: string | null
+          sort_order?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_questions_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "quizzes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quiz_questions_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "quiz_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       get_quiz_leaderboard: {
@@ -1134,7 +1205,14 @@ export type Database = {
         }
         Returns: boolean
       }
-      increment_blog_view: { Args: { post_id: string }; Returns: undefined }
+      increment_blog_view: {
+        Args: { post_id: string; session_id: string }
+        Returns: undefined
+      }
+      submit_quiz_attempt: {
+        Args: { _answers: Json; _quiz_id: string }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "admin" | "user"
