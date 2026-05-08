@@ -1135,57 +1135,7 @@ export type Database = {
       }
     }
     Views: {
-      quiz_questions_public: {
-        Row: {
-          id: string | null
-          option_a: string | null
-          option_b: string | null
-          option_c: string | null
-          option_d: string | null
-          question: string | null
-          quiz_id: string | null
-          section_id: string | null
-          sort_order: number | null
-        }
-        Insert: {
-          id?: string | null
-          option_a?: string | null
-          option_b?: string | null
-          option_c?: string | null
-          option_d?: string | null
-          question?: string | null
-          quiz_id?: string | null
-          section_id?: string | null
-          sort_order?: number | null
-        }
-        Update: {
-          id?: string | null
-          option_a?: string | null
-          option_b?: string | null
-          option_c?: string | null
-          option_d?: string | null
-          question?: string | null
-          quiz_id?: string | null
-          section_id?: string | null
-          sort_order?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "quiz_questions_quiz_id_fkey"
-            columns: ["quiz_id"]
-            isOneToOne: false
-            referencedRelation: "quizzes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "quiz_questions_section_id_fkey"
-            columns: ["section_id"]
-            isOneToOne: false
-            referencedRelation: "quiz_sections"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+      [_ in never]: never
     }
     Functions: {
       get_quiz_leaderboard: {
@@ -1196,6 +1146,27 @@ export type Database = {
           full_name: string
           last_attempt_at: string
           user_id: string
+        }[]
+      }
+      get_quiz_question_counts: {
+        Args: never
+        Returns: {
+          question_count: number
+          quiz_id: string
+        }[]
+      }
+      get_quiz_questions: {
+        Args: { _quiz_id: string }
+        Returns: {
+          id: string
+          option_a: string
+          option_b: string
+          option_c: string
+          option_d: string
+          question: string
+          quiz_id: string
+          section_id: string
+          sort_order: number
         }[]
       }
       has_role: {
