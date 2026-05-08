@@ -52,6 +52,27 @@ export type Database = {
           },
         ]
       }
+      blog_post_views: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          session_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          session_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          session_id?: string
+        }
+        Relationships: []
+      }
       blog_posts: {
         Row: {
           author_name: string
@@ -1127,6 +1148,27 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_quiz_question_counts: {
+        Args: never
+        Returns: {
+          question_count: number
+          quiz_id: string
+        }[]
+      }
+      get_quiz_questions: {
+        Args: { _quiz_id: string }
+        Returns: {
+          id: string
+          option_a: string
+          option_b: string
+          option_c: string
+          option_d: string
+          question: string
+          quiz_id: string
+          section_id: string
+          sort_order: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1134,7 +1176,14 @@ export type Database = {
         }
         Returns: boolean
       }
-      increment_blog_view: { Args: { post_id: string }; Returns: undefined }
+      increment_blog_view: {
+        Args: { post_id: string; session_id: string }
+        Returns: undefined
+      }
+      submit_quiz_attempt: {
+        Args: { _answers: Json; _quiz_id: string }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "admin" | "user"

@@ -101,7 +101,12 @@ const BlogDetailPage = () => {
       setPost(data as BlogPost | null);
       setLoading(false);
       if (data?.id) {
-        supabase.rpc("increment_blog_view", { post_id: data.id });
+        let sid = localStorage.getItem("blog_session_id");
+        if (!sid) {
+          sid = (crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`);
+          localStorage.setItem("blog_session_id", sid);
+        }
+        supabase.rpc("increment_blog_view", { post_id: data.id, session_id: sid });
       }
       // Fetch prev/next posts
       if (data?.published_at) {

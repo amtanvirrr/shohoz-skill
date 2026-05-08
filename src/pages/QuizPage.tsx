@@ -47,8 +47,8 @@ interface Question {
   option_b: string;
   option_c: string;
   option_d: string;
-  correct_option: string;
-  explanation: string | null;
+  correct_option?: string;
+  explanation?: string | null;
   section_id: string | null;
 }
 
@@ -108,10 +108,10 @@ const QuizPage = () => {
     setPreviewQuiz(quiz);
     setPreviewLoading(true);
     const [qRes, secRes] = await Promise.all([
-      supabase.from("quiz_questions").select("id, question, option_a, option_b, option_c, option_d, correct_option, explanation, sort_order, section_id").eq("quiz_id", quiz.id).order("sort_order").limit(3),
+      supabase.rpc("get_quiz_questions", { _quiz_id: quiz.id }),
       supabase.from("quiz_sections").select("*").eq("quiz_id", quiz.id).order("sort_order"),
     ]);
-    setPreviewQuestions((qRes.data as Question[]) || []);
+    setPreviewQuestions(((qRes.data as Question[]) || []).slice(0, 3));
     setPreviewSections((secRes.data as QuizSection[]) || []);
     setPreviewLoading(false);
   };
@@ -119,27 +119,31 @@ const QuizPage = () => {
   useEffect(() => {
     const fetchQuizzes = async () => {
       if (directQuizId && !directQuizStarted) {
-        const { data } = await supabase.from("quizzes").select("*, quiz_questions(id)").eq("id", directQuizId).eq("is_published", true).single();
+        const { data } = await supabase.from("quizzes").select("*").eq("id", directQuizId).eq("is_published", true).single();
         if (data) {
-          const { quiz_questions, ...rest } = data as any;
-          const quiz = rest as Quiz;
+          const quiz = data as Quiz;
           setDirectQuizStarted(true);
           startQuiz(quiz);
         }
         return;
       }
 
-      const { data } = await supabase.from("quizzes").select("*, quiz_questions(id), quiz_sections(id)").eq("is_published", true).is("lesson_id", null);
+      const [{ data }, { data: counts }] = await Promise.all([
+        supabase.from("quizzes").select("*, quiz_sections(id)").eq("is_published", true).is("lesson_id", null),
+        supabase.rpc("get_quiz_question_counts"),
+      ]);
+      const countMap: Record<string, number> = {};
+      (counts as any[] | null)?.forEach((c) => { countMap[c.quiz_id] = Number(c.question_count) || 0; });
       if (data) {
-        const counts: Record<string, number> = {};
+        const qCounts: Record<string, number> = {};
         const secCounts: Record<string, number> = {};
         const mapped = data.map((q: any) => {
-          counts[q.id] = q.quiz_questions?.length || 0;
+          qCounts[q.id] = countMap[q.id] || 0;
           secCounts[q.id] = q.quiz_sections?.length || 0;
-          const { quiz_questions, quiz_sections, ...rest } = q;
+          const { quiz_sections, ...rest } = q;
           return rest as Quiz;
         });
-        setQuestionCounts(counts);
+        setQuestionCounts(qCounts);
         setSectionCounts(secCounts);
         setQuizzes(mapped);
       }
@@ -233,7 +237,7 @@ const QuizPage = () => {
     setSubmitted(false);
     setTimeLeft(quiz.duration_minutes * 60);
     const [qRes, secRes] = await Promise.all([
-      supabase.from("quiz_questions").select("*").eq("quiz_id", quiz.id).order("sort_order"),
+      supabase.rpc("get_quiz_questions", { _quiz_id: quiz.id }),
       supabase.from("quiz_sections").select("*").eq("quiz_id", quiz.id).order("sort_order"),
     ]);
     setQuestions((qRes.data as Question[]) || []);
@@ -246,41 +250,40 @@ const QuizPage = () => {
     setSubmitted(true);
   }, [submitted]);
 
-  useEffect(() => {
-    if (!submitted || !selectedQuiz || questions.length === 0) return;
-    let correct = 0;
-    let wrong = 0;
-    questions.forEach((q) => {
-      if (answers[q.id]) {
-        if (answers[q.id] === q.correct_option) correct++;
-        else wrong++;
-      }
-    });
-    let finalScore = correct;
-    if (selectedQuiz.negative_marking) {
-      finalScore = correct - wrong * selectedQuiz.negative_mark_value;
-    }
+  const [serverResult, setServerResult] = useState<{ score: number; correct: number; wrong: number; skipped: number; total: number } | null>(null);
 
-    if (user) {
-      const saveAttempt = async () => {
-        const { error } = await supabase.from("quiz_attempts").insert({
-          quiz_id: selectedQuiz.id,
-          user_id: user.id,
-          score: finalScore,
-          total_questions: questions.length,
-          answers,
-        });
-        if (error) {
-          console.error("Failed to save quiz attempt:", error);
-        } else {
-          const { data: lbData } = await supabase.rpc("get_quiz_leaderboard", { _quiz_id: selectedQuiz.id, _limit: 10 });
-          if (lbData) {
-            setLeaderboard((prev) => ({ ...prev, [selectedQuiz.id]: lbData as LeaderboardEntry[] }));
-          }
-        }
-      };
-      saveAttempt();
-    }
+  useEffect(() => {
+    if (!submitted || !selectedQuiz || questions.length === 0 || !user) return;
+    const submit = async () => {
+      const { data, error } = await supabase.rpc("submit_quiz_attempt", {
+        _quiz_id: selectedQuiz.id,
+        _answers: answers,
+      });
+      if (error || !data) {
+        console.error("Failed to submit quiz attempt:", error);
+        return;
+      }
+      const result = data as any;
+      const correctMap: Record<string, string> = result.correct_map || {};
+      const explanations: Record<string, string> = result.explanations || {};
+      setQuestions((prev) => prev.map((q) => ({
+        ...q,
+        correct_option: correctMap[q.id],
+        explanation: explanations[q.id] ?? null,
+      })));
+      setServerResult({
+        score: Number(result.score) || 0,
+        correct: Number(result.correct) || 0,
+        wrong: Number(result.wrong) || 0,
+        skipped: Number(result.skipped) || 0,
+        total: Number(result.total) || 0,
+      });
+      const { data: lbData } = await supabase.rpc("get_quiz_leaderboard", { _quiz_id: selectedQuiz.id, _limit: 10 });
+      if (lbData) {
+        setLeaderboard((prev) => ({ ...prev, [selectedQuiz.id]: lbData as LeaderboardEntry[] }));
+      }
+    };
+    submit();
   }, [submitted]);
 
   const formatTime = (seconds: number) => {
@@ -290,17 +293,8 @@ const QuizPage = () => {
   };
 
   const getResults = () => {
-    let correct = 0, wrong = 0, skipped = 0;
-    questions.forEach((q) => {
-      if (!answers[q.id]) skipped++;
-      else if (answers[q.id] === q.correct_option) correct++;
-      else wrong++;
-    });
-    let score = correct;
-    if (selectedQuiz?.negative_marking) {
-      score = correct - wrong * (selectedQuiz?.negative_mark_value || 0);
-    }
-    return { correct, wrong, skipped, score };
+    if (serverResult) return serverResult;
+    return { correct: 0, wrong: 0, skipped: 0, score: 0 };
   };
 
   const handlePurchaseQuiz = async (quiz: Quiz) => {
