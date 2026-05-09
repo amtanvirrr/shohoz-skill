@@ -30,6 +30,9 @@ const PaymentResult = () => {
   const [timedOut, setTimedOut] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [secondsLeft, setSecondsLeft] = useState(0);
+  // Slug of the product this order was for — used so a fail/cancel screen
+  // can offer a one-click "নতুন করে পেমেন্ট করুন" back to the product page.
+  const [retryHref, setRetryHref] = useState<string | null>(null);
   const cancelRef = useRef<{ cancelled: boolean }>({ cancelled: false });
 
   const POLL_INTERVAL = 2; // seconds
@@ -104,6 +107,47 @@ const PaymentResult = () => {
       if (t.tickerId) window.clearInterval(t.tickerId);
     };
   }, [startPolling]);
+
+  // For fail/cancel (and as a fallback for success), look up the order's
+  // product so we can route the user back to retry the purchase. We fetch
+  // independently of polling because polling only runs on success.
+  useEffect(() => {
+    if (!orderId) return;
+    if (status !== "fail" && status !== "cancel") return;
+    let cancelled = false;
+    (async () => {
+      const { data: ord } = await supabase
+        .from("orders")
+        .select("product_id, product_type, product_title")
+        .eq("order_id", orderId)
+        .maybeSingle();
+      if (cancelled || !ord) return;
+      const table =
+        ord.product_type === "course" ? "courses" :
+        ord.product_type === "book" ? "books" :
+        ord.product_type === "quiz" ? "quizzes" : null;
+      if (!table) {
+        // Fallback: send them to the listing page.
+        setRetryHref(ord.product_type === "book" ? "/books" : ord.product_type === "course" ? "/courses" : "/quizzes");
+        return;
+      }
+      const { data: prod } = await supabase
+        .from(table)
+        .select("slug")
+        .eq("id", ord.product_id)
+        .maybeSingle();
+      if (cancelled) return;
+      if (prod?.slug) {
+        const base =
+          ord.product_type === "course" ? "/course/" :
+          ord.product_type === "book" ? "/book/" : "/quizzes";
+        setRetryHref(ord.product_type === "quiz" ? "/quizzes" : `${base}${prod.slug}`);
+      } else {
+        setRetryHref(ord.product_type === "book" ? "/books" : ord.product_type === "course" ? "/courses" : "/quizzes");
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [orderId, status]);
 
   const config = {
     success: {
@@ -217,6 +261,14 @@ const PaymentResult = () => {
             <Button onClick={startPolling} variant="secondary">
               <RefreshCw className="mr-2 h-4 w-4" />
               আবার ভেরিফাই করুন
+            </Button>
+          )}
+          {(status === "fail" || status === "cancel") && (
+            <Button asChild>
+              <Link to={retryHref || "/"}>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                নতুন করে পেমেন্ট করুন
+              </Link>
             </Button>
           )}
           <Button asChild>
