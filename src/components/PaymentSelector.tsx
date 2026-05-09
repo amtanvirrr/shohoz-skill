@@ -396,6 +396,7 @@ export const PaymentSelector = ({
       return;
     }
     setLastError("");
+    setErrorInfo(null);
 
     // Parent-supplied validation (address, shipping zone, etc.)
     if (validateBeforeSubmit && !validateBeforeSubmit()) {
@@ -416,9 +417,11 @@ export const PaymentSelector = ({
         logEvent("cod_submit_success", { method: "cod" });
       } catch (e) {
         const msg = (e as Error).message || "অর্ডার সাবমিট করতে সমস্যা হয়েছে";
+        const info = mapPaymentError(msg, "cod");
         setLastError(msg);
-        toast({ title: "ত্রুটি", description: msg, variant: "destructive" });
-        logEvent("cod_submit_error", { method: "cod", message: msg });
+        setErrorInfo(info);
+        toast({ title: info.title, description: info.message, variant: "destructive" });
+        logEvent("cod_submit_error", { method: "cod", message: msg, metadata: { category: info.category } });
       } finally {
         busyRef.current = false;
       }
@@ -466,13 +469,15 @@ export const PaymentSelector = ({
         });
         if (error || !data?.gateway_url) {
           const msg = data?.error || error?.message || "Unknown error";
+          const info = mapPaymentError(msg, "ssl");
           setLastError(msg);
-          toast({
-            title: "পেমেন্ট শুরু করা যায়নি",
-            description: msg,
-            variant: "destructive",
+          setErrorInfo(info);
+          toast({ title: info.title, description: info.message, variant: "destructive" });
+          logEvent("ssl_init_error", {
+            method: "sslcommerz",
+            message: msg,
+            metadata: { category: info.category, details: data?.details ?? null },
           });
-          logEvent("ssl_init_error", { method: "sslcommerz", message: msg, metadata: { details: data?.details ?? null } });
           setRedirecting(false);
           busyRef.current = false;
           return;
@@ -482,9 +487,11 @@ export const PaymentSelector = ({
         startRedirectCountdown(data.gateway_url, data.order_id ?? null);
       } catch (e) {
         const msg = (e as Error).message || "নেটওয়ার্ক ত্রুটি";
+        const info = mapPaymentError(msg, "ssl");
         setLastError(msg);
-        toast({ title: "ত্রুটি", description: msg, variant: "destructive" });
-        logEvent("ssl_init_exception", { method: "sslcommerz", message: msg });
+        setErrorInfo(info);
+        toast({ title: info.title, description: info.message, variant: "destructive" });
+        logEvent("ssl_init_exception", { method: "sslcommerz", message: msg, metadata: { category: info.category } });
         setRedirecting(false);
         busyRef.current = false;
       }
@@ -516,9 +523,11 @@ export const PaymentSelector = ({
       lastAttemptRef.current = null;
     } catch (e) {
       const msg = (e as Error).message || "অর্ডার সাবমিট করতে সমস্যা হয়েছে";
+      const info = mapPaymentError(msg, "mfs");
       setLastError(msg);
-      toast({ title: "ত্রুটি", description: msg, variant: "destructive" });
-      logEvent("mfs_submit_error", { method: selected, message: msg });
+      setErrorInfo(info);
+      toast({ title: info.title, description: info.message, variant: "destructive" });
+      logEvent("mfs_submit_error", { method: selected, message: msg, metadata: { category: info.category } });
     } finally {
       busyRef.current = false;
     }
