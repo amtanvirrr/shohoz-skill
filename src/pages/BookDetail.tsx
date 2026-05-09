@@ -116,26 +116,23 @@ const BookDetail = () => {
     : 0;
   const totalPrice = book.price + shippingCost;
 
-  const handleOrder = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const validateCustomer = () => {
     if (!order.name || !order.phone) {
       toast({ title: "সকল প্রয়োজনীয় তথ্য পূরণ করুন", variant: "destructive" });
-      return;
+      return false;
     }
     if (isPhysical && !order.address) {
       toast({ title: "ডেলিভারি ঠিকানা লিখুন", variant: "destructive" });
-      return;
+      return false;
     }
     if (isPhysical && !selectedZone) {
       toast({ title: "শিপিং জোন সিলেক্ট করুন", variant: "destructive" });
-      return;
+      return false;
     }
-    if (!isPhysical && !order.transactionId.trim()) {
-      toast({ title: "Transaction ID দিন", description: "পেমেন্ট করার পর Transaction ID লিখুন", variant: "destructive" });
-      return;
-    }
-    setSubmitting(true);
-    const paymentMethod = isPhysical ? "cod" : order.paymentMethod;
+    return true;
+  };
+
+  const insertOrder = async (paymentMethod: string, transactionId: string | null) => {
     const notesText = isPhysical && activeZone ? `Shipping: ${activeZone.zone_label} (৳${shippingCost})` : null;
     const { data, error } = await supabase.from("orders").insert({
       customer_name: order.name,
@@ -148,31 +145,46 @@ const BookDetail = () => {
       price: totalPrice,
       payment_method: paymentMethod as any,
       user_id: user?.id || null,
-      transaction_id: !isPhysical ? order.transactionId.trim() : null,
+      transaction_id: transactionId,
       notes: notesText,
     }).select("order_id").single();
-    setSubmitting(false);
 
     if (error) {
       toast({ title: "অর্ডার ব্যর্থ হয়েছে", description: error.message, variant: "destructive" });
-    } else {
-      // Send admin notification email (fire-and-forget)
-      supabase.functions.invoke("notify-order", {
-        body: { orderId: data.order_id },
-      }).catch(() => {});
-
-      trackEvent("Purchase", {
-        content_name: book.title,
-        content_type: "book",
-        content_ids: [book.id],
-        value: totalPrice,
-        currency: "BDT",
-        order_id: data.order_id,
-      }, { em: order.email || undefined, ph: order.phone || undefined });
-      setSuccessDialog({ open: true, orderId: data.order_id, message: isPhysical ? "আপনার অর্ডারটি সফলভাবে গৃহীত হয়েছে।" : "পেমেন্ট যাচাইয়ের পর আপনি বইটি পড়তে পারবেন।" });
-      setOrder({ name: "", phone: "", email: "", address: "", paymentMethod: "bkash", transactionId: "" });
-      if (isEbook) setOrderStatus("pending");
+      return;
     }
+
+    supabase.functions.invoke("notify-order", { body: { orderId: data.order_id } }).catch(() => {});
+    trackEvent("Purchase", {
+      content_name: book.title,
+      content_type: "book",
+      content_ids: [book.id],
+      value: totalPrice,
+      currency: "BDT",
+      order_id: data.order_id,
+    }, { em: order.email || undefined, ph: order.phone || undefined });
+    setSuccessDialog({
+      open: true,
+      orderId: data.order_id,
+      message: isPhysical ? "আপনার অর্ডারটি সফলভাবে গৃহীত হয়েছে।" : "পেমেন্ট যাচাইয়ের পর আপনি বইটি পড়তে পারবেন।",
+    });
+    setOrder({ name: "", phone: "", email: "", address: "" });
+    if (isEbook) setOrderStatus("pending");
+  };
+
+  const handleCodSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateCustomer()) return;
+    setSubmitting(true);
+    await insertOrder("cod", null);
+    setSubmitting(false);
+  };
+
+  const handleEbookMfsSubmit = async (provider: string, txnId: string) => {
+    if (!validateCustomer()) return;
+    setSubmitting(true);
+    await insertOrder(provider, txnId);
+    setSubmitting(false);
   };
 
   return (
