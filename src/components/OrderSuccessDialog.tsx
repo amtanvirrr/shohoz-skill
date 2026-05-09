@@ -8,14 +8,24 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useEffect, useState, useCallback } from "react";
+import {
+  buildOrderMessage,
+  type OrderPaymentMethod,
+  type OrderProductType,
+} from "@/lib/orderMessage";
 
 interface OrderSuccessDialogProps {
   open: boolean;
   onClose: () => void;
   orderId: string;
   productTitle: string;
+  /** Optional override; if omitted we auto-generate from method + type. */
   message?: string;
   isFree?: boolean;
+  paymentMethod?: OrderPaymentMethod;
+  productType?: OrderProductType;
+  /** e.g. "৩-৫ দিন" — sourced from active shipping zone for physical books. */
+  deliveryText?: string;
 }
 
 const confettiColors = [
@@ -57,7 +67,17 @@ const playSuccessSound = () => {
   } catch {}
 };
 
-const OrderSuccessDialog = ({ open, onClose, orderId, productTitle, message, isFree }: OrderSuccessDialogProps) => {
+const OrderSuccessDialog = ({
+  open,
+  onClose,
+  orderId,
+  productTitle,
+  message,
+  isFree,
+  paymentMethod,
+  productType,
+  deliveryText,
+}: OrderSuccessDialogProps) => {
   const { toast } = useToast();
 
   const navigate = useNavigate();
@@ -77,6 +97,22 @@ const OrderSuccessDialog = ({ open, onClose, orderId, productTitle, message, isF
       return () => clearTimeout(timer);
     }
   }, [open]);
+
+  // Build personalized copy when caller hasn't supplied an explicit override.
+  const auto = paymentMethod && productType
+    ? buildOrderMessage({ paymentMethod, productType, deliveryText, isFree })
+    : null;
+  const displayTitle = auto?.title || (isFree ? "সফলভাবে সম্পন্ন! 🎉" : "অর্ডার সফল! 🎉");
+  const displayMessage =
+    message ||
+    auto?.message ||
+    (isFree ? "আপনার অর্ডারটি কনফার্ম হয়েছে।" : "আপনার অর্ডারটি সফলভাবে জমা হয়েছে।");
+  // Manual / pending payment messaging — show the "save order id" hint
+  // only when the user actually needs to wait for verification.
+  const showVerificationHint =
+    !isFree &&
+    paymentMethod !== "cod" &&
+    paymentMethod !== "sslcommerz";
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -98,12 +134,13 @@ const OrderSuccessDialog = ({ open, onClose, orderId, productTitle, message, isF
             </div>
           </div>
 
-          <h2 className="text-2xl font-bold text-foreground">
-            {isFree ? "সফলভাবে সম্পন্ন! 🎉" : "অর্ডার সফল! 🎉"}
-          </h2>
+          <h2 className="text-2xl font-bold text-foreground">{displayTitle}</h2>
 
           <p className="text-sm text-muted-foreground">
-            <span className="font-medium text-foreground">{productTitle}</span> — {message || (isFree ? "আপনার অর্ডারটি কনফার্ম হয়েছে।" : "আপনার অর্ডারটি সফলভাবে জমা হয়েছে।")}
+            <span className="font-medium text-foreground">{productTitle}</span>
+          </p>
+          <p className="text-sm leading-relaxed text-foreground/90">
+            {displayMessage}
           </p>
 
           {/* Order ID */}
@@ -117,7 +154,7 @@ const OrderSuccessDialog = ({ open, onClose, orderId, productTitle, message, isF
             </div>
           </div>
 
-          {!isFree && (
+          {showVerificationHint && (
             <div className="flex items-start gap-2 rounded-lg bg-yellow-50 px-4 py-3 text-left dark:bg-yellow-900/10">
               <Package className="mt-0.5 h-4 w-4 shrink-0 text-yellow-600" />
               <p className="text-xs text-yellow-700 dark:text-yellow-400">
