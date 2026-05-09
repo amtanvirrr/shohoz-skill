@@ -818,7 +818,7 @@ export const PaymentSelector = ({
               variant="outline"
               className="shrink-0 h-8"
               disabled={isBusy}
-              onClick={() => { setLastError(""); handleConfirm(); }}
+              onClick={handleRetry}
             >
               <RefreshCcw className="mr-1 h-3.5 w-3.5" />
               আবার চেষ্টা করুন
