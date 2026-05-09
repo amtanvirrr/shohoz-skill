@@ -467,9 +467,9 @@ export const PaymentSelector = ({
           busyRef.current = false;
           return;
         }
-        logEvent("ssl_redirect", { method: "sslcommerz", message: "redirecting_to_gateway", metadata: { order_id: data.order_id ?? null } });
-        window.location.href = data.gateway_url;
-        // Keep busy=true; navigation is in progress.
+        // Begin a short cancellable countdown. The actual navigation
+        // happens inside startRedirectCountdown when it reaches zero.
+        startRedirectCountdown(data.gateway_url, data.order_id ?? null);
       } catch (e) {
         const msg = (e as Error).message || "নেটওয়ার্ক ত্রুটি";
         setLastError(msg);
