@@ -7,12 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, ShoppingBag, Smartphone, BookOpen, Clock, Eye } from "lucide-react";
+import { ArrowLeft, ShoppingBag, BookOpen, Clock, Eye } from "lucide-react";
 import { ScrollReveal } from "@/hooks/useScrollReveal";
 import { useToast } from "@/hooks/use-toast";
 import { usePixel } from "@/components/MetaPixelProvider";
 import OrderSuccessDialog from "@/components/OrderSuccessDialog";
-import SslczPayButton from "@/components/SslczPayButton";
+import PaymentSelector from "@/components/PaymentSelector";
 
 interface DbBook {
   id: string;
@@ -25,17 +25,6 @@ interface DbBook {
   category: string;
   book_type: string;
   demo_pdf_url: string | null;
-}
-
-interface MfsMethod {
-  id: string;
-  provider: string;
-  display_name: string;
-  phone_number: string;
-  qr_code_url: string | null;
-  mfs_type: string;
-  payment_instruction: string;
-  process_message: string;
 }
 
 interface ShippingZone {
@@ -56,9 +45,8 @@ const BookDetail = () => {
   const { trackEvent } = usePixel();
   const [book, setBook] = useState<DbBook | null>(null);
   const [loading, setLoading] = useState(true);
-  const [order, setOrder] = useState({ name: "", phone: "", email: "", address: "", paymentMethod: "bkash", transactionId: "" });
+  const [order, setOrder] = useState({ name: "", phone: "", email: "", address: "" });
   const [submitting, setSubmitting] = useState(false);
-  const [mfsMethods, setMfsMethods] = useState<MfsMethod[]>([]);
   const [shippingZones, setShippingZones] = useState<ShippingZone[]>([]);
   const [selectedZone, setSelectedZone] = useState<string>("");
   const [orderStatus, setOrderStatus] = useState<string | null>(null);
@@ -71,9 +59,8 @@ const BookDetail = () => {
     if (!slug) return;
     Promise.all([
       supabase.from("books").select("*").eq("slug", slug).maybeSingle(),
-      supabase.from("payment_methods").select("*").eq("is_active", true).order("sort_order"),
       supabase.from("shipping_zones").select("*").eq("is_active", true).order("sort_order"),
-    ]).then(([bookRes, mfsRes, shippingRes]) => {
+    ]).then(([bookRes, shippingRes]) => {
       const b = bookRes.data as DbBook | null;
       setBook(b);
       if (b) {
@@ -85,9 +72,6 @@ const BookDetail = () => {
           currency: "BDT",
         });
       }
-      const mfsData = (mfsRes.data as MfsMethod[]) || [];
-      setMfsMethods(mfsData);
-      if (mfsData.length > 0) setOrder(o => ({ ...o, paymentMethod: mfsData[0].provider }));
       const szData = (shippingRes.data as ShippingZone[]) || [];
       setShippingZones(szData);
       if (szData.length > 0) setSelectedZone(szData[0].zone_name);
