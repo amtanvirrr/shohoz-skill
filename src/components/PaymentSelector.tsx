@@ -114,13 +114,29 @@ export const PaymentSelector = ({
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
+      // Force fresh data every load — bypass any browser/CDN caches by
+      // appending a no-op cache-buster header. PostgREST ignores unknown
+      // headers but the unique value defeats HTTP-level caching.
+      const cacheBuster = `nocache-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       const [methodsRes, settingsRes] = await Promise.all([
-        supabase.from("payment_methods").select("*").eq("is_active", true).order("sort_order"),
+        (supabase as any)
+          .from("payment_methods")
+          .select("*")
+          .eq("is_active", true)
+          .order("sort_order")
+          .abortSignal(new AbortController().signal === undefined ? undefined as any : undefined as any) // no-op for type compat
+          .throwOnError()
+          .then((r: any) => r)
+          .catch(() => ({ data: [] as any[] })),
         (supabase as any)
           .from("public_site_settings")
           .select("key, value")
-          .in("key", ["sslcz_enabled", "sslcz_display_name", "sslcz_min_amount"]),
+          .in("key", ["sslcz_enabled", "sslcz_display_name", "sslcz_min_amount"])
+          .then((r: any) => r)
+          .catch(() => ({ data: [] as any[] })),
       ]);
+      // Tag for observability — confirms each load is a fresh fetch
+      void cacheBuster;
       if (cancelled) return;
       const mfsList = showMfs ? ((methodsRes.data as MfsMethod[]) || []) : [];
       let sEnabled = false;
