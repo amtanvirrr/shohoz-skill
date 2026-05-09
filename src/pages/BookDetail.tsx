@@ -50,7 +50,13 @@ const BookDetail = () => {
   const [shippingZones, setShippingZones] = useState<ShippingZone[]>([]);
   const [selectedZone, setSelectedZone] = useState<string>("");
   const [orderStatus, setOrderStatus] = useState<string | null>(null);
-  const [successDialog, setSuccessDialog] = useState<{ open: boolean; orderId: string; message?: string; isFree?: boolean } | null>(null);
+  const [successDialog, setSuccessDialog] = useState<{
+    open: boolean;
+    orderId: string;
+    message?: string;
+    isFree?: boolean;
+    paymentMethod?: string;
+  } | null>(null);
   const [demoOpen, setDemoOpen] = useState(false);
   const isPhysical = book?.book_type === "physical";
   const isEbook = book?.book_type === "ebook";
@@ -163,10 +169,12 @@ const BookDetail = () => {
       currency: "BDT",
       order_id: data.order_id,
     }, { em: order.email || undefined, ph: order.phone || undefined });
+    // Personalized copy is computed inside OrderSuccessDialog from
+    // paymentMethod + productType + deliveryText — don't pass `message`.
     setSuccessDialog({
       open: true,
       orderId: data.order_id,
-      message: isPhysical ? "আপনার অর্ডারটি সফলভাবে গৃহীত হয়েছে।" : "পেমেন্ট যাচাইয়ের পর আপনি বইটি পড়তে পারবেন।",
+      paymentMethod,
     });
     setOrder({ name: "", phone: "", email: "", address: "" });
     if (isEbook) setOrderStatus("pending");
@@ -433,6 +441,19 @@ const BookDetail = () => {
           productTitle={book.title}
           message={successDialog.message}
           isFree={successDialog.isFree}
+          paymentMethod={successDialog.paymentMethod}
+          productType={isEbook ? "ebook" : "book"}
+          deliveryText={
+            isPhysical && activeZone
+              ? `${activeZone.delivery_time_min}-${activeZone.delivery_time_max} ${
+                  activeZone.delivery_time_unit === "days"
+                    ? "কর্মদিবস"
+                    : activeZone.delivery_time_unit === "hours"
+                      ? "ঘণ্টা"
+                      : "সপ্তাহ"
+                }`
+              : undefined
+          }
         />
       )}
       {/* Demo PDF Modal */}
