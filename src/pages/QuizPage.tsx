@@ -11,7 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import OrderSuccessDialog from "@/components/OrderSuccessDialog";
-import SslczPayButton from "@/components/SslczPayButton";
+import PaymentSelector from "@/components/PaymentSelector";
 import { ScrollReveal } from "@/hooks/useScrollReveal";
 
 interface QuizAttempt {
@@ -94,9 +94,6 @@ const QuizPage = () => {
   // Purchase state
   const [quizOrderStatus, setQuizOrderStatus] = useState<Record<string, string>>({});
   const [purchasingQuiz, setPurchasingQuiz] = useState<string | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState("bkash");
-  const [transactionId, setTransactionId] = useState("");
-  const [mfsMethods, setMfsMethods] = useState<MfsMethod[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [successDialog, setSuccessDialog] = useState<{ open: boolean; orderId: string; message?: string; isFree?: boolean } | null>(null);
   const [previewQuiz, setPreviewQuiz] = useState<Quiz | null>(null);
@@ -150,14 +147,6 @@ const QuizPage = () => {
     };
     fetchQuizzes();
   }, [directQuizId]);
-
-  useEffect(() => {
-    supabase.from("payment_methods").select("*").eq("is_active", true).order("sort_order").then(({ data }) => {
-      const methods = (data as MfsMethod[]) || [];
-      setMfsMethods(methods);
-      if (methods.length > 0) setPaymentMethod(methods[0].provider);
-    });
-  }, []);
 
   useEffect(() => {
     if (!user || quizzes.length === 0) return;
