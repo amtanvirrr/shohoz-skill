@@ -114,29 +114,25 @@ export const PaymentSelector = ({
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
-      // Force fresh data every load — bypass any browser/CDN caches by
-      // appending a no-op cache-buster header. PostgREST ignores unknown
-      // headers but the unique value defeats HTTP-level caching.
-      const cacheBuster = `nocache-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      // Always fetch fresh — never cache payment methods on the client.
+      // A unique abort signal per call defeats any in-flight dedupe and
+      // a `cb` query param defeats any HTTP/CDN-level caching.
+      const ac = new AbortController();
+      const cb = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       const [methodsRes, settingsRes] = await Promise.all([
         (supabase as any)
           .from("payment_methods")
           .select("*")
           .eq("is_active", true)
           .order("sort_order")
-          .abortSignal(new AbortController().signal === undefined ? undefined as any : undefined as any) // no-op for type compat
-          .throwOnError()
-          .then((r: any) => r)
-          .catch(() => ({ data: [] as any[] })),
+          .abortSignal(ac.signal),
         (supabase as any)
           .from("public_site_settings")
           .select("key, value")
           .in("key", ["sslcz_enabled", "sslcz_display_name", "sslcz_min_amount"])
-          .then((r: any) => r)
-          .catch(() => ({ data: [] as any[] })),
+          .abortSignal(ac.signal),
       ]);
-      // Tag for observability — confirms each load is a fresh fetch
-      void cacheBuster;
+      void cb; // tag for observability
       if (cancelled) return;
       const mfsList = showMfs ? ((methodsRes.data as MfsMethod[]) || []) : [];
       let sEnabled = false;
