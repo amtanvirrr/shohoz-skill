@@ -313,15 +313,10 @@ const QuizPage = () => {
     }
 
     setPurchasingQuiz(quiz.id);
-    setTransactionId("");
   };
 
-  const submitPurchase = async (quiz: Quiz) => {
+  const submitPurchase = async (quiz: Quiz, provider: string, txnId: string) => {
     if (!user) return;
-    if (!transactionId.trim()) {
-      toast({ title: "Transaction ID দিন", description: "পেমেন্ট করার পর Transaction ID লিখুন", variant: "destructive" });
-      return;
-    }
     setSubmitting(true);
     const { data, error } = await supabase.from("orders").insert({
       customer_name: user.user_metadata?.full_name || "User",
@@ -331,9 +326,9 @@ const QuizPage = () => {
       product_id: quiz.id,
       product_title: quiz.title,
       price: quiz.price,
-      payment_method: paymentMethod as any,
+      payment_method: provider as any,
       user_id: user.id,
-      transaction_id: transactionId.trim(),
+      transaction_id: txnId,
     }).select("order_id").single();
     setSubmitting(false);
 
