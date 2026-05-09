@@ -4,6 +4,7 @@ import { CheckCircle2, XCircle, AlertCircle, Loader2, Receipt, RefreshCw } from 
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
+import { sanitizeFailureNote } from "@/lib/sanitizeFailureNote";
 
 interface OrderSummary {
   order_id: string;
@@ -37,6 +38,8 @@ const PaymentResult = () => {
   // fails or is cancelled. Surfaced verbatim on the fail/cancel screen so
   // the user understands *why* their payment didn't go through.
   const [failureNote, setFailureNote] = useState<string | null>(null);
+  // When the cleaned reason is long we collapse it; user can expand inline.
+  const [showFullNote, setShowFullNote] = useState(false);
   // Loading state for the post-fail lookup (notes + product slug). We block
   // the "নতুন করে পেমেন্ট করুন" button until this finishes so users see the
   // failure reason before retrying, and so they can't double-submit while
