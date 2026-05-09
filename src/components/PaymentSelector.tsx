@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { Globe, Loader2, Smartphone, CreditCard, AlertCircle } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Globe, Loader2, Smartphone, CreditCard, AlertCircle, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -62,6 +62,12 @@ export const PaymentSelector = ({
   const [selected, setSelected] = useState<string>("");
   const [transactionId, setTransactionId] = useState("");
   const [redirecting, setRedirecting] = useState(false);
+  const [lastError, setLastError] = useState<string>("");
+  // Hard guard against rapid double clicks — refs update synchronously
+  // so a second click before React flushes state still sees `true`.
+  const busyRef = useRef(false);
+
+  const isBusy = submitting || redirecting;
 
   useEffect(() => {
     let cancelled = false;
@@ -166,10 +172,12 @@ export const PaymentSelector = ({
   }
 
   const handleConfirm = async () => {
+    if (busyRef.current || isBusy) return;
     if (!user) {
       toast({ title: "প্রথমে লগইন করুন", variant: "destructive" });
       return;
     }
+    setLastError("");
 
     if (isSsl) {
       if (belowMin) {
@@ -191,6 +199,7 @@ export const PaymentSelector = ({
         return;
       }
       setRedirecting(true);
+      busyRef.current = true;
       try {
         const { data, error } = await supabase.functions.invoke("sslcz-init", {
           body: {
@@ -205,18 +214,25 @@ export const PaymentSelector = ({
           },
         });
         if (error || !data?.gateway_url) {
+          const msg = data?.error || error?.message || "Unknown error";
+          setLastError(msg);
           toast({
             title: "পেমেন্ট শুরু করা যায়নি",
-            description: data?.error || error?.message || "Unknown error",
+            description: msg,
             variant: "destructive",
           });
           setRedirecting(false);
+          busyRef.current = false;
           return;
         }
         window.location.href = data.gateway_url;
+        // Keep busy=true; navigation is in progress.
       } catch (e) {
-        toast({ title: "ত্রুটি", description: (e as Error).message, variant: "destructive" });
+        const msg = (e as Error).message || "নেটওয়ার্ক ত্রুটি";
+        setLastError(msg);
+        toast({ title: "ত্রুটি", description: msg, variant: "destructive" });
         setRedirecting(false);
+        busyRef.current = false;
       }
       return;
     }
@@ -230,8 +246,17 @@ export const PaymentSelector = ({
       toast({ title: "ট্রানজেকশন আইডি দিন", description: "পেমেন্ট করার পর Transaction ID লিখুন", variant: "destructive" });
       return;
     }
-    await onMfsSubmit(selected, transactionId.trim());
-    setTransactionId("");
+    busyRef.current = true;
+    try {
+      await onMfsSubmit(selected, transactionId.trim());
+      setTransactionId("");
+    } catch (e) {
+      const msg = (e as Error).message || "অর্ডার সাবমিট করতে সমস্যা হয়েছে";
+      setLastError(msg);
+      toast({ title: "ত্রুটি", description: msg, variant: "destructive" });
+    } finally {
+      busyRef.current = false;
+    }
   };
 
   const cardBase =
@@ -252,8 +277,9 @@ export const PaymentSelector = ({
               <button
                 type="button"
                 key={m.id}
-                onClick={() => setSelected(m.provider)}
-                className={`${cardBase} ${active ? cardActive : cardIdle}`}
+                onClick={() => { if (!isBusy) { setSelected(m.provider); setLastError(""); } }}
+                disabled={isBusy}
+                className={`${cardBase} ${active ? cardActive : cardIdle} ${isBusy ? "opacity-60 cursor-not-allowed" : ""}`}
               >
                 <Smartphone className="h-4 w-4 mb-1" />
                 <span className={`font-semibold ${compact ? "text-xs" : "text-sm"}`}>
@@ -266,8 +292,9 @@ export const PaymentSelector = ({
           {sslEnabled && (
             <button
               type="button"
-              onClick={() => setSelected(SSL_KEY)}
-              className={`${cardBase} ${selected === SSL_KEY ? cardActive : cardIdle}`}
+              onClick={() => { if (!isBusy) { setSelected(SSL_KEY); setLastError(""); } }}
+              disabled={isBusy}
+              className={`${cardBase} ${selected === SSL_KEY ? cardActive : cardIdle} ${isBusy ? "opacity-60 cursor-not-allowed" : ""}`}
             >
               <Globe className="h-4 w-4 mb-1" />
               <span className={`font-semibold ${compact ? "text-xs" : "text-sm"}`}>অনলাইন পেমেন্ট</span>
@@ -311,6 +338,7 @@ export const PaymentSelector = ({
               onChange={(e) => setTransactionId(e.target.value)}
               placeholder="যেমন: TXN1234ABCD"
               className="mt-1"
+              disabled={isBusy}
             />
           </div>
         </div>
@@ -335,11 +363,34 @@ export const PaymentSelector = ({
         </div>
       )}
 
+      {lastError && (
+        <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-xs">
+          <div className="flex items-start gap-2">
+            <AlertCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="font-medium text-destructive">পেমেন্ট সম্পন্ন করা যায়নি</p>
+              <p className="mt-1 text-muted-foreground break-words">{lastError}</p>
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="shrink-0 h-8"
+              disabled={isBusy}
+              onClick={() => { setLastError(""); handleConfirm(); }}
+            >
+              <RefreshCcw className="mr-1 h-3.5 w-3.5" />
+              আবার চেষ্টা করুন
+            </Button>
+          </div>
+        </div>
+      )}
+
       <Button
         type="button"
         size={compact ? "default" : "lg"}
         className="w-full"
-        disabled={submitting || redirecting || !selected || (isSsl && belowMin)}
+        disabled={isBusy || !selected || (isSsl && belowMin)}
         onClick={handleConfirm}
       >
         {redirecting ? (
