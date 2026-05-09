@@ -71,7 +71,13 @@ const CourseDetail = () => {
   const [submitting, setSubmitting] = useState(false);
   const [reviews, setReviews] = useState<DbReview[]>([]);
   const [orderStatus, setOrderStatus] = useState<string | null>(null);
-  const [successDialog, setSuccessDialog] = useState<{ open: boolean; orderId: string; message?: string; isFree?: boolean } | null>(null);
+  const [successDialog, setSuccessDialog] = useState<{
+    open: boolean;
+    orderId: string;
+    message?: string;
+    isFree?: boolean;
+    paymentMethod?: string;
+  } | null>(null);
   const [reviewForm, setReviewForm] = useState({ rating: 5, comment: "" });
   const [submittingReview, setSubmittingReview] = useState(false);
 
@@ -181,7 +187,8 @@ const CourseDetail = () => {
         currency: "BDT",
         order_id: data.order_id,
       }, { em: user.email || undefined });
-      setSuccessDialog({ open: true, orderId: data.order_id, message: "পেমেন্ট ভেরিফিকেশনের পর কোর্স অ্যাক্সেস পাবেন।" });
+      // Helper builds the right copy from paymentMethod+productType.
+      setSuccessDialog({ open: true, orderId: data.order_id, paymentMethod });
       setOrderStatus("pending");
     }
   };
@@ -496,6 +503,8 @@ const CourseDetail = () => {
           productTitle={course.title}
           message={successDialog.message}
           isFree={successDialog.isFree}
+          paymentMethod={successDialog.paymentMethod}
+          productType="course"
         />
       )}
     </div>
