@@ -189,7 +189,12 @@ const LandingPage = () => {
   const [selectedZone, setSelectedZone] = useState("");
   const [order, setOrder] = useState({ name: "", phone: "", address: "", paymentMethod: "", transactionId: "" });
   const [submitting, setSubmitting] = useState(false);
-  const [successDialog, setSuccessDialog] = useState<{ open: boolean; orderId: string; message?: string } | null>(null);
+  const [successDialog, setSuccessDialog] = useState<{
+    open: boolean;
+    orderId: string;
+    message?: string;
+    paymentMethod?: string;
+  } | null>(null);
   const [couponCode, setCouponCode] = useState("");
   const [couponLoading, setCouponLoading] = useState(false);
   const [appliedCoupon, setAppliedCoupon] = useState<{ id: string; code: string; discount_type: string; discount_value: number } | null>(null);
@@ -338,7 +343,7 @@ const LandingPage = () => {
         });
       }
       supabase.functions.invoke("notify-order", { body: { orderId: data.order_id } }).catch(() => {});
-      setSuccessDialog({ open: true, orderId: data.order_id, message: isPhysical ? "আপনার অর্ডারটি সফলভাবে গৃহীত হয়েছে।" : "পেমেন্ট যাচাইয়ের পর আপনি কন্টেন্ট অ্যাকসেস করতে পারবেন।" });
+      setSuccessDialog({ open: true, orderId: data.order_id, paymentMethod });
       setOrder({ name: "", phone: "", address: "", paymentMethod: mfsMethods[0]?.provider || "", transactionId: "" });
       setQuantity(1);
       setAppliedCoupon(null);
