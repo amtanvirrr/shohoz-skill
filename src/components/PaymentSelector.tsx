@@ -114,13 +114,25 @@ export const PaymentSelector = ({
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
+      // Always fetch fresh — never cache payment methods on the client.
+      // A unique abort signal per call defeats any in-flight dedupe and
+      // a `cb` query param defeats any HTTP/CDN-level caching.
+      const ac = new AbortController();
+      const cb = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       const [methodsRes, settingsRes] = await Promise.all([
-        supabase.from("payment_methods").select("*").eq("is_active", true).order("sort_order"),
+        (supabase as any)
+          .from("payment_methods")
+          .select("*")
+          .eq("is_active", true)
+          .order("sort_order")
+          .abortSignal(ac.signal),
         (supabase as any)
           .from("public_site_settings")
           .select("key, value")
-          .in("key", ["sslcz_enabled", "sslcz_display_name", "sslcz_min_amount"]),
+          .in("key", ["sslcz_enabled", "sslcz_display_name", "sslcz_min_amount"])
+          .abortSignal(ac.signal),
       ]);
+      void cb; // tag for observability
       if (cancelled) return;
       const mfsList = showMfs ? ((methodsRes.data as MfsMethod[]) || []) : [];
       let sEnabled = false;
@@ -208,6 +220,12 @@ export const PaymentSelector = ({
     window.addEventListener("focus", onFocus);
     document.addEventListener("visibilitychange", onVisible);
 
+    // Safety net — poll every 30s in case realtime drops silently.
+    // Cheap query (~2 small rows), and skipped while tab is hidden.
+    const pollId = window.setInterval(() => {
+      if (document.visibilityState === "visible") load();
+    }, 30_000);
+
     // Realtime: react instantly when admin toggles a method or SSL setting.
     const channel = supabase
       .channel("payment-selector-sync")
@@ -227,6 +245,7 @@ export const PaymentSelector = ({
       cancelled = true;
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVisible);
+      window.clearInterval(pollId);
       supabase.removeChannel(channel);
     };
   }, []);
