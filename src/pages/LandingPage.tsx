@@ -189,6 +189,7 @@ const LandingPage = () => {
   const [selectedZone, setSelectedZone] = useState("");
   const [order, setOrder] = useState({ name: "", phone: "", address: "", paymentMethod: "", transactionId: "" });
   const [submitting, setSubmitting] = useState(false);
+  const [agreedTerms, setAgreedTerms] = useState(false);
   const [successDialog, setSuccessDialog] = useState<{
     open: boolean;
     orderId: string;
@@ -313,6 +314,14 @@ const LandingPage = () => {
     if (!order.name || !order.phone) { toast({ title: "নাম ও ফোন আবশ্যক", variant: "destructive" }); return; }
     if (isPhysical && !order.address) { toast({ title: "ঠিকানা আবশ্যক", variant: "destructive" }); return; }
     if (!isPhysical && !order.transactionId.trim()) { toast({ title: "Transaction ID দিন", variant: "destructive" }); return; }
+    if (!agreedTerms) {
+      toast({
+        title: "শর্তাবলীতে সম্মতি দিন",
+        description: "অর্ডার করার আগে শর্তাবলী, প্রাইভেসি ও রিফান্ড পলিসি পড়ে চেকবক্সে টিক দিন।",
+        variant: "destructive",
+      });
+      return;
+    }
     setSubmitting(true);
     const paymentMethod = isPhysical ? "cod" : order.paymentMethod;
     const notes = [
