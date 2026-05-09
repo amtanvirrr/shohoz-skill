@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { CheckCircle2, XCircle, AlertCircle, Loader2, Receipt, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -37,6 +37,17 @@ const PaymentResult = () => {
   // fails or is cancelled. Surfaced verbatim on the fail/cancel screen so
   // the user understands *why* their payment didn't go through.
   const [failureNote, setFailureNote] = useState<string | null>(null);
+  // Loading state for the post-fail lookup (notes + product slug). We block
+  // the "নতুন করে পেমেন্ট করুন" button until this finishes so users see the
+  // failure reason before retrying, and so they can't double-submit while
+  // we're still resolving the right product URL.
+  const [failureLoading, setFailureLoading] = useState(false);
+  // Synchronous guard against double-clicks on the retry button — refs beat
+  // state here because state updates are async and a fast double tap can
+  // queue two navigations before React re-renders the disabled button.
+  const navigatingRef = useRef(false);
+  const [navigating, setNavigating] = useState(false);
+  const navigate = useNavigate();
   const cancelRef = useRef<{ cancelled: boolean }>({ cancelled: false });
 
   const POLL_INTERVAL = 2; // seconds
@@ -119,13 +130,17 @@ const PaymentResult = () => {
     if (!orderId) return;
     if (status !== "fail" && status !== "cancel") return;
     let cancelled = false;
+    setFailureLoading(true);
     (async () => {
       const { data: ord } = await supabase
         .from("orders")
         .select("product_id, product_type, product_title, notes")
         .eq("order_id", orderId)
         .maybeSingle();
-      if (cancelled || !ord) return;
+      if (cancelled || !ord) {
+        if (!cancelled) setFailureLoading(false);
+        return;
+      }
       if (ord.notes) setFailureNote(ord.notes);
       const table =
         ord.product_type === "course" ? "courses" :
@@ -134,6 +149,7 @@ const PaymentResult = () => {
       if (!table) {
         // Fallback: send them to the listing page.
         setRetryHref(ord.product_type === "book" ? "/books" : ord.product_type === "course" ? "/courses" : "/quizzes");
+        setFailureLoading(false);
         return;
       }
       const { data: prod } = await supabase
@@ -150,9 +166,18 @@ const PaymentResult = () => {
       } else {
         setRetryHref(ord.product_type === "book" ? "/books" : ord.product_type === "course" ? "/courses" : "/quizzes");
       }
+      setFailureLoading(false);
     })();
     return () => { cancelled = true; };
   }, [orderId, status]);
+
+  const handleRetry = () => {
+    if (navigatingRef.current) return;
+    if (failureLoading || !retryHref) return;
+    navigatingRef.current = true;
+    setNavigating(true);
+    navigate(retryHref);
+  };
 
   const config = {
     success: {
@@ -207,14 +232,22 @@ const PaymentResult = () => {
             অর্ডার আইডি: <span className="font-mono font-semibold text-foreground">{orderId}</span>
           </p>
         )}
-        {(status === "fail" || status === "cancel") && failureNote && (
+        {(status === "fail" || status === "cancel") && (failureLoading || failureNote) && (
           <div className="mx-auto mt-4 max-w-md rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-left">
-            <p className="text-xs font-semibold text-destructive">
+            <p className="flex items-center gap-2 text-xs font-semibold text-destructive">
+              {failureLoading && <Loader2 className="h-3 w-3 animate-spin" />}
               ব্যর্থতার কারণ
             </p>
-            <p className="mt-1 break-words text-sm text-foreground">
-              {failureNote}
-            </p>
+            {failureLoading ? (
+              <div className="mt-2 space-y-2" aria-busy="true">
+                <div className="h-3 w-3/4 animate-pulse rounded bg-destructive/20" />
+                <div className="h-3 w-1/2 animate-pulse rounded bg-destructive/20" />
+              </div>
+            ) : (
+              <p className="mt-1 break-words text-sm text-foreground">
+                {failureNote}
+              </p>
+            )}
           </div>
         )}
         {showReceipt && (
@@ -279,11 +312,21 @@ const PaymentResult = () => {
             </Button>
           )}
           {(status === "fail" || status === "cancel") && (
-            <Button asChild>
-              <Link to={retryHref || "/"}>
+            <Button
+              onClick={handleRetry}
+              disabled={failureLoading || navigating || !retryHref}
+              aria-busy={failureLoading || navigating}
+            >
+              {failureLoading || navigating ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
                 <RefreshCw className="mr-2 h-4 w-4" />
-                নতুন করে পেমেন্ট করুন
-              </Link>
+              )}
+              {failureLoading
+                ? "কারণ লোড হচ্ছে..."
+                : navigating
+                  ? "রিডিরেক্ট হচ্ছে..."
+                  : "নতুন করে পেমেন্ট করুন"}
             </Button>
           )}
           <Button asChild>
