@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Smartphone, QrCode, Save, X, Globe, Copy, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import PaymentEventsLog from "@/components/admin/PaymentEventsLog";
+import GatewayActivityLog from "@/components/admin/GatewayActivityLog";
 
 interface PaymentMethod {
   id: string;
@@ -528,6 +529,7 @@ const AdminPayments = () => {
         </DialogContent>
       </Dialog>
       <PaymentEventsLog />
+      <GatewayActivityLog />
     </div>
   );
 };
