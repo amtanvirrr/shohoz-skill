@@ -120,6 +120,10 @@ export const PaymentSelector = ({
   // card so they can resume or cancel & retry.
   const [pendingSession, setPendingSession] = useState<PendingSslSession | null>(null);
   const [lastError, setLastError] = useState<string>("");
+  // Snapshot of the most recent failed attempt — used by the retry button so
+  // that even if some piece of state drifts, we resubmit with the exact same
+  // method + inputs the user originally chose.
+  const lastAttemptRef = useRef<{ method: string; transactionId: string } | null>(null);
   // Banner shown when the user's previously-selected method gets auto-switched
   // because admin disabled it (or it disappeared) — gives a clear explanation.
   const [fallbackNotice, setFallbackNotice] = useState<{ from: string; to: string } | null>(null);
