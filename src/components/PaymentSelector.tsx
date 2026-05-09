@@ -403,6 +403,40 @@ export const PaymentSelector = ({
 
   return (
     <div className="space-y-3">
+      {fallbackNotice && (
+        <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-xs">
+          <div className="flex items-start gap-2">
+            <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="font-medium text-amber-700 dark:text-amber-300">
+                পেমেন্ট পদ্ধতি পরিবর্তন হয়েছে
+              </p>
+              <p className="mt-1 text-muted-foreground">
+                {fallbackNotice.to ? (
+                  <>
+                    "<span className="font-medium text-foreground">{fallbackNotice.from}</span>" এখন আর উপলব্ধ নেই।
+                    স্বয়ংক্রিয়ভাবে "<span className="font-medium text-foreground">{fallbackNotice.to}</span>" নির্বাচন করা হয়েছে।
+                  </>
+                ) : (
+                  <>
+                    "<span className="font-medium text-foreground">{fallbackNotice.from}</span>" বন্ধ করা হয়েছে এবং
+                    কোনো বিকল্প পদ্ধতি বর্তমানে সক্রিয় নেই।
+                  </>
+                )}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setFallbackNotice(null)}
+              className="text-amber-600 dark:text-amber-400 hover:opacity-70 text-lg leading-none"
+              aria-label="বন্ধ করুন"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
       <div>
         <Label className={compact ? "text-xs" : "text-sm font-medium text-foreground"}>
           পেমেন্ট পদ্ধতি নির্বাচন করুন
