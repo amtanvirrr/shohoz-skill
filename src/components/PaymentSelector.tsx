@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Globe, Loader2, Smartphone, CreditCard, AlertCircle, RefreshCcw, Truck } from "lucide-react";
+import { Globe, Loader2, Smartphone, CreditCard, AlertCircle, RefreshCcw, Truck, X, ArrowRight, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,6 +46,42 @@ interface PaymentSelectorProps {
 
 const SSL_KEY = "__sslcommerz__";
 const COD_KEY = "__cod__";
+const PENDING_KEY = "sslcz_pending_session";
+const PENDING_TTL_MS = 30 * 60 * 1000; // 30 minutes
+const REDIRECT_COUNTDOWN_S = 3;
+
+interface PendingSslSession {
+  productId: string;
+  productTitle: string;
+  orderId: string | null;
+  gatewayUrl: string;
+  price: number;
+  ts: number;
+}
+
+const readPendingSession = (productId: string): PendingSslSession | null => {
+  try {
+    const raw = sessionStorage.getItem(PENDING_KEY);
+    if (!raw) return null;
+    const s = JSON.parse(raw) as PendingSslSession;
+    if (s.productId !== productId) return null;
+    if (Date.now() - s.ts > PENDING_TTL_MS) {
+      sessionStorage.removeItem(PENDING_KEY);
+      return null;
+    }
+    return s;
+  } catch {
+    return null;
+  }
+};
+
+const writePendingSession = (s: PendingSslSession) => {
+  try { sessionStorage.setItem(PENDING_KEY, JSON.stringify(s)); } catch { /* ignore */ }
+};
+
+const clearPendingSession = () => {
+  try { sessionStorage.removeItem(PENDING_KEY); } catch { /* ignore */ }
+};
 
 export const PaymentSelector = ({
   productType,
@@ -75,11 +111,72 @@ export const PaymentSelector = ({
   const [selected, setSelected] = useState<string>("");
   const [transactionId, setTransactionId] = useState("");
   const [redirecting, setRedirecting] = useState(false);
+  // Countdown before window.location.href fires — gives the user a chance
+  // to cancel before being shipped off to the gateway.
+  const [redirectCountdown, setRedirectCountdown] = useState(0);
+  const redirectTimerRef = useRef<number | null>(null);
+  // A pending SSL session means the user previously initiated a gateway
+  // payment for this product but didn't complete it. We surface a recovery
+  // card so they can resume or cancel & retry.
+  const [pendingSession, setPendingSession] = useState<PendingSslSession | null>(null);
   const [lastError, setLastError] = useState<string>("");
   // Banner shown when the user's previously-selected method gets auto-switched
   // because admin disabled it (or it disappeared) — gives a clear explanation.
   const [fallbackNotice, setFallbackNotice] = useState<{ from: string; to: string } | null>(null);
   const isInitialLoad = useRef(true);
+
+  // On mount, look for a stored pending SSL session for this product.
+  useEffect(() => {
+    setPendingSession(readPendingSession(productId));
+    // Cleanup any leftover redirect timer if we unmount mid-countdown.
+    return () => {
+      if (redirectTimerRef.current !== null) {
+        window.clearInterval(redirectTimerRef.current);
+        redirectTimerRef.current = null;
+      }
+    };
+  }, [productId]);
+
+  const cancelRedirect = (reason: "user_cancelled" | "user_back" = "user_cancelled") => {
+    if (redirectTimerRef.current !== null) {
+      window.clearInterval(redirectTimerRef.current);
+      redirectTimerRef.current = null;
+    }
+    setRedirecting(false);
+    setRedirectCountdown(0);
+    busyRef.current = false;
+    logEvent("ssl_redirect_cancelled", { method: "sslcommerz", message: reason });
+  };
+
+  const startRedirectCountdown = (gatewayUrl: string, orderId: string | null) => {
+    setRedirectCountdown(REDIRECT_COUNTDOWN_S);
+    let remaining = REDIRECT_COUNTDOWN_S;
+    redirectTimerRef.current = window.setInterval(() => {
+      remaining -= 1;
+      setRedirectCountdown(remaining);
+      if (remaining <= 0) {
+        if (redirectTimerRef.current !== null) {
+          window.clearInterval(redirectTimerRef.current);
+          redirectTimerRef.current = null;
+        }
+        // Persist the pending session so a back-navigation can recover.
+        writePendingSession({
+          productId,
+          productTitle,
+          orderId,
+          gatewayUrl,
+          price,
+          ts: Date.now(),
+        });
+        logEvent("ssl_redirect", {
+          method: "sslcommerz",
+          message: "navigating_to_gateway",
+          metadata: { order_id: orderId },
+        });
+        window.location.href = gatewayUrl;
+      }
+    }, 1000) as unknown as number;
+  };
   // Hard guard against rapid double clicks — refs update synchronously
   // so a second click before React flushes state still sees `true`.
   const busyRef = useRef(false);
@@ -370,9 +467,9 @@ export const PaymentSelector = ({
           busyRef.current = false;
           return;
         }
-        logEvent("ssl_redirect", { method: "sslcommerz", message: "redirecting_to_gateway", metadata: { order_id: data.order_id ?? null } });
-        window.location.href = data.gateway_url;
-        // Keep busy=true; navigation is in progress.
+        // Begin a short cancellable countdown. The actual navigation
+        // happens inside startRedirectCountdown when it reaches zero.
+        startRedirectCountdown(data.gateway_url, data.order_id ?? null);
       } catch (e) {
         const msg = (e as Error).message || "নেটওয়ার্ক ত্রুটি";
         setLastError(msg);
@@ -422,6 +519,95 @@ export const PaymentSelector = ({
 
   return (
     <div className="space-y-3">
+      {/* Pending SSL session recovery — shown when the user came back from
+          the gateway without completing payment (browser back, closed tab,
+          gateway cancel, etc.). They can resume or cancel and retry. */}
+      {pendingSession && !redirecting && (
+        <div className="rounded-lg border-2 border-primary/40 bg-primary/5 p-4">
+          <div className="flex items-start gap-3">
+            <div className="rounded-full bg-primary/10 p-2 shrink-0">
+              <Clock className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-foreground">
+                পেমেন্ট সম্পন্ন হয়নি
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                আপনি ইতোমধ্যে এই অর্ডারের জন্য একটি অনলাইন পেমেন্ট শুরু করেছিলেন। চাইলে গেটওয়েতে ফিরে গিয়ে পেমেন্ট সম্পন্ন করুন, অথবা বাতিল করে নতুন করে চেষ্টা করুন।
+              </p>
+              {pendingSession.orderId && (
+                <p className="mt-1 text-[11px] text-muted-foreground font-mono">
+                  Order: {pendingSession.orderId}
+                </p>
+              )}
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => {
+                    logEvent("ssl_resume_clicked", { method: "sslcommerz", metadata: { order_id: pendingSession.orderId } });
+                    window.location.href = pendingSession.gatewayUrl;
+                  }}
+                >
+                  <ArrowRight className="mr-1 h-4 w-4" /> গেটওয়েতে ফিরে যান
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    clearPendingSession();
+                    setPendingSession(null);
+                    logEvent("ssl_pending_dismissed", { method: "sslcommerz", metadata: { order_id: pendingSession.orderId } });
+                    toast({
+                      title: "বাতিল করা হয়েছে",
+                      description: "আপনি এখন নতুন করে পেমেন্ট পদ্ধতি বেছে নিতে পারবেন।",
+                    });
+                  }}
+                >
+                  <X className="mr-1 h-4 w-4" /> বাতিল করে আবার চেষ্টা করুন
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Active redirect countdown — visible only while the timer ticks
+          down. Lets the user abort before the browser navigates. */}
+      {redirecting && redirectCountdown > 0 && (
+        <div className="rounded-lg border-2 border-primary bg-primary/10 p-4">
+          <div className="flex items-start gap-3">
+            <div className="rounded-full bg-primary/20 p-2 shrink-0">
+              <Loader2 className="h-5 w-5 text-primary animate-spin" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-foreground">
+                পেমেন্ট গেটওয়েতে রিডিরেক্ট হচ্ছে...
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                <span className="font-bold text-primary">{redirectCountdown}</span> সেকেন্ডের মধ্যে SSLCommerz গেটওয়েতে নিয়ে যাওয়া হবে। চাইলে এখনই বাতিল করতে পারেন।
+              </p>
+              <Button
+                type="button"
+                size="sm"
+                variant="destructive"
+                className="mt-3"
+                onClick={() => {
+                  cancelRedirect("user_cancelled");
+                  toast({
+                    title: "রিডিরেক্ট বাতিল হয়েছে",
+                    description: "আপনি অন্য পেমেন্ট পদ্ধতি বেছে নিতে পারেন।",
+                  });
+                }}
+              >
+                <X className="mr-1 h-4 w-4" /> বাতিল করুন
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {fallbackNotice && (
         <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-xs">
           <div className="flex items-start gap-2">

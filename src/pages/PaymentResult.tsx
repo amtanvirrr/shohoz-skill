@@ -92,6 +92,12 @@ const PaymentResult = () => {
 
   useEffect(() => {
     startPolling();
+    // Any final status (success/fail/cancel) means the in-flight SSL session
+    // is no longer pending — clear the recovery marker so PaymentSelector
+    // won't surface a stale "resume payment" banner next time.
+    if (status === "success" || status === "fail" || status === "cancel") {
+      try { sessionStorage.removeItem("sslcz_pending_session"); } catch { /* ignore */ }
+    }
     return () => {
       const t = cancelRef.current as { cancelled: boolean; tickerId?: number };
       t.cancelled = true;
