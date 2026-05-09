@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { mapPaymentError, type MappedPaymentError } from "@/lib/paymentErrors";
 
 export interface MfsMethod {
   id: string;
@@ -120,6 +121,9 @@ export const PaymentSelector = ({
   // card so they can resume or cancel & retry.
   const [pendingSession, setPendingSession] = useState<PendingSslSession | null>(null);
   const [lastError, setLastError] = useState<string>("");
+  // Mapped, user-friendly version of the most recent failure. Drives both
+  // the inline banner copy AND whether the retry button is offered.
+  const [errorInfo, setErrorInfo] = useState<MappedPaymentError | null>(null);
   // Snapshot of the most recent failed attempt — used by the retry button so
   // that even if some piece of state drifts, we resubmit with the exact same
   // method + inputs the user originally chose.
