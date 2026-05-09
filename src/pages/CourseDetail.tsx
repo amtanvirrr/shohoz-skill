@@ -467,81 +467,16 @@ const CourseDetail = () => {
                   {submitting ? "প্রসেস হচ্ছে..." : "ফ্রিতে এনরোল করুন"}
                 </Button>
               ) : (
-                <>
-                  <div className="mt-6">
-                    <p className="text-sm font-medium text-foreground">পেমেন্ট পদ্ধতি</p>
-                    <div className="mt-3 grid grid-cols-2 gap-3">
-                      {mfsMethods.length > 0 ? mfsMethods.map((m) => (
-                        <button
-                          key={m.id}
-                          onClick={() => setPaymentMethod(m.provider)}
-                          className={`rounded-lg border-2 px-4 py-3 text-center text-sm font-semibold transition-colors ${
-                            paymentMethod === m.provider ? "border-primary bg-primary/5 text-primary" : "border-border text-muted-foreground hover:border-primary/30"
-                          }`}
-                        >
-                          {m.display_name || m.provider}
-                        </button>
-                      )) : (["bkash", "nagad"] as const).map((method) => (
-                        <button
-                          key={method}
-                          onClick={() => setPaymentMethod(method)}
-                          className={`rounded-lg border-2 px-4 py-3 text-center text-sm font-semibold transition-colors ${
-                            paymentMethod === method ? "border-primary bg-primary/5 text-primary" : "border-border text-muted-foreground hover:border-primary/30"
-                          }`}
-                        >
-                          {method === "bkash" ? "bKash" : "Nagad"}
-                        </button>
-                      ))}
-                    </div>
-
-                    {/* Show selected MFS payment details */}
-                    {(() => {
-                      const selected = mfsMethods.find(m => m.provider === paymentMethod);
-                      if (!selected) return null;
-                      return (
-                        <div className="mt-4 rounded-lg border border-border bg-muted/30 p-4 space-y-3">
-                          <div className="flex items-center gap-2 text-sm">
-                            <Smartphone className="h-4 w-4 text-primary" />
-                            <span className="font-medium text-foreground">{selected.phone_number}</span>
-                            <span className="rounded bg-primary/10 px-2 py-0.5 text-xs text-primary capitalize">{selected.mfs_type}</span>
-                          </div>
-                          {selected.qr_code_url && (
-                            <img src={selected.qr_code_url} alt="QR Code" className="mx-auto h-32 w-32 rounded-lg border border-border object-contain" />
-                          )}
-                          {selected.payment_instruction && (
-                            <p className="text-sm text-muted-foreground whitespace-pre-line">{selected.payment_instruction}</p>
-                          )}
-                          {selected.process_message && (
-                            <div className="rounded-md bg-primary/5 p-3 text-xs text-foreground whitespace-pre-line">{selected.process_message}</div>
-                          )}
-                        </div>
-                      );
-                    })()}
-                  </div>
-
-                  {/* Transaction ID field */}
-                  <div className="mt-4">
-                    <Label htmlFor="courseTxnId" className="text-sm font-medium">ট্রানজেকশন আইডি *</Label>
-                    <Input id="courseTxnId" value={transactionId} onChange={(e) => setTransactionId(e.target.value)} className="mt-1" placeholder="যেমন: TXN1234ABCD" />
-                  </div>
-
-                  <Button onClick={handlePurchase} size="lg" className="mt-4 w-full" disabled={submitting}>
-                    {submitting ? "প্রসেস হচ্ছে..." : "কোর্স কিনুন"}
-                  </Button>
-
-                  <div className="my-4 flex items-center gap-3">
-                    <div className="h-px flex-1 bg-border" />
-                    <span className="text-xs text-muted-foreground">অথবা</span>
-                    <div className="h-px flex-1 bg-border" />
-                  </div>
-
-                  <SslczPayButton
+                <div className="mt-6">
+                  <PaymentSelector
                     productType="course"
                     productId={course.id}
                     productTitle={course.title}
                     price={course.price}
+                    onMfsSubmit={handleMfsSubmit}
+                    submitting={submitting}
                   />
-                </>
+                </div>
               )}
               <ul className="mt-6 space-y-2 text-xs text-muted-foreground">
                 <li className="flex items-center gap-2"><PlayCircle className="h-3.5 w-3.5 text-primary" /> আজীবন অ্যাক্সেস</li>
