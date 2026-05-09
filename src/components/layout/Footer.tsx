@@ -138,19 +138,19 @@ const Footer = () => {
           </div>
         </div>
 
+        {/* Accepted payment methods banner — matches footer content width */}
+        <div className="mt-10 w-full bg-white rounded-md overflow-hidden">
+          <img
+            src={settings.payment_banner_url || paymentMethodsImg}
+            alt="Accepted payment methods"
+            loading="lazy"
+            className="block w-full h-auto"
+          />
+        </div>
+
         <div className="mt-6 border-t border-border pt-6 text-center text-xs text-muted-foreground">
           {settings.copyright_text || `© ${new Date().getFullYear()} সর্বস্বত্ব সংরক্ষিত।`}
         </div>
-      </div>
-
-      {/* Accepted payment methods banner — full bleed */}
-      <div className="w-full bg-white">
-        <img
-          src={settings.payment_banner_url || paymentMethodsImg}
-          alt="Accepted payment methods"
-          loading="lazy"
-          className="block w-full h-auto"
-        />
       </div>
     </footer>
   );
