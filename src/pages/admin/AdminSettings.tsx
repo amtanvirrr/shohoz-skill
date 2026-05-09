@@ -480,10 +480,6 @@ const AdminSettings = () => {
           </div>
         )}
 
-        {/* Courier Settings */}
-        {activeSection === "courier" && (
-          <></>
-        )}
         {activeSection === "compliance" && (
           <div className="space-y-6">
             <div className="rounded-xl glass-card p-6 space-y-4">
@@ -534,7 +530,7 @@ const AdminSettings = () => {
             </div>
           </div>
         )}
-        {activeSection === "courier-disabled-placeholder" && (
+        {activeSection === "courier" && (
           <div className="space-y-6">
             <div className="rounded-xl glass-card p-6 space-y-4">
               <h3 className="font-display text-lg font-semibold text-foreground">Steadfast Courier</h3>
