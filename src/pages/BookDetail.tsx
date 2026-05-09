@@ -125,7 +125,7 @@ const BookDetail = () => {
       toast({ title: "ডেলিভারি ঠিকানা লিখুন", variant: "destructive" });
       return false;
     }
-    if (isPhysical && !selectedZone) {
+    if (isPhysical && shippingZones.length > 0 && !selectedZone) {
       toast({ title: "শিপিং জোন সিলেক্ট করুন", variant: "destructive" });
       return false;
     }
@@ -172,15 +172,14 @@ const BookDetail = () => {
     if (isEbook) setOrderStatus("pending");
   };
 
-  const handleCodSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCodSubmit = async () => {
     if (!validateCustomer()) return;
     setSubmitting(true);
     await insertOrder("cod", null);
     setSubmitting(false);
   };
 
-  const handleEbookMfsSubmit = async (provider: string, txnId: string) => {
+  const handleMfsSubmit = async (provider: string, txnId: string) => {
     if (!validateCustomer()) return;
     setSubmitting(true);
     await insertOrder(provider, txnId);
