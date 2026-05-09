@@ -263,6 +263,14 @@ const PaymentResult = () => {
               আবার ভেরিফাই করুন
             </Button>
           )}
+          {(status === "fail" || status === "cancel") && (
+            <Button asChild>
+              <Link to={retryHref || "/"}>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                নতুন করে পেমেন্ট করুন
+              </Link>
+            </Button>
+          )}
           <Button asChild>
             <Link to="/dashboard">ড্যাশবোর্ডে যান</Link>
           </Button>
