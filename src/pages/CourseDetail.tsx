@@ -188,7 +188,7 @@ const CourseDetail = () => {
         order_id: data.order_id,
       }, { em: user.email || undefined });
       // Helper builds the right copy from paymentMethod+productType.
-      setSuccessDialog({ open: true, orderId: data.order_id, paymentMethod });
+      setSuccessDialog({ open: true, orderId: data.order_id, paymentMethod: provider });
       setOrderStatus("pending");
     }
   };
