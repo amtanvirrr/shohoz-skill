@@ -301,7 +301,7 @@ const QuizPage = () => {
         product_id: quiz.id,
         product_title: quiz.title,
         price: 0,
-        payment_method: "bkash" as any,
+        payment_method: "cod" as any,
         user_id: user.id,
         status: "confirmed" as any,
       }).select("order_id").single();
