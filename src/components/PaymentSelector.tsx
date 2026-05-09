@@ -69,6 +69,31 @@ export const PaymentSelector = ({
 
   const isBusy = submitting || redirecting;
 
+  // Fire-and-forget event logger. Never throws — logging must not block checkout.
+  const logEvent = (
+    event_type: string,
+    payload: { message?: string; metadata?: Record<string, any>; method?: string } = {},
+  ) => {
+    try {
+      (supabase as any)
+        .from("payment_events")
+        .insert({
+          user_id: user?.id ?? null,
+          product_type: productType,
+          product_id: productId,
+          product_title: productTitle,
+          price,
+          payment_method: payload.method ?? (selected === SSL_KEY ? "sslcommerz" : selected || null),
+          event_type,
+          message: payload.message ?? null,
+          metadata: payload.metadata ?? {},
+          user_agent: typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 500) : null,
+        })
+        .then(() => {})
+        .catch(() => {});
+    } catch { /* ignore */ }
+  };
+
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
@@ -175,6 +200,7 @@ export const PaymentSelector = ({
     if (busyRef.current || isBusy) return;
     if (!user) {
       toast({ title: "প্রথমে লগইন করুন", variant: "destructive" });
+      logEvent("auth_required");
       return;
     }
     setLastError("");
@@ -186,20 +212,24 @@ export const PaymentSelector = ({
           description: `অনলাইন পেমেন্টের জন্য কমপক্ষে ৳${sslMinAmount} প্রয়োজন। অনুগ্রহ করে অন্য পেমেন্ট পদ্ধতি বেছে নিন।`,
           variant: "destructive",
         });
+        logEvent("validation_error", { method: "sslcommerz", message: "below_min_amount", metadata: { min: sslMinAmount, price } });
         return;
       }
       const name = customerName?.trim() || (user.user_metadata as any)?.full_name || "Customer";
       const phone = customerPhone?.trim() || (user.user_metadata as any)?.phone || "";
       if (requireCustomerFields && (!name || !phone || !customerAddress?.trim())) {
         toast({ title: "অর্ডার তথ্য পূরণ করুন", description: "নাম, ফোন এবং ঠিকানা আবশ্যক", variant: "destructive" });
+        logEvent("validation_error", { method: "sslcommerz", message: "missing_customer_fields" });
         return;
       }
       if (!phone) {
         toast({ title: "ফোন নাম্বার দিন", variant: "destructive" });
+        logEvent("validation_error", { method: "sslcommerz", message: "missing_phone" });
         return;
       }
       setRedirecting(true);
       busyRef.current = true;
+      logEvent("ssl_init_start", { method: "sslcommerz" });
       try {
         const { data, error } = await supabase.functions.invoke("sslcz-init", {
           body: {
@@ -221,16 +251,19 @@ export const PaymentSelector = ({
             description: msg,
             variant: "destructive",
           });
+          logEvent("ssl_init_error", { method: "sslcommerz", message: msg, metadata: { details: data?.details ?? null } });
           setRedirecting(false);
           busyRef.current = false;
           return;
         }
+        logEvent("ssl_redirect", { method: "sslcommerz", message: "redirecting_to_gateway", metadata: { order_id: data.order_id ?? null } });
         window.location.href = data.gateway_url;
         // Keep busy=true; navigation is in progress.
       } catch (e) {
         const msg = (e as Error).message || "নেটওয়ার্ক ত্রুটি";
         setLastError(msg);
         toast({ title: "ত্রুটি", description: msg, variant: "destructive" });
+        logEvent("ssl_init_exception", { method: "sslcommerz", message: msg });
         setRedirecting(false);
         busyRef.current = false;
       }
@@ -240,20 +273,25 @@ export const PaymentSelector = ({
     // MFS flow
     if (!selected) {
       toast({ title: "পেমেন্ট পদ্ধতি নির্বাচন করুন", variant: "destructive" });
+      logEvent("validation_error", { message: "no_method_selected" });
       return;
     }
     if (!transactionId.trim()) {
       toast({ title: "ট্রানজেকশন আইডি দিন", description: "পেমেন্ট করার পর Transaction ID লিখুন", variant: "destructive" });
+      logEvent("validation_error", { method: selected, message: "missing_transaction_id" });
       return;
     }
     busyRef.current = true;
+    logEvent("mfs_submit_start", { method: selected, metadata: { txn_len: transactionId.trim().length } });
     try {
       await onMfsSubmit(selected, transactionId.trim());
+      logEvent("mfs_submit_success", { method: selected });
       setTransactionId("");
     } catch (e) {
       const msg = (e as Error).message || "অর্ডার সাবমিট করতে সমস্যা হয়েছে";
       setLastError(msg);
       toast({ title: "ত্রুটি", description: msg, variant: "destructive" });
+      logEvent("mfs_submit_error", { method: selected, message: msg });
     } finally {
       busyRef.current = false;
     }
