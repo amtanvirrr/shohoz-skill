@@ -65,7 +65,7 @@ export const PaymentSelector = ({
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
+    const load = async () => {
       const [methodsRes, settingsRes] = await Promise.all([
         supabase.from("payment_methods").select("*").eq("is_active", true).order("sort_order"),
         (supabase as any)
@@ -75,8 +75,6 @@ export const PaymentSelector = ({
       ]);
       if (cancelled) return;
       const mfsList = (methodsRes.data as MfsMethod[]) || [];
-      setMethods(mfsList);
-
       let sEnabled = false;
       (settingsRes.data || []).forEach((r: any) => {
         if (r.key === "sslcz_enabled") sEnabled = r.value === "true";
@@ -86,15 +84,53 @@ export const PaymentSelector = ({
           if (!isNaN(n) && n > 0) setSslMinAmount(n);
         }
       });
+      setMethods(mfsList);
       setSslEnabled(sEnabled);
 
-      // Auto-select first available method
-      if (mfsList.length > 0) setSelected(mfsList[0].provider);
-      else if (sEnabled) setSelected(SSL_KEY);
+      // Auto-select / re-validate selection against currently-enabled methods
+      setSelected((prev) => {
+        const stillValid =
+          (prev === SSL_KEY && sEnabled) ||
+          (prev && mfsList.some((m) => m.provider === prev));
+        if (stillValid) return prev;
+        if (mfsList.length > 0) return mfsList[0].provider;
+        if (sEnabled) return SSL_KEY;
+        return "";
+      });
       setLoading(false);
-    })();
+    };
+
+    load();
+
+    // Self-heal: refetch when tab regains focus so disabled methods disappear
+    // without requiring a full page reload.
+    const onFocus = () => load();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") load();
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisible);
+
+    // Realtime: react instantly when admin toggles a method or SSL setting.
+    const channel = supabase
+      .channel("payment-selector-sync")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "payment_methods" },
+        () => load(),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "public_site_settings" },
+        () => load(),
+      )
+      .subscribe();
+
     return () => {
       cancelled = true;
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisible);
+      supabase.removeChannel(channel);
     };
   }, []);
 
