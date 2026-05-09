@@ -13,6 +13,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Star, CheckCircle, Minus, Plus, ShoppingBag, Clock, Flame, AlertTriangle, Tag, Loader2, X as XIcon, Shield, Truck, Award, Users, ThumbsUp, Zap, Crown, Gem, ChevronLeft, ChevronRight } from "lucide-react";
 import OrderSuccessDialog from "@/components/OrderSuccessDialog";
 import { ScrollReveal } from "@/hooks/useScrollReveal";
+import CheckoutConsent from "@/components/CheckoutConsent";
 
 interface LandingPageData {
   id: string;
