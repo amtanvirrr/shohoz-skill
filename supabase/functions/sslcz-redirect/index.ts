@@ -39,18 +39,28 @@ Deno.serve(async (req) => {
 
   // Read tran_id from POST body or query
   let tranId = url.searchParams.get("tran_id") || "";
+  // SSLCommerz POSTs `failedreason` (and sometimes `error`) in the form body
+  // when a transaction fails. We capture it so the user-facing fail page can
+  // explain *why* the gateway rejected the payment instead of a generic msg.
+  let gatewayReason = url.searchParams.get("failedreason") || url.searchParams.get("error") || "";
   if (!tranId && req.method === "POST") {
     try {
       const ct = req.headers.get("content-type") || "";
       if (ct.includes("application/x-www-form-urlencoded") || ct.includes("multipart/form-data")) {
         const form = await req.formData();
         tranId = String(form.get("tran_id") || "");
+        if (!gatewayReason) {
+          gatewayReason = String(form.get("failedreason") || form.get("error") || "");
+        }
       } else if (ct.includes("application/json")) {
         const body = await req.json();
         tranId = body.tran_id || "";
+        if (!gatewayReason) gatewayReason = body.failedreason || body.error || "";
       }
     } catch { /* ignore */ }
   }
+  // Trim & cap to avoid storing absurd payloads.
+  const safeReason = String(gatewayReason || "").trim().slice(0, 500);
 
   // Sanitize tran_id to printable safe chars only (our order_id format is ORD-XXXXXXXX)
   const safeTran = tranId.replace(/[^A-Za-z0-9_-]/g, "").slice(0, 64);
@@ -69,14 +79,16 @@ Deno.serve(async (req) => {
           .eq("order_id", safeTran)
           .maybeSingle();
         if (order && !order.payment_verified && order.status !== "confirmed" && order.status !== "delivered") {
+          const baseNote = status === "cancel"
+            ? "ব্যবহারকারী পেমেন্ট বাতিল করেছেন"
+            : "পেমেন্ট গেটওয়েতে ব্যর্থ হয়েছে";
+          const finalNote = safeReason ? `${baseNote} — কারণ: ${safeReason}` : baseNote;
           await admin
             .from("orders")
             .update({
               status: "cancelled",
               gateway_tran_id: safeTran,
-              notes: status === "cancel"
-                ? "ব্যবহারকারী পেমেন্ট বাতিল করেছেন"
-                : "পেমেন্ট গেটওয়েতে ব্যর্থ হয়েছে",
+              notes: finalNote,
             })
             .eq("id", order.id);
         }
