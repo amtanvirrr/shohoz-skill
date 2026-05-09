@@ -5,7 +5,7 @@ import { useSiteSettings } from "@/hooks/useSiteSettings";
 import {
   BookOpen, GraduationCap, Users, ShoppingCart, Settings,
   LayoutDashboard, HelpCircle, LogOut, Menu, X, ChevronRight, ChevronDown, Star, FileText, MessageCircle, Mail, CreditCard, Truck, Image,
-  Globe, Home, Phone, Megaphone, Package, MailCheck, Info, Layers, Tag
+  Globe, Home, Phone, Megaphone, Package, MailCheck, Info, Layers, Tag, ShieldCheck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -36,6 +36,7 @@ const settingsSubLinks = [
   { hash: "contact-page", label: "কন্টাক্ট পেজ", icon: FileText },
   { hash: "newsletter-settings", label: "নিউজলেটার", icon: Mail },
   { hash: "about", label: "About পেজ", icon: Info },
+  { hash: "compliance", label: "আইনি ও কম্প্লায়েন্স", icon: ShieldCheck },
   { hash: "courier", label: "কুরিয়ার সেটিংস", icon: Package },
   { hash: "smtp", label: "ইমেইল (SMTP)", icon: MailCheck },
 ];

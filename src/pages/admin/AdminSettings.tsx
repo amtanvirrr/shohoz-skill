@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import RichTextEditor from "@/components/RichTextEditor";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
@@ -62,6 +63,14 @@ interface BrandingFields {
   homepage_track_subtitle: string;
   featured_course_ids: string;
   featured_book_ids: string;
+  terms_content: string;
+  privacy_content: string;
+  refund_content: string;
+  refund_timeline_text: string;
+  trade_license_number: string;
+  registered_address: string;
+  company_details: string;
+  payment_banner_url: string;
 }
 
 const defaultBranding: BrandingFields = {
@@ -109,6 +118,14 @@ const defaultBranding: BrandingFields = {
   homepage_track_subtitle: "",
   featured_course_ids: "",
   featured_book_ids: "",
+  terms_content: "",
+  privacy_content: "",
+  refund_content: "",
+  refund_timeline_text: "৭–১০ কর্মদিবস",
+  trade_license_number: "",
+  registered_address: "",
+  company_details: "",
+  payment_banner_url: "",
 };
 
 const PUBLIC_KEYS: (keyof BrandingFields)[] = [
@@ -122,6 +139,8 @@ const PUBLIC_KEYS: (keyof BrandingFields)[] = [
   "homepage_reviews_title", "homepage_reviews_subtitle",
   "homepage_track_title", "homepage_track_subtitle",
   "featured_course_ids", "featured_book_ids",
+  "terms_content", "privacy_content", "refund_content", "refund_timeline_text",
+  "trade_license_number", "registered_address", "company_details", "payment_banner_url",
 ];
 
 const ALL_KEYS = Object.keys(defaultBranding) as (keyof BrandingFields)[];
@@ -461,7 +480,56 @@ const AdminSettings = () => {
           </div>
         )}
 
-        {/* Courier Settings */}
+        {activeSection === "compliance" && (
+          <div className="space-y-6">
+            <div className="rounded-xl glass-card p-6 space-y-4">
+              <h3 className="font-display text-lg font-semibold text-foreground">কোম্পানি তথ্য (পেমেন্ট গেটওয়ে কম্প্লায়েন্স)</h3>
+              <p className="text-sm text-muted-foreground">SSLCommerz সহ পেমেন্ট গেটওয়ের জন্য বাধ্যতামূলক তথ্য। ফুটার ও About পেজে দেখাবে।</p>
+              <div>
+                <Label htmlFor="trade_license_number">ট্রেড লাইসেন্স নম্বর *</Label>
+                <Input id="trade_license_number" value={fields.trade_license_number} onChange={(e) => handleChange("trade_license_number", e.target.value)} className="mt-1" placeholder="যেমন: TRAD/DSCC/123456/2024" />
+                <p className="mt-1 text-xs text-muted-foreground">পেমেন্ট গেটওয়ে অনুমোদনের জন্য আবশ্যক।</p>
+              </div>
+              <div>
+                <Label htmlFor="registered_address">নিবন্ধিত ঠিকানা (ট্রেড লাইসেন্স অনুযায়ী)</Label>
+                <Textarea id="registered_address" rows={3} value={fields.registered_address} onChange={(e) => handleChange("registered_address", e.target.value)} className="mt-1" placeholder="House 12, Road 5, Dhanmondi, Dhaka-1205, Bangladesh" />
+              </div>
+              <div>
+                <Label>কোম্পানি ও ম্যানেজমেন্ট ডিটেলস (About পেজে দেখাবে)</Label>
+                <div className="mt-1"><RichTextEditor content={fields.company_details} onChange={(html) => handleChange("company_details", html)} placeholder="প্রতিষ্ঠার বছর, ম্যানেজিং ডিরেক্টর/ফাউন্ডারের নাম, ইত্যাদি..." /></div>
+              </div>
+              <div>
+                <Label htmlFor="payment_banner_url">পেমেন্ট মেথড ব্যানার URL (ফুটারে)</Label>
+                <Input id="payment_banner_url" value={fields.payment_banner_url} onChange={(e) => handleChange("payment_banner_url", e.target.value)} className="mt-1" placeholder="https://... (খালি রাখলে ডিফল্ট ব্যানার দেখাবে)" />
+                {fields.payment_banner_url && <img src={fields.payment_banner_url} alt="Banner preview" className="mt-2 max-h-20 rounded border border-border bg-white p-1" />}
+              </div>
+            </div>
+
+            <div className="rounded-xl glass-card p-6 space-y-4">
+              <h3 className="font-display text-lg font-semibold text-foreground">ব্যবহারের শর্তাবলী (Terms & Conditions)</h3>
+              <p className="text-sm text-muted-foreground">খালি রাখলে ডিফল্ট কম্প্লায়েন্ট কপি দেখাবে।</p>
+              <RichTextEditor content={fields.terms_content} onChange={(html) => handleChange("terms_content", html)} />
+            </div>
+
+            <div className="rounded-xl glass-card p-6 space-y-4">
+              <h3 className="font-display text-lg font-semibold text-foreground">প্রাইভেসি পলিসি</h3>
+              <RichTextEditor content={fields.privacy_content} onChange={(html) => handleChange("privacy_content", html)} />
+            </div>
+
+            <div className="rounded-xl glass-card p-6 space-y-4">
+              <h3 className="font-display text-lg font-semibold text-foreground">রিটার্ন ও রিফান্ড পলিসি</h3>
+              <div>
+                <Label htmlFor="refund_timeline_text">রিফান্ড টাইমলাইন (সংক্ষিপ্ত)</Label>
+                <Input id="refund_timeline_text" value={fields.refund_timeline_text} onChange={(e) => handleChange("refund_timeline_text", e.target.value)} className="mt-1" placeholder="৭–১০ কর্মদিবস" />
+                <p className="mt-1 text-xs text-muted-foreground">পেজের শীর্ষে ব্যাজ হিসেবে দেখাবে। স্ট্যান্ডার্ড: ৭–১০ কর্মদিবস।</p>
+              </div>
+              <div>
+                <Label>পূর্ণ রিফান্ড পলিসি কন্টেন্ট</Label>
+                <div className="mt-1"><RichTextEditor content={fields.refund_content} onChange={(html) => handleChange("refund_content", html)} /></div>
+              </div>
+            </div>
+          </div>
+        )}
         {activeSection === "courier" && (
           <div className="space-y-6">
             <div className="rounded-xl glass-card p-6 space-y-4">

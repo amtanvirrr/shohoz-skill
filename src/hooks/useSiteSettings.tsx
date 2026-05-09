@@ -29,6 +29,14 @@ export interface SiteSettings {
   homepage_track_subtitle: string;
   featured_course_ids: string;
   featured_book_ids: string;
+  terms_content: string;
+  privacy_content: string;
+  refund_content: string;
+  refund_timeline_text: string;
+  trade_license_number: string;
+  registered_address: string;
+  company_details: string;
+  payment_banner_url: string;
 }
 
 const defaults: SiteSettings = {
@@ -59,6 +67,14 @@ const defaults: SiteSettings = {
   homepage_track_subtitle: "",
   featured_course_ids: "",
   featured_book_ids: "",
+  terms_content: "",
+  privacy_content: "",
+  refund_content: "",
+  refund_timeline_text: "",
+  trade_license_number: "",
+  registered_address: "",
+  company_details: "",
+  payment_banner_url: "",
 };
 
 const SETTING_KEYS = Object.keys(defaults) as (keyof SiteSettings)[];

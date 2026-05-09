@@ -12,6 +12,9 @@ import ScrollToTop from "@/components/ScrollToTop";
 import Index from "./pages/Index";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
+import Refund from "./pages/Refund";
 import CoursesPage from "./pages/CoursesPage";
 import BooksPage from "./pages/BooksPage";
 import CourseDetail from "./pages/CourseDetail";
@@ -67,6 +70,9 @@ const App = () => (
             <Route path="/book/:slug" element={<Layout><BookDetail /></Layout>} />
             <Route path="/quizzes" element={<Layout><QuizPage /></Layout>} />
             <Route path="/about" element={<Layout><About /></Layout>} />
+            <Route path="/terms" element={<Layout><Terms /></Layout>} />
+            <Route path="/privacy" element={<Layout><Privacy /></Layout>} />
+            <Route path="/refund" element={<Layout><Refund /></Layout>} />
             <Route path="/blog" element={<Layout><BlogPage /></Layout>} />
             <Route path="/blog/:slug" element={<Layout><BlogDetailPage /></Layout>} />
             <Route path="/contact" element={<Layout><Contact /></Layout>} />
