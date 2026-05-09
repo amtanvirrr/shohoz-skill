@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Globe, Loader2, Smartphone, CreditCard, AlertCircle, RefreshCcw, Truck } from "lucide-react";
+import { Globe, Loader2, Smartphone, CreditCard, AlertCircle, RefreshCcw, Truck, X, ArrowRight, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,6 +46,42 @@ interface PaymentSelectorProps {
 
 const SSL_KEY = "__sslcommerz__";
 const COD_KEY = "__cod__";
+const PENDING_KEY = "sslcz_pending_session";
+const PENDING_TTL_MS = 30 * 60 * 1000; // 30 minutes
+const REDIRECT_COUNTDOWN_S = 3;
+
+interface PendingSslSession {
+  productId: string;
+  productTitle: string;
+  orderId: string | null;
+  gatewayUrl: string;
+  price: number;
+  ts: number;
+}
+
+const readPendingSession = (productId: string): PendingSslSession | null => {
+  try {
+    const raw = sessionStorage.getItem(PENDING_KEY);
+    if (!raw) return null;
+    const s = JSON.parse(raw) as PendingSslSession;
+    if (s.productId !== productId) return null;
+    if (Date.now() - s.ts > PENDING_TTL_MS) {
+      sessionStorage.removeItem(PENDING_KEY);
+      return null;
+    }
+    return s;
+  } catch {
+    return null;
+  }
+};
+
+const writePendingSession = (s: PendingSslSession) => {
+  try { sessionStorage.setItem(PENDING_KEY, JSON.stringify(s)); } catch { /* ignore */ }
+};
+
+const clearPendingSession = () => {
+  try { sessionStorage.removeItem(PENDING_KEY); } catch { /* ignore */ }
+};
 
 export const PaymentSelector = ({
   productType,
