@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { mapPaymentError, type MappedPaymentError } from "@/lib/paymentErrors";
+import CheckoutConsent from "@/components/CheckoutConsent";
 
 export interface MfsMethod {
   id: string;
