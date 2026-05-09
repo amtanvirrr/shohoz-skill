@@ -479,6 +479,7 @@ const LandingPage = () => {
           </div>
         </div>
       )}
+      <CheckoutConsent checked={agreedTerms} onChange={setAgreedTerms} />
     </form>
   );
 
