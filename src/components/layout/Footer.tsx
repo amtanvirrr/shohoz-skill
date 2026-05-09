@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import paymentMethodsImg from "@/assets/payment-methods.png";
 
 const Footer = () => {
   const [email, setEmail] = useState("");
@@ -105,9 +106,9 @@ const Footer = () => {
             <h4 className="font-display text-sm font-semibold text-foreground">সাপোর্ট</h4>
             <nav className="mt-3 flex flex-col gap-2">
               <Link to="/contact" className="text-sm text-muted-foreground hover:text-primary transition-colors">হেল্প সেন্টার</Link>
-              <span className="text-sm text-muted-foreground">প্রাইভেসি পলিসি</span>
-              <span className="text-sm text-muted-foreground">ব্যবহারের শর্তাবলী</span>
-              <span className="text-sm text-muted-foreground">রিফান্ড পলিসি</span>
+              <Link to="/privacy" className="text-sm text-muted-foreground hover:text-primary transition-colors">প্রাইভেসি পলিসি</Link>
+              <Link to="/terms" className="text-sm text-muted-foreground hover:text-primary transition-colors">ব্যবহারের শর্তাবলী</Link>
+              <Link to="/refund" className="text-sm text-muted-foreground hover:text-primary transition-colors">রিটার্ন ও রিফান্ড পলিসি</Link>
             </nav>
           </div>
 
@@ -122,15 +123,35 @@ const Footer = () => {
                 <Phone className="h-4 w-4" />
                 {settings.contact_phone}
               </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <MapPin className="h-4 w-4" />
-                {settings.contact_address}
+              <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                <MapPin className="h-4 w-4 mt-0.5 shrink-0" />
+                <span className="whitespace-pre-line">
+                  {settings.registered_address || settings.contact_address}
+                </span>
               </div>
+              {settings.trade_license_number && (
+                <div className="text-xs text-muted-foreground">
+                  ট্রেড লাইসেন্স নং: <span className="font-medium text-foreground">{settings.trade_license_number}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
 
-        <div className="mt-10 border-t border-border pt-6 text-center text-xs text-muted-foreground">
+        {/* Accepted payment methods banner */}
+        <div className="mt-10 border-t border-border pt-6">
+          <p className="text-center text-xs text-muted-foreground mb-3">গৃহীত পেমেন্ট পদ্ধতি</p>
+          <div className="flex justify-center">
+            <img
+              src={settings.payment_banner_url || paymentMethodsImg}
+              alt="Accepted payment methods"
+              loading="lazy"
+              className="max-h-16 sm:max-h-20 w-auto object-contain rounded-md bg-white p-2"
+            />
+          </div>
+        </div>
+
+        <div className="mt-6 border-t border-border pt-6 text-center text-xs text-muted-foreground">
           {settings.copyright_text || `© ${new Date().getFullYear()} সর্বস্বত্ব সংরক্ষিত।`}
         </div>
       </div>
