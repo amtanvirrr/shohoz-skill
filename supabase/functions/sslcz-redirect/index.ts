@@ -1,3 +1,5 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "*",
@@ -52,6 +54,36 @@ Deno.serve(async (req) => {
 
   // Sanitize tran_id to printable safe chars only (our order_id format is ORD-XXXXXXXX)
   const safeTran = tranId.replace(/[^A-Za-z0-9_-]/g, "").slice(0, 64);
+
+  // Safety net: if gateway reports fail/cancel, mark the pending order as cancelled
+  // immediately (do not wait for IPN). Never downgrade a confirmed/verified order.
+  if (safeTran && (status === "fail" || status === "cancel")) {
+    try {
+      const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+      const SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      if (SUPABASE_URL && SERVICE) {
+        const admin = createClient(SUPABASE_URL, SERVICE);
+        const { data: order } = await admin
+          .from("orders")
+          .select("id, status, payment_verified")
+          .eq("order_id", safeTran)
+          .maybeSingle();
+        if (order && !order.payment_verified && order.status !== "confirmed" && order.status !== "delivered") {
+          await admin
+            .from("orders")
+            .update({
+              status: "cancelled",
+              gateway_tran_id: safeTran,
+              notes: status === "cancel"
+                ? "ব্যবহারকারী পেমেন্ট বাতিল করেছেন"
+                : "পেমেন্ট গেটওয়েতে ব্যর্থ হয়েছে",
+            })
+            .eq("id", order.id);
+        }
+      }
+    } catch { /* swallow — redirect must always proceed */ }
+  }
+
   const target = `${site}/payment/${status}${safeTran ? `?order=${encodeURIComponent(safeTran)}` : ""}`;
 
   // 303 redirect for POST → GET
