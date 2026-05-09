@@ -406,6 +406,7 @@ export const PaymentSelector = ({
       }
       busyRef.current = true;
       logEvent("cod_submit_start", { method: "cod" });
+      lastAttemptRef.current = { method: "cod", transactionId: "" };
       try {
         await onCodSubmit();
         logEvent("cod_submit_success", { method: "cod" });
@@ -445,6 +446,7 @@ export const PaymentSelector = ({
       setRedirecting(true);
       busyRef.current = true;
       logEvent("ssl_init_start", { method: "sslcommerz" });
+      lastAttemptRef.current = { method: SSL_KEY, transactionId: "" };
       try {
         const { data, error } = await supabase.functions.invoke("sslcz-init", {
           body: {
@@ -502,10 +504,12 @@ export const PaymentSelector = ({
     }
     busyRef.current = true;
     logEvent("mfs_submit_start", { method: selected, metadata: { txn_len: transactionId.trim().length } });
+    lastAttemptRef.current = { method: selected, transactionId: transactionId.trim() };
     try {
       await onMfsSubmit(selected, transactionId.trim());
       logEvent("mfs_submit_success", { method: selected });
       setTransactionId("");
+      lastAttemptRef.current = null;
     } catch (e) {
       const msg = (e as Error).message || "অর্ডার সাবমিট করতে সমস্যা হয়েছে";
       setLastError(msg);
@@ -514,6 +518,37 @@ export const PaymentSelector = ({
     } finally {
       busyRef.current = false;
     }
+  };
+
+  // Retry the most recent failed attempt with the same method + inputs.
+  // Defensively resets transient UI flags (countdown timer, redirecting, busy)
+  // and restores the snapshotted selection/transaction id before resubmitting,
+  // so the retry never silently uses a different method than what failed.
+  const handleRetry = () => {
+    if (redirectTimerRef.current !== null) {
+      window.clearInterval(redirectTimerRef.current);
+      redirectTimerRef.current = null;
+    }
+    setRedirectCountdown(0);
+    setRedirecting(false);
+    busyRef.current = false;
+    setLastError("");
+
+    const snap = lastAttemptRef.current;
+    if (snap) {
+      // Restore the exact method/inputs the user originally submitted.
+      if (snap.method && snap.method !== selected) setSelected(snap.method);
+      if (snap.transactionId && snap.transactionId !== transactionId) {
+        setTransactionId(snap.transactionId);
+      }
+      logEvent("retry_clicked", { method: snap.method, message: "retry_with_snapshot" });
+    } else {
+      logEvent("retry_clicked", { method: selected, message: "retry_no_snapshot" });
+    }
+
+    // Wait one tick so any state restoration above is reflected before
+    // handleConfirm reads from state.
+    setTimeout(() => { handleConfirm(); }, 0);
   };
 
   const cardBase =
