@@ -4,6 +4,7 @@ import { CheckCircle2, XCircle, AlertCircle, Loader2, Receipt, RefreshCw } from 
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
+import { sanitizeFailureNote } from "@/lib/sanitizeFailureNote";
 
 interface OrderSummary {
   order_id: string;
@@ -37,6 +38,8 @@ const PaymentResult = () => {
   // fails or is cancelled. Surfaced verbatim on the fail/cancel screen so
   // the user understands *why* their payment didn't go through.
   const [failureNote, setFailureNote] = useState<string | null>(null);
+  // When the cleaned reason is long we collapse it; user can expand inline.
+  const [showFullNote, setShowFullNote] = useState(false);
   // Loading state for the post-fail lookup (notes + product slug). We block
   // the "নতুন করে পেমেন্ট করুন" button until this finishes so users see the
   // failure reason before retrying, and so they can't double-submit while
@@ -232,24 +235,39 @@ const PaymentResult = () => {
             অর্ডার আইডি: <span className="font-mono font-semibold text-foreground">{orderId}</span>
           </p>
         )}
-        {(status === "fail" || status === "cancel") && (failureLoading || failureNote) && (
-          <div className="mx-auto mt-4 max-w-md rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-left">
-            <p className="flex items-center gap-2 text-xs font-semibold text-destructive">
-              {failureLoading && <Loader2 className="h-3 w-3 animate-spin" />}
-              ব্যর্থতার কারণ
-            </p>
-            {failureLoading ? (
-              <div className="mt-2 space-y-2" aria-busy="true">
-                <div className="h-3 w-3/4 animate-pulse rounded bg-destructive/20" />
-                <div className="h-3 w-1/2 animate-pulse rounded bg-destructive/20" />
-              </div>
-            ) : (
-              <p className="mt-1 break-words text-sm text-foreground">
-                {failureNote}
+        {(status === "fail" || status === "cancel") && (() => {
+          const clean = sanitizeFailureNote(failureNote);
+          if (!failureLoading && !clean.full) return null;
+          return (
+            <div className="mx-auto mt-4 max-w-md rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-left">
+              <p className="flex items-center gap-2 text-xs font-semibold text-destructive">
+                {failureLoading && <Loader2 className="h-3 w-3 animate-spin" />}
+                ব্যর্থতার কারণ
               </p>
-            )}
-          </div>
-        )}
+              {failureLoading ? (
+                <div className="mt-2 space-y-2" aria-busy="true">
+                  <div className="h-3 w-3/4 animate-pulse rounded bg-destructive/20" />
+                  <div className="h-3 w-1/2 animate-pulse rounded bg-destructive/20" />
+                </div>
+              ) : (
+                <>
+                  <p className="mt-1 whitespace-pre-line break-words text-sm text-foreground">
+                    {showFullNote ? clean.full : clean.text}
+                  </p>
+                  {clean.truncated && (
+                    <button
+                      type="button"
+                      onClick={() => setShowFullNote((v) => !v)}
+                      className="mt-2 text-xs font-medium text-destructive underline-offset-2 hover:underline"
+                    >
+                      {showFullNote ? "সংক্ষিপ্ত দেখুন" : "বিস্তারিত দেখুন"}
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          );
+        })()}
         {showReceipt && (
           <div className="mt-6 rounded-xl border border-border/50 bg-background/40 p-5 text-left">
             <div className="mb-4 flex items-center gap-2 border-b border-border/50 pb-3">
