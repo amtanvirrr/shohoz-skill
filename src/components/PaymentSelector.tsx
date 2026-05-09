@@ -220,6 +220,12 @@ export const PaymentSelector = ({
     window.addEventListener("focus", onFocus);
     document.addEventListener("visibilitychange", onVisible);
 
+    // Safety net — poll every 30s in case realtime drops silently.
+    // Cheap query (~2 small rows), and skipped while tab is hidden.
+    const pollId = window.setInterval(() => {
+      if (document.visibilityState === "visible") load();
+    }, 30_000);
+
     // Realtime: react instantly when admin toggles a method or SSL setting.
     const channel = supabase
       .channel("payment-selector-sync")
@@ -239,6 +245,7 @@ export const PaymentSelector = ({
       cancelled = true;
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVisible);
+      window.clearInterval(pollId);
       supabase.removeChannel(channel);
     };
   }, []);
