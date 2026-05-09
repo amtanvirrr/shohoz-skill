@@ -21,6 +21,9 @@ const About = () => {
   const name = settings.site_name || "আমাদের প্ল্যাটফর্ম";
   const rawHtml = settings.about_content || defaultAboutHtml;
   const cleanHtml = DOMPurify.sanitize(rawHtml);
+  const companyHtml = settings.company_details
+    ? DOMPurify.sanitize(settings.company_details)
+    : "";
 
   return (
     <div className="py-16 lg:py-20">
@@ -31,6 +34,32 @@ const About = () => {
             className="mt-8 space-y-6 text-muted-foreground leading-relaxed prose prose-headings:text-foreground prose-headings:font-bold prose-h2:text-2xl prose-h2:!mt-10 prose-ul:list-disc prose-ul:pl-6 prose-li:space-y-2 max-w-none"
             dangerouslySetInnerHTML={{ __html: cleanHtml }}
           />
+
+          {(companyHtml || settings.trade_license_number || settings.registered_address) && (
+            <div className="mt-12 rounded-xl border border-border bg-card/50 p-6">
+              <h2 className="text-2xl font-bold text-foreground">কোম্পানি ও ম্যানেজমেন্ট তথ্য</h2>
+              {companyHtml && (
+                <div
+                  className="mt-4 prose prose-headings:text-foreground prose-h3:text-lg max-w-none text-muted-foreground"
+                  dangerouslySetInnerHTML={{ __html: companyHtml }}
+                />
+              )}
+              <dl className="mt-6 grid gap-3 sm:grid-cols-2 text-sm">
+                {settings.trade_license_number && (
+                  <div>
+                    <dt className="font-semibold text-foreground">ট্রেড লাইসেন্স নং</dt>
+                    <dd className="text-muted-foreground">{settings.trade_license_number}</dd>
+                  </div>
+                )}
+                {settings.registered_address && (
+                  <div>
+                    <dt className="font-semibold text-foreground">নিবন্ধিত ঠিকানা</dt>
+                    <dd className="text-muted-foreground whitespace-pre-line">{settings.registered_address}</dd>
+                  </div>
+                )}
+              </dl>
+            </div>
+          )}
         </div>
       </div>
     </div>
