@@ -133,6 +133,9 @@ export const PaymentSelector = ({
   // because admin disabled it (or it disappeared) — gives a clear explanation.
   const [fallbackNotice, setFallbackNotice] = useState<{ from: string; to: string } | null>(null);
   const isInitialLoad = useRef(true);
+  // Mandatory compliance: customer must explicitly agree to terms before
+  // any order can be placed (SSL / MFS / COD).
+  const [agreed, setAgreed] = useState(false);
 
   // On mount, look for a stored pending SSL session for this product.
   useEffect(() => {
@@ -390,6 +393,15 @@ export const PaymentSelector = ({
 
   const handleConfirm = async () => {
     if (busyRef.current || isBusy) return;
+    if (!agreed) {
+      toast({
+        title: "শর্তাবলীতে সম্মতি দিন",
+        description: "অর্ডার করার আগে শর্তাবলী, প্রাইভেসি ও রিফান্ড পলিসি পড়ে চেকবক্সে টিক দিন।",
+        variant: "destructive",
+      });
+      logEvent("consent_missing");
+      return;
+    }
     // COD allows guest checkout (parent decides). Online methods require login.
     if (!isCod && !user) {
       toast({ title: "প্রথমে লগইন করুন", variant: "destructive" });
@@ -858,11 +870,13 @@ export const PaymentSelector = ({
         </div>
       )}
 
+      <CheckoutConsent checked={agreed} onChange={setAgreed} />
+
       <Button
         type="button"
         size={compact ? "default" : "lg"}
         className="w-full"
-        disabled={isBusy || !selected || (isSsl && belowMin)}
+        disabled={isBusy || !selected || (isSsl && belowMin) || !agreed}
         onClick={handleConfirm}
       >
         {redirecting ? (
