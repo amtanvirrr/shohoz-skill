@@ -111,11 +111,72 @@ export const PaymentSelector = ({
   const [selected, setSelected] = useState<string>("");
   const [transactionId, setTransactionId] = useState("");
   const [redirecting, setRedirecting] = useState(false);
+  // Countdown before window.location.href fires — gives the user a chance
+  // to cancel before being shipped off to the gateway.
+  const [redirectCountdown, setRedirectCountdown] = useState(0);
+  const redirectTimerRef = useRef<number | null>(null);
+  // A pending SSL session means the user previously initiated a gateway
+  // payment for this product but didn't complete it. We surface a recovery
+  // card so they can resume or cancel & retry.
+  const [pendingSession, setPendingSession] = useState<PendingSslSession | null>(null);
   const [lastError, setLastError] = useState<string>("");
   // Banner shown when the user's previously-selected method gets auto-switched
   // because admin disabled it (or it disappeared) — gives a clear explanation.
   const [fallbackNotice, setFallbackNotice] = useState<{ from: string; to: string } | null>(null);
   const isInitialLoad = useRef(true);
+
+  // On mount, look for a stored pending SSL session for this product.
+  useEffect(() => {
+    setPendingSession(readPendingSession(productId));
+    // Cleanup any leftover redirect timer if we unmount mid-countdown.
+    return () => {
+      if (redirectTimerRef.current !== null) {
+        window.clearInterval(redirectTimerRef.current);
+        redirectTimerRef.current = null;
+      }
+    };
+  }, [productId]);
+
+  const cancelRedirect = (reason: "user_cancelled" | "user_back" = "user_cancelled") => {
+    if (redirectTimerRef.current !== null) {
+      window.clearInterval(redirectTimerRef.current);
+      redirectTimerRef.current = null;
+    }
+    setRedirecting(false);
+    setRedirectCountdown(0);
+    busyRef.current = false;
+    logEvent("ssl_redirect_cancelled", { method: "sslcommerz", message: reason });
+  };
+
+  const startRedirectCountdown = (gatewayUrl: string, orderId: string | null) => {
+    setRedirectCountdown(REDIRECT_COUNTDOWN_S);
+    let remaining = REDIRECT_COUNTDOWN_S;
+    redirectTimerRef.current = window.setInterval(() => {
+      remaining -= 1;
+      setRedirectCountdown(remaining);
+      if (remaining <= 0) {
+        if (redirectTimerRef.current !== null) {
+          window.clearInterval(redirectTimerRef.current);
+          redirectTimerRef.current = null;
+        }
+        // Persist the pending session so a back-navigation can recover.
+        writePendingSession({
+          productId,
+          productTitle,
+          orderId,
+          gatewayUrl,
+          price,
+          ts: Date.now(),
+        });
+        logEvent("ssl_redirect", {
+          method: "sslcommerz",
+          message: "navigating_to_gateway",
+          metadata: { order_id: orderId },
+        });
+        window.location.href = gatewayUrl;
+      }
+    }, 1000) as unknown as number;
+  };
   // Hard guard against rapid double clicks — refs update synchronously
   // so a second click before React flushes state still sees `true`.
   const busyRef = useRef(false);
