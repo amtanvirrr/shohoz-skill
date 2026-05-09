@@ -760,7 +760,7 @@ const LandingPage = () => {
         <footer className="py-8 text-center text-sm text-muted-foreground border-t border-border">
           {settings.copyright_text || `© ${new Date().getFullYear()} ${settings.site_name}`}
         </footer>
-        {successDialog && <OrderSuccessDialog open={successDialog.open} orderId={successDialog.orderId} productTitle={product.title} message={successDialog.message} onClose={() => setSuccessDialog(null)} />}
+        {successDialog && <OrderSuccessDialog open={successDialog.open} orderId={successDialog.orderId} productTitle={product.title} message={successDialog.message} paymentMethod={successDialog.paymentMethod} productType={(page.product_type === "course" ? "course" : page.product_type === "quiz" ? "quiz" : (isPhysical ? "book" : "ebook"))} deliveryText={isPhysical && activeZone ? `${activeZone.delivery_time_min}-${activeZone.delivery_time_max} ${activeZone.delivery_time_unit === "days" ? "কর্মদিবস" : activeZone.delivery_time_unit === "hours" ? "ঘণ্টা" : "সপ্তাহ"}` : undefined} onClose={() => setSuccessDialog(null)} />}
       </div>
     );
   }
@@ -1047,7 +1047,7 @@ const LandingPage = () => {
         <footer className="py-6 text-center text-sm text-muted-foreground border-t">
           {settings.copyright_text || `© ${new Date().getFullYear()} ${settings.site_name}`}
         </footer>
-        {successDialog && <OrderSuccessDialog open={successDialog.open} orderId={successDialog.orderId} productTitle={product.title} message={successDialog.message} onClose={() => setSuccessDialog(null)} />}
+        {successDialog && <OrderSuccessDialog open={successDialog.open} orderId={successDialog.orderId} productTitle={product.title} message={successDialog.message} paymentMethod={successDialog.paymentMethod} productType={(page.product_type === "course" ? "course" : page.product_type === "quiz" ? "quiz" : (isPhysical ? "book" : "ebook"))} deliveryText={isPhysical && activeZone ? `${activeZone.delivery_time_min}-${activeZone.delivery_time_max} ${activeZone.delivery_time_unit === "days" ? "কর্মদিবস" : activeZone.delivery_time_unit === "hours" ? "ঘণ্টা" : "সপ্তাহ"}` : undefined} onClose={() => setSuccessDialog(null)} />}
       </div>
     );
   }
@@ -1331,7 +1331,7 @@ const LandingPage = () => {
       <footer className="py-6 text-center text-sm text-zinc-600 border-t border-zinc-800">
         {settings.copyright_text || `© ${new Date().getFullYear()} ${settings.site_name}`}
       </footer>
-      {successDialog && <OrderSuccessDialog open={successDialog.open} orderId={successDialog.orderId} productTitle={product.title} message={successDialog.message} onClose={() => setSuccessDialog(null)} />}
+      {successDialog && <OrderSuccessDialog open={successDialog.open} orderId={successDialog.orderId} productTitle={product.title} message={successDialog.message} paymentMethod={successDialog.paymentMethod} productType={(page.product_type === "course" ? "course" : page.product_type === "quiz" ? "quiz" : (isPhysical ? "book" : "ebook"))} deliveryText={isPhysical && activeZone ? `${activeZone.delivery_time_min}-${activeZone.delivery_time_max} ${activeZone.delivery_time_unit === "days" ? "কর্মদিবস" : activeZone.delivery_time_unit === "hours" ? "ঘণ্টা" : "সপ্তাহ"}` : undefined} onClose={() => setSuccessDialog(null)} />}
     </div>
   );
 };
