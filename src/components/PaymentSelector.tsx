@@ -76,6 +76,10 @@ export const PaymentSelector = ({
   const [transactionId, setTransactionId] = useState("");
   const [redirecting, setRedirecting] = useState(false);
   const [lastError, setLastError] = useState<string>("");
+  // Banner shown when the user's previously-selected method gets auto-switched
+  // because admin disabled it (or it disappeared) — gives a clear explanation.
+  const [fallbackNotice, setFallbackNotice] = useState<{ from: string; to: string } | null>(null);
+  const isInitialLoad = useRef(true);
   // Hard guard against rapid double clicks — refs update synchronously
   // so a second click before React flushes state still sees `true`.
   const busyRef = useRef(false);
@@ -131,21 +135,66 @@ export const PaymentSelector = ({
       setMethods(mfsList);
       setSslEnabled(sEnabled);
 
-      // Auto-select / re-validate selection against currently-enabled methods
+      // Friendly label for any provider key, used in the fallback banner.
+      const labelOf = (key: string) => {
+        if (!key) return "";
+        if (key === SSL_KEY) return "অনলাইন পেমেন্ট";
+        if (key === COD_KEY) return "ক্যাশ অন ডেলিভারি";
+        const m = mfsList.find((x) => x.provider === key);
+        return m?.display_name || key;
+      };
+
+      // Auto-select / re-validate selection against currently-enabled methods.
+      // If the previous selection is no longer valid, pick the next available
+      // method and surface a fallback notice so the user is never silently
+      // left on a hidden / disabled option.
       setSelected((prev) => {
         const stillValid =
           (prev === SSL_KEY && sEnabled) ||
           (prev === COD_KEY && showCod) ||
           (prev && mfsList.some((m) => m.provider === prev));
         if (stillValid) return prev;
-        // Physical-style flow (COD shown, MFS hidden) → default to COD
-        if (showCod && !showMfs) return COD_KEY;
-        if (mfsList.length > 0) return mfsList[0].provider;
-        if (sEnabled) return SSL_KEY;
-        if (showCod) return COD_KEY;
-        return "";
+
+        // Decide next best option in priority order
+        let next = "";
+        if (showCod && !showMfs) next = COD_KEY;
+        else if (mfsList.length > 0) next = mfsList[0].provider;
+        else if (sEnabled) next = SSL_KEY;
+        else if (showCod) next = COD_KEY;
+
+        // Only notify if the user previously had a real choice that just
+        // disappeared (skip the very first load, where prev === "").
+        if (!isInitialLoad.current && prev && next && prev !== next) {
+          const fromLabel = labelOf(prev);
+          const toLabel = labelOf(next);
+          setFallbackNotice({ from: fromLabel, to: toLabel });
+          // Reset transaction id since it belonged to the now-disabled method.
+          setTransactionId("");
+          setLastError("");
+          toast({
+            title: "পেমেন্ট পদ্ধতি পরিবর্তন হয়েছে",
+            description: `"${fromLabel}" এখন আর উপলব্ধ নেই। স্বয়ংক্রিয়ভাবে "${toLabel}" নির্বাচন করা হয়েছে।`,
+          });
+          logEvent("method_auto_switched", {
+            method: next === SSL_KEY ? "sslcommerz" : next,
+            message: `auto-switched from ${prev} to ${next}`,
+            metadata: { from: prev, to: next },
+          });
+        } else if (!isInitialLoad.current && prev && !next) {
+          // No fallback available at all
+          setFallbackNotice({ from: labelOf(prev), to: "" });
+          toast({
+            title: "পেমেন্ট পদ্ধতি অনুপলব্ধ",
+            description: `"${labelOf(prev)}" বন্ধ করা হয়েছে এবং কোনো বিকল্প পদ্ধতি বর্তমানে সক্রিয় নেই।`,
+            variant: "destructive",
+          });
+          logEvent("method_no_fallback", { metadata: { from: prev } });
+        }
+
+        return next;
       });
       setLoading(false);
+      isInitialLoad.current = false;
     };
 
     load();
@@ -354,6 +403,40 @@ export const PaymentSelector = ({
 
   return (
     <div className="space-y-3">
+      {fallbackNotice && (
+        <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-xs">
+          <div className="flex items-start gap-2">
+            <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="font-medium text-amber-700 dark:text-amber-300">
+                পেমেন্ট পদ্ধতি পরিবর্তন হয়েছে
+              </p>
+              <p className="mt-1 text-muted-foreground">
+                {fallbackNotice.to ? (
+                  <>
+                    "<span className="font-medium text-foreground">{fallbackNotice.from}</span>" এখন আর উপলব্ধ নেই।
+                    স্বয়ংক্রিয়ভাবে "<span className="font-medium text-foreground">{fallbackNotice.to}</span>" নির্বাচন করা হয়েছে।
+                  </>
+                ) : (
+                  <>
+                    "<span className="font-medium text-foreground">{fallbackNotice.from}</span>" বন্ধ করা হয়েছে এবং
+                    কোনো বিকল্প পদ্ধতি বর্তমানে সক্রিয় নেই।
+                  </>
+                )}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setFallbackNotice(null)}
+              className="text-amber-600 dark:text-amber-400 hover:opacity-70 text-lg leading-none"
+              aria-label="বন্ধ করুন"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
       <div>
         <Label className={compact ? "text-xs" : "text-sm font-medium text-foreground"}>
           পেমেন্ট পদ্ধতি নির্বাচন করুন
