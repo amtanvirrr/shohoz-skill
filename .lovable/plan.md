@@ -1,169 +1,63 @@
-# Payment UI/UX পরিমার্জনা পরিকল্পনা
+## Overview
 
-## সমস্যা চিহ্নিতকরণ
+SSLCommerz/Payment Gateway compliance বাস্তবায়ন — তিনটি লিগ্যাল পেজ, ফুটার আপডেট, চেকআউট কনসেন্ট চেকবক্স, পেমেন্ট ব্যানার, ট্রেড লাইসেন্স/রেজিস্টার্ড অ্যাড্রেস ও সবকিছু অ্যাডমিন প্যানেল থেকে এডিটেবল।
 
-দুটি স্বতন্ত্র বাগ পাওয়া গেছে চারটি জায়গায় (CourseDetail, BookDetail, QuizPage, LandingPage):
+## Database (1 migration)
 
-### বাগ ১ — বন্ধ payment options এখনও দেখায়
-`CourseDetail.tsx` (লাইন 497-517) এবং `BookDetail.tsx` (লাইন 395-403) এ এই কোড আছে:
+`public_site_settings`-এ নতুন key গুলো যোগ হবে (text rows): `terms_content`, `privacy_content`, `refund_content`, `refund_timeline_text`, `trade_license_number`, `registered_address`, `company_details`, `payment_banner_url`. কোনো নতুন টেবিল লাগবে না — বিদ্যমান key/value প্যাটার্ন ব্যবহার হবে।
 
-```tsx
-{mfsMethods.length > 0 ? mfsMethods.map(...) : (["bkash", "nagad"] as const).map(...)}
-```
+## নতুন পাবলিক পেজ (৩টি)
 
-অর্থাৎ admin যখন সব MFS method off করে দেয় বা কোনোটি নেই, তখন hardcoded fallback হিসেবে bKash/Nagad button দেখায়। ফলে যে methodগুলো admin বন্ধ রেখেছে সেগুলো user-এর সামনে চলে আসে এবং সেই দিয়ে order জমা হয়ে যায়।
+1. `/terms` — Terms & Conditions
+2. `/privacy` — Privacy Policy  
+3. `/refund` — Return & Refund Policy (ডিফল্ট কপিতে **৭–১০ কর্মদিবস** টাইমলাইন স্পষ্টভাবে লেখা)
 
-এছাড়া initial state `useState("bkash")`/`paymentMethod: "bkash"` রাখা আছে — যদি bKash database-এ active না থাকে কিন্তু অন্য কিছু থাকে, list-এর প্রথম method auto-select হয় ঠিকই, কিন্তু hardcoded fallback path-এ এই default কোনো guard ছাড়াই server-এ যায়।
+তিনটিই `About.tsx`-এর মতো সরল প্যাটার্ন: `useSiteSettings` থেকে HTML কনটেন্ট লোড → `DOMPurify.sanitize` → render। ডেটাবেসে কনটেন্ট না থাকলে কম্প্লায়েন্ট ডিফল্ট Bengali টেক্সট দেখাবে। `App.tsx`-এ রুট যোগ হবে।
 
-### বাগ ২ — SSLCommerz button বিভ্রান্তিকর ভাবে আলাদা
-বর্তমানে layout এরকম:
+## Footer আপডেট (`src/components/layout/Footer.tsx`)
 
-```text
-[ পেমেন্ট পদ্ধতি: bKash | Nagad ]
-[ Transaction ID input ]
-[ "কোর্স কিনুন" বড় button ]
-———— অথবা ————
-[ Globe icon — অনলাইন পেমেন্ট — ৳XXX ]
-```
+- "সাপোর্ট" কলামের প্লেইন `<span>` গুলো `<Link>`-এ পরিবর্তন: প্রাইভেসি পলিসি → `/privacy`, ব্যবহারের শর্তাবলী → `/terms`, রিফান্ড পলিসি → `/refund`। About link আগে থেকেই আছে।
+- নতুন "কোম্পানি তথ্য" ব্লক: Trade License No. + Registered Address (settings থেকে)।
+- Payment banner: settings এর `payment_banner_url` ইমেজ ফুটারে দেখাবে (fallback হিসেবে SSLCommerz-এর স্ট্যান্ডার্ড পেমেন্ট মেথড ব্যানার `src/assets/`-এ রাখা একটি ডিফল্ট ইমেজ — bKash/Nagad/Rocket/Visa/Master/Amex)।
 
-এতে user বুঝতে পারে না: "কোর্স কিনুন" আর "অনলাইন পেমেন্ট" কি একই purchase-এর দুটো রাস্তা নাকি আলাদা product? SSL button-টা একটা disconnected secondary action-এর মতো দেখায়।
+## About পেজ আপডেট
 
----
+`About.tsx`-এ কোম্পানি ও ম্যানেজমেন্ট ডিটেলস + Trade License Number সেকশন যোগ হবে (settings থেকে পড়ে)।
 
-## সমাধান
+## চেকআউট কনসেন্ট চেকবক্স (MANDATORY)
 
-### ১. Frontend: একক unified Payment Selector
+প্রতিটি অর্ডার সাবমিট পয়েন্টে কনসেন্ট চেকবক্স যোগ:
+- `src/pages/BookDetail.tsx` (অর্ডার ফর্ম)
+- `src/pages/CourseDetail.tsx`
+- `src/pages/QuizPage.tsx`
+- `src/pages/LandingPage.tsx` (অর্ডার ফর্ম সেকশন)
 
-চারটি page-এ (Course/Book/Quiz/LandingPage) MFS methods এবং SSLCommerz-কে **একই radio-style selector**-এ মেশানো হবে। নতুন reusable component:
+প্যাটার্ন: "Place Order" বাটনের ঠিক আগে blank `Checkbox` (Radix) + লেবেল: *"আমি [শর্তাবলী](/terms), [প্রাইভেসি পলিসি](/privacy) এবং [রিফান্ড পলিসি](/refund) পড়েছি ও সম্মত আছি।"* — আনচেকড থাকলে সাবমিট বাটন `disabled`। ৪টি পেজের একই UX-এর জন্য `src/components/CheckoutConsent.tsx` নামে ছোট shared component তৈরি হবে।
 
-```text
-src/components/PaymentSelector.tsx
-```
+## অ্যাডমিন প্যানেল এক্সটেনশন
 
-UI কাঠামো:
+`src/pages/admin/AdminSettings.tsx`-এ নতুন ট্যাব **"আইনি ও কম্প্লায়েন্স"** যোগ হবে যেখানে অ্যাডমিন এডিট করতে পারবে:
 
-```text
-┌─ পেমেন্ট পদ্ধতি নির্বাচন করুন ─────────────┐
-│  ┌───────────┐ ┌───────────┐ ┌─────────┐ │
-│  │ ◉ bKash   │ │ ○ Nagad   │ │ ○ অনলাইন│ │
-│  │  Personal │ │ Personal  │ │ পেমেন্ট │ │
-│  └───────────┘ └───────────┘ └─────────┘ │
-│                                            │
-│  ▼ Selected method-এর details              │
-│   - MFS হলে: phone, QR, instruction,       │
-│     transaction ID input                   │
-│   - SSLCommerz হলে: ছোট description +     │
-│     min-amount warning (যদি price < min)  │
-└────────────────────────────────────────────┘
+- Terms & Conditions (RichTextEditor)
+- Privacy Policy (RichTextEditor)
+- Return & Refund Policy (RichTextEditor) — ডিফল্ট প্রি-ফিল্ড টেমপ্লেটে ৭–১০ কর্মদিবস উল্লেখ।
+- Refund timeline text (Input — ফলব্যাক/সারাংশ)
+- Trade License Number (Input — MANDATORY মার্ক)
+- Registered Address (Textarea)
+- Company & Management details (RichTextEditor — About-এ দেখাবে)
+- Payment banner image (URL/আপলোড — `hero-media` বাকেট রিইউজ)
 
-[  নিশ্চিত করুন এবং পেমেন্ট করুন — ৳XXX  ]
-```
+### Technical Details
 
-একটি single primary CTA button থাকবে যা selected method অনুযায়ী action নেবে:
-- MFS method selected → existing `handlePurchase` (orders insert)
-- SSLCommerz selected → `sslcz-init` edge function call করে redirect
+- `useSiteSettings` hook এবং `SiteSettings` interface-এ ৮টি নতুন key যোগ; `defaults` আপডেট।
+- `AdminSettings.tsx`-এর `BrandingFields` interface ও `defaultBranding` object-এ একই key যোগ হবে।
+- Payment banner-এর জন্য প্রয়োজনে `imagegen--generate_image` (premium) ব্যবহার করে একটি ক্লিন ডিফল্ট "Accepted Payment Methods" ব্যানার generate হবে (bKash, Nagad, Rocket, Visa, Mastercard, Amex লোগোসহ) `src/assets/payment-methods.png`-এ।
+- কনসেন্ট চেকবক্স স্টেট প্রতি পেজে লোকাল `useState<boolean>`; submit handler-এ guard: `if (!agreed) { toast.error("শর্তাবলীতে সম্মতি দিন"); return; }`।
 
-### ২. Frontend: hardcoded fallback সরানো
+## নিরাপত্তা
 
-```tsx
-// আগে
-{mfsMethods.length > 0 ? mfsMethods.map(...) : (["bkash","nagad"]).map(...)}
+লিগ্যাল কনটেন্ট পাবলিক — `public_site_settings` ইতিমধ্যে public read RLS-এ আছে, কোনো পরিবর্তন লাগবে না। `DOMPurify.sanitize` সব রেন্ডারে।
 
-// পরে
-{mfsMethods.length === 0 && !sslczEnabled ? (
-   <EmptyState message="বর্তমানে পেমেন্ট পদ্ধতি অনুপলব্ধ। অনুগ্রহ করে পরে চেষ্টা করুন বা আমাদের সাথে যোগাযোগ করুন।" />
-) : (
-   <PaymentSelector mfsMethods={mfsMethods} sslczEnabled={sslczEnabled} ... />
-)}
-```
+## Out of scope
 
-Default `paymentMethod` state কে hardcoded `"bkash"` থেকে empty string `""` করা হবে; প্রথম available method auto-select হবে fetch-এর পরে।
-
-### ৩. Backend safety guard
-
-বর্তমানে `orders` table-এ যেকেউ `payment_method: "bkash"` দিয়ে insert করতে পারে যদিও admin সেটা off রেখেছে। একটি database trigger যোগ হবে:
-
-```sql
--- BEFORE INSERT trigger on orders
--- যদি payment_method 'cod'/'sslcommerz' না হয় (অর্থাৎ MFS),
--- তাহলে payment_methods table-এ provider=NEW.payment_method AND is_active=true থাকতে হবে।
--- SSLCommerz হলে public_site_settings-এ sslcz_enabled='true' থাকতে হবে।
--- না হলে RAISE EXCEPTION 'এই পেমেন্ট পদ্ধতি বর্তমানে নিষ্ক্রিয়'।
-```
-
-এতে disabled method দিয়ে কোনো client-side bypass করেও order জমা দেওয়া যাবে না।
-
-### ৪. Edge case handling
-
-- **সব method off + SSL off** → empty state message + admin notification নয়, শুধু user-friendly বার্তা।
-- **শুধু SSL on, MFS সব off** → SSL automatic select হয়ে থাকবে, একটাই card visible।
-- **শুধু MFS on, SSL off** → আগের মতই MFS list, কিন্তু hardcoded fallback ছাড়া।
-- **Free product (price=0)** → PaymentSelector render হবে না, "ফ্রিতে এনরোল করুন" button থাকবে (existing behavior unchanged)।
-- **Physical book (COD)** → PaymentSelector render হবে না, "ক্যাশ অন ডেলিভারি" badge + confirm button (existing behavior unchanged)।
-
-### ৫. Admin Panel
-
-`AdminPayments.tsx`-এ ছোট improvement — সব MFS off + SSL off হলে warning banner দেখানো হবে: "⚠️ কোনো সক্রিয় পেমেন্ট পদ্ধতি নেই — গ্রাহক কিছু কিনতে পারবে না।"
-
----
-
-## প্রভাবিত ফাইলসমূহ
-
-### নতুন
-- `src/components/PaymentSelector.tsx` — reusable unified selector
-- নতুন migration: `orders` insert validation trigger
-
-### পরিবর্তিত
-- `src/pages/CourseDetail.tsx` — hardcoded fallback সরানো, PaymentSelector ব্যবহার
-- `src/pages/BookDetail.tsx` — same (digital book অংশের জন্য)
-- `src/pages/QuizPage.tsx` — same
-- `src/pages/LandingPage.tsx` — already MFS-only check করে; SSL integrate করা হবে
-- `src/pages/admin/AdminPayments.tsx` — empty state warning banner
-- `src/components/SslczPayButton.tsx` — internal logic PaymentSelector-এ merge হবে; component deprecated/removed
-
----
-
-## টেকনিক্যাল বিস্তারিত
-
-### PaymentSelector props API
-```ts
-interface PaymentSelectorProps {
-  productType: "course" | "book" | "quiz";
-  productId: string;
-  productTitle: string;
-  price: number;
-  customerName?: string;
-  customerPhone?: string;
-  customerEmail?: string;
-  customerAddress?: string;
-  requireCustomerFields?: boolean;
-  onMfsSubmit: (provider: string, transactionId: string) => Promise<void>;
-  submitting?: boolean;
-}
-```
-
-Component নিজে fetch করবে `payment_methods` (active) এবং `public_site_settings` (sslcz_*) — যাতে parent pages-এ duplicate fetch logic না থাকে। পরে cleanup phase-এ parent থেকে এই fetchগুলো সরানো হবে।
-
-### Validation trigger (সংক্ষেপে)
-```sql
-CREATE FUNCTION public.validate_order_payment_method()
-RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
-BEGIN
-  IF NEW.payment_method::text = 'cod' THEN RETURN NEW; END IF;
-  IF NEW.payment_method::text = 'sslcommerz' THEN
-    IF NOT EXISTS (SELECT 1 FROM public_site_settings WHERE key='sslcz_enabled' AND value='true')
-      THEN RAISE EXCEPTION 'অনলাইন পেমেন্ট বর্তমানে বন্ধ';
-    END IF;
-    RETURN NEW;
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM payment_methods WHERE provider = NEW.payment_method::text AND is_active=true)
-    THEN RAISE EXCEPTION 'এই পেমেন্ট পদ্ধতি নিষ্ক্রিয়';
-  END IF;
-  RETURN NEW;
-END$$;
-```
-
-(SSLCommerz orders edge function থেকে service-role দিয়ে insert হয়, কিন্তু trigger তখনও validate করবে — `sslcz_enabled=true` থাকলেই pass)।
-
-### বিদ্যমান `payment_method` enum values
-পরীক্ষা করতে হবে enum-এ `bkash`, `nagad`, `rocket`, `upay`, `cod`, `sslcommerz` সব আছে কিনা — না থাকলে migration-এ যোগ করা হবে।
+কোনো বিদ্যমান পেমেন্ট/অর্ডার বিজনেস লজিকে পরিবর্তন নেই — শুধু কনসেন্ট গার্ড যুক্ত হবে।
