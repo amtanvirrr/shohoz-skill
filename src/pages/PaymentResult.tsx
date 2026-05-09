@@ -33,6 +33,10 @@ const PaymentResult = () => {
   // Slug of the product this order was for — used so a fail/cancel screen
   // can offer a one-click "নতুন করে পেমেন্ট করুন" back to the product page.
   const [retryHref, setRetryHref] = useState<string | null>(null);
+  // Reason text written into orders.notes by sslcz-redirect when a payment
+  // fails or is cancelled. Surfaced verbatim on the fail/cancel screen so
+  // the user understands *why* their payment didn't go through.
+  const [failureNote, setFailureNote] = useState<string | null>(null);
   const cancelRef = useRef<{ cancelled: boolean }>({ cancelled: false });
 
   const POLL_INTERVAL = 2; // seconds
@@ -118,10 +122,11 @@ const PaymentResult = () => {
     (async () => {
       const { data: ord } = await supabase
         .from("orders")
-        .select("product_id, product_type, product_title")
+        .select("product_id, product_type, product_title, notes")
         .eq("order_id", orderId)
         .maybeSingle();
       if (cancelled || !ord) return;
+      if (ord.notes) setFailureNote(ord.notes);
       const table =
         ord.product_type === "course" ? "courses" :
         ord.product_type === "book" ? "books" :
