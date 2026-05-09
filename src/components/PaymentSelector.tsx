@@ -546,6 +546,7 @@ export const PaymentSelector = ({
     setRedirecting(false);
     busyRef.current = false;
     setLastError("");
+    setErrorInfo(null);
 
     const snap = lastAttemptRef.current;
     if (snap) {
