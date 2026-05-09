@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import RichTextEditor from "@/components/RichTextEditor";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
@@ -62,6 +63,14 @@ interface BrandingFields {
   homepage_track_subtitle: string;
   featured_course_ids: string;
   featured_book_ids: string;
+  terms_content: string;
+  privacy_content: string;
+  refund_content: string;
+  refund_timeline_text: string;
+  trade_license_number: string;
+  registered_address: string;
+  company_details: string;
+  payment_banner_url: string;
 }
 
 const defaultBranding: BrandingFields = {
@@ -109,6 +118,14 @@ const defaultBranding: BrandingFields = {
   homepage_track_subtitle: "",
   featured_course_ids: "",
   featured_book_ids: "",
+  terms_content: "",
+  privacy_content: "",
+  refund_content: "",
+  refund_timeline_text: "৭–১০ কর্মদিবস",
+  trade_license_number: "",
+  registered_address: "",
+  company_details: "",
+  payment_banner_url: "",
 };
 
 const PUBLIC_KEYS: (keyof BrandingFields)[] = [
@@ -122,6 +139,8 @@ const PUBLIC_KEYS: (keyof BrandingFields)[] = [
   "homepage_reviews_title", "homepage_reviews_subtitle",
   "homepage_track_title", "homepage_track_subtitle",
   "featured_course_ids", "featured_book_ids",
+  "terms_content", "privacy_content", "refund_content", "refund_timeline_text",
+  "trade_license_number", "registered_address", "company_details", "payment_banner_url",
 ];
 
 const ALL_KEYS = Object.keys(defaultBranding) as (keyof BrandingFields)[];
