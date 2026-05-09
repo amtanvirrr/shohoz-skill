@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Globe, Loader2, Smartphone, CreditCard, AlertCircle, RefreshCcw } from "lucide-react";
+import { Globe, Loader2, Smartphone, CreditCard, AlertCircle, RefreshCcw, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,13 +30,22 @@ interface PaymentSelectorProps {
   /** Require name/phone/address validation before SSL redirect (physical book) */
   requireCustomerFields?: boolean;
   /** Called with selected MFS provider + transaction ID. Should perform the order insert. */
-  onMfsSubmit: (provider: string, transactionId: string) => Promise<void> | void;
+  onMfsSubmit?: (provider: string, transactionId: string) => Promise<void> | void;
+  /** Show Cash-on-Delivery option (for physical products). */
+  showCod?: boolean;
+  /** Hide MFS (manual mobile payment) cards. Defaults to true. */
+  showMfs?: boolean;
+  /** Called when user confirms COD. Parent performs the order insert. */
+  onCodSubmit?: () => Promise<void> | void;
+  /** Optional pre-flight validation (e.g. check address / shipping zone). Return false to abort. */
+  validateBeforeSubmit?: () => boolean;
   submitting?: boolean;
   /** Compact layout for tight spaces (e.g. quiz cards) */
   compact?: boolean;
 }
 
 const SSL_KEY = "__sslcommerz__";
+const COD_KEY = "__cod__";
 
 export const PaymentSelector = ({
   productType,
@@ -49,6 +58,10 @@ export const PaymentSelector = ({
   customerAddress,
   requireCustomerFields = false,
   onMfsSubmit,
+  showCod = false,
+  showMfs = true,
+  onCodSubmit,
+  validateBeforeSubmit,
   submitting = false,
   compact = false,
 }: PaymentSelectorProps) => {
@@ -105,7 +118,7 @@ export const PaymentSelector = ({
           .in("key", ["sslcz_enabled", "sslcz_display_name", "sslcz_min_amount"]),
       ]);
       if (cancelled) return;
-      const mfsList = (methodsRes.data as MfsMethod[]) || [];
+      const mfsList = showMfs ? ((methodsRes.data as MfsMethod[]) || []) : [];
       let sEnabled = false;
       (settingsRes.data || []).forEach((r: any) => {
         if (r.key === "sslcz_enabled") sEnabled = r.value === "true";
@@ -122,10 +135,14 @@ export const PaymentSelector = ({
       setSelected((prev) => {
         const stillValid =
           (prev === SSL_KEY && sEnabled) ||
+          (prev === COD_KEY && showCod) ||
           (prev && mfsList.some((m) => m.provider === prev));
         if (stillValid) return prev;
+        // Physical-style flow (COD shown, MFS hidden) → default to COD
+        if (showCod && !showMfs) return COD_KEY;
         if (mfsList.length > 0) return mfsList[0].provider;
         if (sEnabled) return SSL_KEY;
+        if (showCod) return COD_KEY;
         return "";
       });
       setLoading(false);
@@ -170,6 +187,7 @@ export const PaymentSelector = ({
     [methods, selected],
   );
   const isSsl = selected === SSL_KEY;
+  const isCod = selected === COD_KEY;
   const belowMin = isSsl && price < sslMinAmount;
 
   if (loading) {
@@ -182,7 +200,7 @@ export const PaymentSelector = ({
 
   if (price <= 0) return null;
 
-  if (methods.length === 0 && !sslEnabled) {
+  if (methods.length === 0 && !sslEnabled && !showCod) {
     return (
       <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-center">
         <AlertCircle className="mx-auto h-6 w-6 text-destructive" />
@@ -198,12 +216,40 @@ export const PaymentSelector = ({
 
   const handleConfirm = async () => {
     if (busyRef.current || isBusy) return;
-    if (!user) {
+    // COD allows guest checkout (parent decides). Online methods require login.
+    if (!isCod && !user) {
       toast({ title: "প্রথমে লগইন করুন", variant: "destructive" });
       logEvent("auth_required");
       return;
     }
     setLastError("");
+
+    // Parent-supplied validation (address, shipping zone, etc.)
+    if (validateBeforeSubmit && !validateBeforeSubmit()) {
+      logEvent("validation_error", { method: isSsl ? "sslcommerz" : isCod ? "cod" : selected, message: "parent_validation_failed" });
+      return;
+    }
+
+    if (isCod) {
+      if (!onCodSubmit) {
+        toast({ title: "ক্যাশ অন ডেলিভারি কনফিগার করা নেই", variant: "destructive" });
+        return;
+      }
+      busyRef.current = true;
+      logEvent("cod_submit_start", { method: "cod" });
+      try {
+        await onCodSubmit();
+        logEvent("cod_submit_success", { method: "cod" });
+      } catch (e) {
+        const msg = (e as Error).message || "অর্ডার সাবমিট করতে সমস্যা হয়েছে";
+        setLastError(msg);
+        toast({ title: "ত্রুটি", description: msg, variant: "destructive" });
+        logEvent("cod_submit_error", { method: "cod", message: msg });
+      } finally {
+        busyRef.current = false;
+      }
+      return;
+    }
 
     if (isSsl) {
       if (belowMin) {
@@ -276,6 +322,10 @@ export const PaymentSelector = ({
       logEvent("validation_error", { message: "no_method_selected" });
       return;
     }
+    if (!onMfsSubmit) {
+      toast({ title: "এই পদ্ধতি সাপোর্টেড নয়", variant: "destructive" });
+      return;
+    }
     if (!transactionId.trim()) {
       toast({ title: "ট্রানজেকশন আইডি দিন", description: "পেমেন্ট করার পর Transaction ID লিখুন", variant: "destructive" });
       logEvent("validation_error", { method: selected, message: "missing_transaction_id" });
@@ -309,6 +359,18 @@ export const PaymentSelector = ({
           পেমেন্ট পদ্ধতি নির্বাচন করুন
         </Label>
         <div className={`mt-2 grid gap-2 ${compact ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2 sm:grid-cols-3"}`}>
+          {showCod && (
+            <button
+              type="button"
+              onClick={() => { if (!isBusy) { setSelected(COD_KEY); setLastError(""); } }}
+              disabled={isBusy}
+              className={`${cardBase} ${selected === COD_KEY ? cardActive : cardIdle} ${isBusy ? "opacity-60 cursor-not-allowed" : ""}`}
+            >
+              <Truck className="h-4 w-4 mb-1" />
+              <span className={`font-semibold ${compact ? "text-xs" : "text-sm"}`}>ক্যাশ অন ডেলিভারি</span>
+              <span className="text-[10px] opacity-70">ডেলিভারির সময় পেমেন্ট</span>
+            </button>
+          )}
           {methods.map((m) => {
             const active = selected === m.provider;
             return (
@@ -341,6 +403,20 @@ export const PaymentSelector = ({
           )}
         </div>
       </div>
+
+      {isCod && (
+        <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs text-muted-foreground">
+          <div className="flex items-start gap-2">
+            <Truck className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+            <div>
+              <p className="text-foreground font-medium">ক্যাশ অন ডেলিভারি</p>
+              <p className="mt-1">
+                পণ্য হাতে পেয়ে ডেলিভারিম্যানকে নগদ অর্থ পরিশোধ করুন। কোনো অগ্রিম পেমেন্ট প্রয়োজন নেই।
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Details for selected method */}
       {selectedMfs && (
@@ -440,6 +516,10 @@ export const PaymentSelector = ({
         ) : isSsl ? (
           <>
             <Globe className="mr-2 h-4 w-4" /> অনলাইন পেমেন্ট করুন — ৳{price}
+          </>
+        ) : isCod ? (
+          <>
+            <Truck className="mr-2 h-4 w-4" /> ক্যাশ অন ডেলিভারিতে অর্ডার — ৳{price}
           </>
         ) : (
           <>নিশ্চিত করুন এবং অর্ডার দিন — ৳{price}</>

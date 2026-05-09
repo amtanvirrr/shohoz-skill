@@ -125,7 +125,7 @@ const BookDetail = () => {
       toast({ title: "ডেলিভারি ঠিকানা লিখুন", variant: "destructive" });
       return false;
     }
-    if (isPhysical && !selectedZone) {
+    if (isPhysical && shippingZones.length > 0 && !selectedZone) {
       toast({ title: "শিপিং জোন সিলেক্ট করুন", variant: "destructive" });
       return false;
     }
@@ -172,15 +172,14 @@ const BookDetail = () => {
     if (isEbook) setOrderStatus("pending");
   };
 
-  const handleCodSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCodSubmit = async () => {
     if (!validateCustomer()) return;
     setSubmitting(true);
     await insertOrder("cod", null);
     setSubmitting(false);
   };
 
-  const handleEbookMfsSubmit = async (provider: string, txnId: string) => {
+  const handleMfsSubmit = async (provider: string, txnId: string) => {
     if (!validateCustomer()) return;
     setSubmitting(true);
     await insertOrder(provider, txnId);
@@ -330,7 +329,7 @@ const BookDetail = () => {
                   {isPhysical ? "ক্যাশ অন ডেলিভারি — সারা বাংলাদেশে ডেলিভারি" : "বিকাশ / নগদ পেমেন্টে ইবুক পান"}
                 </p>
 
-                <form onSubmit={handleCodSubmit} className="mt-5 space-y-4">
+                <div className="mt-5 space-y-4">
                   <div><Label htmlFor="fullname">পূর্ণ নাম *</Label><Input id="fullname" value={order.name} onChange={(e) => setOrder({ ...order, name: e.target.value })} className="mt-1" /></div>
                   <div><Label htmlFor="phone">ফোন নম্বর *</Label><Input id="phone" value={order.phone} onChange={(e) => setOrder({ ...order, phone: e.target.value })} className="mt-1" /></div>
                   <div><Label htmlFor="email">ইমেইল (ঐচ্ছিক)</Label><Input id="email" type="email" value={order.email} onChange={(e) => setOrder({ ...order, email: e.target.value })} className="mt-1" /></div>
@@ -382,22 +381,6 @@ const BookDetail = () => {
                     </div>
                   )}
 
-                  {isPhysical ? (
-                    <div className="rounded-lg bg-secondary p-3 text-sm text-muted-foreground">💵 পেমেন্ট: <span className="font-medium text-foreground">ক্যাশ অন ডেলিভারি</span></div>
-                  ) : (
-                    <PaymentSelector
-                      productType="book"
-                      productId={book.id}
-                      productTitle={book.title}
-                      price={totalPrice}
-                      customerName={order.name}
-                      customerPhone={order.phone}
-                      customerEmail={order.email}
-                      onMfsSubmit={handleEbookMfsSubmit}
-                      submitting={submitting}
-                    />
-                  )}
-
                   {/* Order Summary for physical */}
                   {isPhysical && (
                     <div className="rounded-lg border border-border bg-card p-4 space-y-2 text-sm">
@@ -418,12 +401,24 @@ const BookDetail = () => {
               </div>
             )}
 
-                  {isPhysical && (
-                    <Button type="submit" size="lg" className="w-full" disabled={submitting}>
-                      {submitting ? "অর্ডার হচ্ছে..." : `অর্ডার করুন — ৳${totalPrice}`}
-                    </Button>
-                  )}
-                </form>
+                  <PaymentSelector
+                    productType="book"
+                    productId={book.id}
+                    productTitle={book.title}
+                    price={totalPrice}
+                    customerName={order.name}
+                    customerPhone={order.phone}
+                    customerEmail={order.email}
+                    customerAddress={isPhysical ? order.address : undefined}
+                    requireCustomerFields={isPhysical}
+                    showCod={isPhysical}
+                    showMfs={!isPhysical}
+                    onMfsSubmit={handleMfsSubmit}
+                    onCodSubmit={handleCodSubmit}
+                    validateBeforeSubmit={validateCustomer}
+                    submitting={submitting}
+                  />
+                </div>
               </div>
             )}
             </ScrollReveal>
