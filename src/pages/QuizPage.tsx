@@ -95,7 +95,13 @@ const QuizPage = () => {
   const [quizOrderStatus, setQuizOrderStatus] = useState<Record<string, string>>({});
   const [purchasingQuiz, setPurchasingQuiz] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [successDialog, setSuccessDialog] = useState<{ open: boolean; orderId: string; message?: string; isFree?: boolean } | null>(null);
+  const [successDialog, setSuccessDialog] = useState<{
+    open: boolean;
+    orderId: string;
+    message?: string;
+    isFree?: boolean;
+    paymentMethod?: string;
+  } | null>(null);
   const [previewQuiz, setPreviewQuiz] = useState<Quiz | null>(null);
   const [previewQuestions, setPreviewQuestions] = useState<Question[]>([]);
   const [previewSections, setPreviewSections] = useState<QuizSection[]>([]);
@@ -337,7 +343,7 @@ const QuizPage = () => {
     } else if (data) {
       setQuizOrderStatus(prev => ({ ...prev, [quiz.id]: "pending" }));
       setPurchasingQuiz(null);
-      setSuccessDialog({ open: true, orderId: data.order_id, message: "পেমেন্ট যাচাই করা হলে কুইজে এক্সেস পাবেন।" });
+      setSuccessDialog({ open: true, orderId: data.order_id, paymentMethod: provider });
 
       supabase.functions.invoke("notify-order", {
         body: { orderId: data.order_id },
@@ -853,6 +859,8 @@ const QuizPage = () => {
           productTitle="কুইজ"
           message={successDialog.message}
           isFree={successDialog.isFree}
+          paymentMethod={successDialog.paymentMethod}
+          productType="quiz"
         />
       )}
     </div>
