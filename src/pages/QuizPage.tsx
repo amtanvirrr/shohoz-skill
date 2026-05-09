@@ -576,8 +576,6 @@ const QuizPage = () => {
     );
   }
 
-  const selectedMfs = mfsMethods.find(m => m.provider === paymentMethod);
-
   // ── Quiz list view ──
   return (
     <div className="py-16">
@@ -650,48 +648,19 @@ const QuizPage = () => {
                           ⏳ পেমেন্ট যাচাই অপেক্ষমাণ
                         </Button>
                       ) : purchasingQuiz === quiz.id ? (
-                        <div className="space-y-3 rounded-lg border border-border/50 p-3 bg-background/50 backdrop-blur-sm">
-                          <div>
-                            <Label className="text-xs">পেমেন্ট মেথড</Label>
-                            <div className="mt-1 flex flex-wrap gap-2">
-                              {mfsMethods.map((m) => (
-                                <button
-                                  key={m.id}
-                                  onClick={() => setPaymentMethod(m.provider)}
-                                  className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-all duration-200 ${paymentMethod === m.provider ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-primary/40"}`}
-                                >
-                                  {m.display_name}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                          {selectedMfs && (
-                            <div className="rounded-md bg-muted/50 p-2 text-xs text-muted-foreground">
-                              <p><Smartphone className="mr-1 inline h-3 w-3" /> {selectedMfs.mfs_type}: <strong>{selectedMfs.phone_number}</strong></p>
-                              {selectedMfs.payment_instruction && <p className="mt-1">{selectedMfs.payment_instruction}</p>}
-                            </div>
-                          )}
-                          <div>
-                            <Label className="text-xs">ট্রানজেকশন আইডি *</Label>
-                            <Input value={transactionId} onChange={(e) => setTransactionId(e.target.value)} placeholder="ট্রানজেকশন আইডি" className="mt-1 glass-input" />
-                          </div>
-                          <div className="flex gap-2">
-                            <Button size="sm" variant="outline" onClick={() => setPurchasingQuiz(null)} className="flex-1">বাতিল</Button>
-                            <Button size="sm" onClick={() => submitPurchase(quiz)} disabled={submitting} className="flex-1">
-                              {submitting ? "..." : "জমা দিন"}
-                            </Button>
-                          </div>
-                          <div className="flex items-center gap-3 pt-2">
-                            <div className="h-px flex-1 bg-border" />
-                            <span className="text-xs text-muted-foreground">অথবা</span>
-                            <div className="h-px flex-1 bg-border" />
-                          </div>
-                          <SslczPayButton
+                        <div className="space-y-2 rounded-lg border border-border/50 p-3 bg-background/50 backdrop-blur-sm">
+                          <PaymentSelector
                             productType="quiz"
                             productId={quiz.id}
                             productTitle={quiz.title}
                             price={quiz.price}
+                            onMfsSubmit={(provider, txnId) => submitPurchase(quiz, provider, txnId)}
+                            submitting={submitting}
+                            compact
                           />
+                          <Button size="sm" variant="ghost" onClick={() => setPurchasingQuiz(null)} className="w-full text-xs">
+                            বাতিল
+                          </Button>
                         </div>
                       ) : (
                         <Button onClick={() => handlePurchaseQuiz(quiz)} className="w-full">
