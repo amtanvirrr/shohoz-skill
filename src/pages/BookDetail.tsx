@@ -7,12 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, ShoppingBag, Smartphone, BookOpen, Clock, Eye } from "lucide-react";
+import { ArrowLeft, ShoppingBag, BookOpen, Clock, Eye } from "lucide-react";
 import { ScrollReveal } from "@/hooks/useScrollReveal";
 import { useToast } from "@/hooks/use-toast";
 import { usePixel } from "@/components/MetaPixelProvider";
 import OrderSuccessDialog from "@/components/OrderSuccessDialog";
-import SslczPayButton from "@/components/SslczPayButton";
+import PaymentSelector from "@/components/PaymentSelector";
 
 interface DbBook {
   id: string;
@@ -25,17 +25,6 @@ interface DbBook {
   category: string;
   book_type: string;
   demo_pdf_url: string | null;
-}
-
-interface MfsMethod {
-  id: string;
-  provider: string;
-  display_name: string;
-  phone_number: string;
-  qr_code_url: string | null;
-  mfs_type: string;
-  payment_instruction: string;
-  process_message: string;
 }
 
 interface ShippingZone {
@@ -56,9 +45,8 @@ const BookDetail = () => {
   const { trackEvent } = usePixel();
   const [book, setBook] = useState<DbBook | null>(null);
   const [loading, setLoading] = useState(true);
-  const [order, setOrder] = useState({ name: "", phone: "", email: "", address: "", paymentMethod: "bkash", transactionId: "" });
+  const [order, setOrder] = useState({ name: "", phone: "", email: "", address: "" });
   const [submitting, setSubmitting] = useState(false);
-  const [mfsMethods, setMfsMethods] = useState<MfsMethod[]>([]);
   const [shippingZones, setShippingZones] = useState<ShippingZone[]>([]);
   const [selectedZone, setSelectedZone] = useState<string>("");
   const [orderStatus, setOrderStatus] = useState<string | null>(null);
@@ -71,9 +59,8 @@ const BookDetail = () => {
     if (!slug) return;
     Promise.all([
       supabase.from("books").select("*").eq("slug", slug).maybeSingle(),
-      supabase.from("payment_methods").select("*").eq("is_active", true).order("sort_order"),
       supabase.from("shipping_zones").select("*").eq("is_active", true).order("sort_order"),
-    ]).then(([bookRes, mfsRes, shippingRes]) => {
+    ]).then(([bookRes, shippingRes]) => {
       const b = bookRes.data as DbBook | null;
       setBook(b);
       if (b) {
@@ -85,9 +72,6 @@ const BookDetail = () => {
           currency: "BDT",
         });
       }
-      const mfsData = (mfsRes.data as MfsMethod[]) || [];
-      setMfsMethods(mfsData);
-      if (mfsData.length > 0) setOrder(o => ({ ...o, paymentMethod: mfsData[0].provider }));
       const szData = (shippingRes.data as ShippingZone[]) || [];
       setShippingZones(szData);
       if (szData.length > 0) setSelectedZone(szData[0].zone_name);
@@ -132,26 +116,23 @@ const BookDetail = () => {
     : 0;
   const totalPrice = book.price + shippingCost;
 
-  const handleOrder = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const validateCustomer = () => {
     if (!order.name || !order.phone) {
       toast({ title: "সকল প্রয়োজনীয় তথ্য পূরণ করুন", variant: "destructive" });
-      return;
+      return false;
     }
     if (isPhysical && !order.address) {
       toast({ title: "ডেলিভারি ঠিকানা লিখুন", variant: "destructive" });
-      return;
+      return false;
     }
     if (isPhysical && !selectedZone) {
       toast({ title: "শিপিং জোন সিলেক্ট করুন", variant: "destructive" });
-      return;
+      return false;
     }
-    if (!isPhysical && !order.transactionId.trim()) {
-      toast({ title: "Transaction ID দিন", description: "পেমেন্ট করার পর Transaction ID লিখুন", variant: "destructive" });
-      return;
-    }
-    setSubmitting(true);
-    const paymentMethod = isPhysical ? "cod" : order.paymentMethod;
+    return true;
+  };
+
+  const insertOrder = async (paymentMethod: string, transactionId: string | null) => {
     const notesText = isPhysical && activeZone ? `Shipping: ${activeZone.zone_label} (৳${shippingCost})` : null;
     const { data, error } = await supabase.from("orders").insert({
       customer_name: order.name,
@@ -164,31 +145,46 @@ const BookDetail = () => {
       price: totalPrice,
       payment_method: paymentMethod as any,
       user_id: user?.id || null,
-      transaction_id: !isPhysical ? order.transactionId.trim() : null,
+      transaction_id: transactionId,
       notes: notesText,
     }).select("order_id").single();
-    setSubmitting(false);
 
     if (error) {
       toast({ title: "অর্ডার ব্যর্থ হয়েছে", description: error.message, variant: "destructive" });
-    } else {
-      // Send admin notification email (fire-and-forget)
-      supabase.functions.invoke("notify-order", {
-        body: { orderId: data.order_id },
-      }).catch(() => {});
-
-      trackEvent("Purchase", {
-        content_name: book.title,
-        content_type: "book",
-        content_ids: [book.id],
-        value: totalPrice,
-        currency: "BDT",
-        order_id: data.order_id,
-      }, { em: order.email || undefined, ph: order.phone || undefined });
-      setSuccessDialog({ open: true, orderId: data.order_id, message: isPhysical ? "আপনার অর্ডারটি সফলভাবে গৃহীত হয়েছে।" : "পেমেন্ট যাচাইয়ের পর আপনি বইটি পড়তে পারবেন।" });
-      setOrder({ name: "", phone: "", email: "", address: "", paymentMethod: "bkash", transactionId: "" });
-      if (isEbook) setOrderStatus("pending");
+      return;
     }
+
+    supabase.functions.invoke("notify-order", { body: { orderId: data.order_id } }).catch(() => {});
+    trackEvent("Purchase", {
+      content_name: book.title,
+      content_type: "book",
+      content_ids: [book.id],
+      value: totalPrice,
+      currency: "BDT",
+      order_id: data.order_id,
+    }, { em: order.email || undefined, ph: order.phone || undefined });
+    setSuccessDialog({
+      open: true,
+      orderId: data.order_id,
+      message: isPhysical ? "আপনার অর্ডারটি সফলভাবে গৃহীত হয়েছে।" : "পেমেন্ট যাচাইয়ের পর আপনি বইটি পড়তে পারবেন।",
+    });
+    setOrder({ name: "", phone: "", email: "", address: "" });
+    if (isEbook) setOrderStatus("pending");
+  };
+
+  const handleCodSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateCustomer()) return;
+    setSubmitting(true);
+    await insertOrder("cod", null);
+    setSubmitting(false);
+  };
+
+  const handleEbookMfsSubmit = async (provider: string, txnId: string) => {
+    if (!validateCustomer()) return;
+    setSubmitting(true);
+    await insertOrder(provider, txnId);
+    setSubmitting(false);
   };
 
   return (
@@ -334,7 +330,7 @@ const BookDetail = () => {
                   {isPhysical ? "ক্যাশ অন ডেলিভারি — সারা বাংলাদেশে ডেলিভারি" : "বিকাশ / নগদ পেমেন্টে ইবুক পান"}
                 </p>
 
-                <form onSubmit={handleOrder} className="mt-5 space-y-4">
+                <form onSubmit={handleCodSubmit} className="mt-5 space-y-4">
                   <div><Label htmlFor="fullname">পূর্ণ নাম *</Label><Input id="fullname" value={order.name} onChange={(e) => setOrder({ ...order, name: e.target.value })} className="mt-1" /></div>
                   <div><Label htmlFor="phone">ফোন নম্বর *</Label><Input id="phone" value={order.phone} onChange={(e) => setOrder({ ...order, phone: e.target.value })} className="mt-1" /></div>
                   <div><Label htmlFor="email">ইমেইল (ঐচ্ছিক)</Label><Input id="email" type="email" value={order.email} onChange={(e) => setOrder({ ...order, email: e.target.value })} className="mt-1" /></div>
@@ -389,53 +385,17 @@ const BookDetail = () => {
                   {isPhysical ? (
                     <div className="rounded-lg bg-secondary p-3 text-sm text-muted-foreground">💵 পেমেন্ট: <span className="font-medium text-foreground">ক্যাশ অন ডেলিভারি</span></div>
                   ) : (
-                    <div className="space-y-2">
-                      <Label>পেমেন্ট পদ্ধতি *</Label>
-                      <div className="flex flex-wrap gap-3">
-                        {mfsMethods.length > 0 ? mfsMethods.map((m) => (
-                          <Button key={m.id} type="button" variant={order.paymentMethod === m.provider ? "default" : "outline"} className="flex-1" onClick={() => setOrder({ ...order, paymentMethod: m.provider })}>
-                            {m.display_name || m.provider}
-                          </Button>
-                        )) : (
-                          <>
-                            <Button type="button" variant={order.paymentMethod === "bkash" ? "default" : "outline"} className="flex-1" onClick={() => setOrder({ ...order, paymentMethod: "bkash" })}>বিকাশ</Button>
-                            <Button type="button" variant={order.paymentMethod === "nagad" ? "default" : "outline"} className="flex-1" onClick={() => setOrder({ ...order, paymentMethod: "nagad" })}>নগদ</Button>
-                          </>
-                        )}
-                      </div>
-
-                      {/* Show selected MFS payment details */}
-                      {(() => {
-                        const selected = mfsMethods.find(m => m.provider === order.paymentMethod);
-                        if (!selected) return null;
-                        return (
-                          <div className="mt-3 rounded-lg border border-border bg-muted/30 p-4 space-y-3">
-                            <div className="flex items-center gap-2 text-sm">
-                              <Smartphone className="h-4 w-4 text-primary" />
-                              <span className="font-medium text-foreground">{selected.phone_number}</span>
-                              <span className="rounded bg-primary/10 px-2 py-0.5 text-xs text-primary capitalize">{selected.mfs_type}</span>
-                            </div>
-                            {selected.qr_code_url && (
-                              <img src={selected.qr_code_url} alt="QR Code" className="mx-auto h-32 w-32 rounded-lg border border-border object-contain" />
-                            )}
-                            {selected.payment_instruction && (
-                              <p className="text-sm text-muted-foreground whitespace-pre-line">{selected.payment_instruction}</p>
-                            )}
-                            {selected.process_message && (
-                              <div className="rounded-md bg-primary/5 p-3 text-xs text-foreground whitespace-pre-line">{selected.process_message}</div>
-                            )}
-                          </div>
-                        );
-                      })()}
-                    </div>
-                  )}
-
-                  {/* Transaction ID field for digital payments */}
-                  {!isPhysical && (
-                    <div>
-                      <Label htmlFor="txnId">ট্রানজেকশন আইডি *</Label>
-                      <Input id="txnId" value={order.transactionId} onChange={(e) => setOrder({ ...order, transactionId: e.target.value })} className="mt-1" placeholder="যেমন: TXN1234ABCD" />
-                    </div>
+                    <PaymentSelector
+                      productType="book"
+                      productId={book.id}
+                      productTitle={book.title}
+                      price={totalPrice}
+                      customerName={order.name}
+                      customerPhone={order.phone}
+                      customerEmail={order.email}
+                      onMfsSubmit={handleEbookMfsSubmit}
+                      submitting={submitting}
+                    />
                   )}
 
                   {/* Order Summary for physical */}
@@ -458,25 +418,11 @@ const BookDetail = () => {
               </div>
             )}
 
-                  <Button type="submit" size="lg" className="w-full" disabled={submitting}>{submitting ? "অর্ডার হচ্ছে..." : isPhysical ? `অর্ডার করুন — ৳${totalPrice}` : "এখনই কিনুন"}</Button>
-
-                  <div className="flex items-center gap-3 pt-1">
-                    <div className="h-px flex-1 bg-border" />
-                    <span className="text-xs text-muted-foreground">অথবা</span>
-                    <div className="h-px flex-1 bg-border" />
-                  </div>
-
-                  <SslczPayButton
-                    productType="book"
-                    productId={book.id}
-                    productTitle={book.title}
-                    price={totalPrice}
-                    customerName={order.name}
-                    customerPhone={order.phone}
-                    customerEmail={order.email}
-                    customerAddress={isPhysical ? order.address : undefined}
-                    requireCustomerFields={isPhysical}
-                  />
+                  {isPhysical && (
+                    <Button type="submit" size="lg" className="w-full" disabled={submitting}>
+                      {submitting ? "অর্ডার হচ্ছে..." : `অর্ডার করুন — ৳${totalPrice}`}
+                    </Button>
+                  )}
                 </form>
               </div>
             )}
