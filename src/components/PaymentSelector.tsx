@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { mapPaymentError, type MappedPaymentError } from "@/lib/paymentErrors";
 
 export interface MfsMethod {
   id: string;
@@ -120,6 +121,9 @@ export const PaymentSelector = ({
   // card so they can resume or cancel & retry.
   const [pendingSession, setPendingSession] = useState<PendingSslSession | null>(null);
   const [lastError, setLastError] = useState<string>("");
+  // Mapped, user-friendly version of the most recent failure. Drives both
+  // the inline banner copy AND whether the retry button is offered.
+  const [errorInfo, setErrorInfo] = useState<MappedPaymentError | null>(null);
   // Snapshot of the most recent failed attempt — used by the retry button so
   // that even if some piece of state drifts, we resubmit with the exact same
   // method + inputs the user originally chose.
@@ -392,6 +396,7 @@ export const PaymentSelector = ({
       return;
     }
     setLastError("");
+    setErrorInfo(null);
 
     // Parent-supplied validation (address, shipping zone, etc.)
     if (validateBeforeSubmit && !validateBeforeSubmit()) {
@@ -412,9 +417,11 @@ export const PaymentSelector = ({
         logEvent("cod_submit_success", { method: "cod" });
       } catch (e) {
         const msg = (e as Error).message || "অর্ডার সাবমিট করতে সমস্যা হয়েছে";
+        const info = mapPaymentError(msg, "cod");
         setLastError(msg);
-        toast({ title: "ত্রুটি", description: msg, variant: "destructive" });
-        logEvent("cod_submit_error", { method: "cod", message: msg });
+        setErrorInfo(info);
+        toast({ title: info.title, description: info.message, variant: "destructive" });
+        logEvent("cod_submit_error", { method: "cod", message: msg, metadata: { category: info.category } });
       } finally {
         busyRef.current = false;
       }
@@ -462,13 +469,15 @@ export const PaymentSelector = ({
         });
         if (error || !data?.gateway_url) {
           const msg = data?.error || error?.message || "Unknown error";
+          const info = mapPaymentError(msg, "ssl");
           setLastError(msg);
-          toast({
-            title: "পেমেন্ট শুরু করা যায়নি",
-            description: msg,
-            variant: "destructive",
+          setErrorInfo(info);
+          toast({ title: info.title, description: info.message, variant: "destructive" });
+          logEvent("ssl_init_error", {
+            method: "sslcommerz",
+            message: msg,
+            metadata: { category: info.category, details: data?.details ?? null },
           });
-          logEvent("ssl_init_error", { method: "sslcommerz", message: msg, metadata: { details: data?.details ?? null } });
           setRedirecting(false);
           busyRef.current = false;
           return;
@@ -478,9 +487,11 @@ export const PaymentSelector = ({
         startRedirectCountdown(data.gateway_url, data.order_id ?? null);
       } catch (e) {
         const msg = (e as Error).message || "নেটওয়ার্ক ত্রুটি";
+        const info = mapPaymentError(msg, "ssl");
         setLastError(msg);
-        toast({ title: "ত্রুটি", description: msg, variant: "destructive" });
-        logEvent("ssl_init_exception", { method: "sslcommerz", message: msg });
+        setErrorInfo(info);
+        toast({ title: info.title, description: info.message, variant: "destructive" });
+        logEvent("ssl_init_exception", { method: "sslcommerz", message: msg, metadata: { category: info.category } });
         setRedirecting(false);
         busyRef.current = false;
       }
@@ -512,9 +523,11 @@ export const PaymentSelector = ({
       lastAttemptRef.current = null;
     } catch (e) {
       const msg = (e as Error).message || "অর্ডার সাবমিট করতে সমস্যা হয়েছে";
+      const info = mapPaymentError(msg, "mfs");
       setLastError(msg);
-      toast({ title: "ত্রুটি", description: msg, variant: "destructive" });
-      logEvent("mfs_submit_error", { method: selected, message: msg });
+      setErrorInfo(info);
+      toast({ title: info.title, description: info.message, variant: "destructive" });
+      logEvent("mfs_submit_error", { method: selected, message: msg, metadata: { category: info.category } });
     } finally {
       busyRef.current = false;
     }
@@ -533,6 +546,7 @@ export const PaymentSelector = ({
     setRedirecting(false);
     busyRef.current = false;
     setLastError("");
+    setErrorInfo(null);
 
     const snap = lastAttemptRef.current;
     if (snap) {
@@ -804,25 +818,41 @@ export const PaymentSelector = ({
         </div>
       )}
 
-      {lastError && (
+      {(errorInfo || lastError) && (
         <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-xs">
           <div className="flex items-start gap-2">
             <AlertCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <p className="font-medium text-destructive">পেমেন্ট সম্পন্ন করা যায়নি</p>
-              <p className="mt-1 text-muted-foreground break-words">{lastError}</p>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-destructive">
+                {errorInfo?.title || "পেমেন্ট সম্পন্ন করা যায়নি"}
+              </p>
+              <p className="mt-1 text-muted-foreground break-words">
+                {errorInfo?.message || lastError}
+              </p>
+              {errorInfo?.hint && (
+                <p className="mt-1 text-muted-foreground/80 break-words">
+                  💡 {errorInfo.hint}
+                </p>
+              )}
+              {errorInfo?.raw && errorInfo.raw !== errorInfo.message && (
+                <p className="mt-1 font-mono text-[10px] text-muted-foreground/60 break-all">
+                  {errorInfo.raw}
+                </p>
+              )}
             </div>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="shrink-0 h-8"
-              disabled={isBusy}
-              onClick={handleRetry}
-            >
-              <RefreshCcw className="mr-1 h-3.5 w-3.5" />
-              আবার চেষ্টা করুন
-            </Button>
+            {(errorInfo?.retryable ?? true) && (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="shrink-0 h-8"
+                disabled={isBusy}
+                onClick={handleRetry}
+              >
+                <RefreshCcw className="mr-1 h-3.5 w-3.5" />
+                আবার চেষ্টা করুন
+              </Button>
+            )}
           </div>
         </div>
       )}
