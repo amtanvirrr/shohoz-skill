@@ -441,6 +441,19 @@ const BookDetail = () => {
           productTitle={book.title}
           message={successDialog.message}
           isFree={successDialog.isFree}
+          paymentMethod={successDialog.paymentMethod}
+          productType={isEbook ? "ebook" : "book"}
+          deliveryText={
+            isPhysical && activeZone
+              ? `${activeZone.delivery_time_min}-${activeZone.delivery_time_max} ${
+                  activeZone.delivery_time_unit === "days"
+                    ? "কর্মদিবস"
+                    : activeZone.delivery_time_unit === "hours"
+                      ? "ঘণ্টা"
+                      : "সপ্তাহ"
+                }`
+              : undefined
+          }
         />
       )}
       {/* Demo PDF Modal */}
