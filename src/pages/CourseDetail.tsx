@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, BookOpen, Clock, PlayCircle, Users, Video, FileText, HelpCircle, ChevronDown, Star, Send, Smartphone, GraduationCap } from "lucide-react";
+import { ArrowLeft, BookOpen, Clock, PlayCircle, Users, Video, FileText, HelpCircle, ChevronDown, Star, Send, GraduationCap } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { ScrollReveal } from "@/hooks/useScrollReveal";
 import { useToast } from "@/hooks/use-toast";
@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { usePixel } from "@/components/MetaPixelProvider";
 import OrderSuccessDialog from "@/components/OrderSuccessDialog";
-import SslczPayButton from "@/components/SslczPayButton";
+import PaymentSelector from "@/components/PaymentSelector";
 
 interface DbCourse {
   id: string;
@@ -58,17 +58,6 @@ interface DbReview {
   created_at: string;
 }
 
-interface MfsMethod {
-  id: string;
-  provider: string;
-  display_name: string;
-  phone_number: string;
-  qr_code_url: string | null;
-  mfs_type: string;
-  payment_instruction: string;
-  process_message: string;
-}
-
 const CourseDetail = () => {
   const { slug } = useParams();
   const { user } = useAuth();
@@ -79,15 +68,12 @@ const CourseDetail = () => {
   const [loading, setLoading] = useState(true);
   const [resources, setResources] = useState<Record<string, DbResource[]>>({});
   const [quizzes, setQuizzes] = useState<DbQuiz[]>([]);
-  const [paymentMethod, setPaymentMethod] = useState<string>("bkash");
-  const [transactionId, setTransactionId] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [reviews, setReviews] = useState<DbReview[]>([]);
   const [orderStatus, setOrderStatus] = useState<string | null>(null);
   const [successDialog, setSuccessDialog] = useState<{ open: boolean; orderId: string; message?: string; isFree?: boolean } | null>(null);
   const [reviewForm, setReviewForm] = useState({ rating: 5, comment: "" });
   const [submittingReview, setSubmittingReview] = useState(false);
-  const [mfsMethods, setMfsMethods] = useState<MfsMethod[]>([]);
 
   useEffect(() => {
     if (!slug) return;
@@ -102,17 +88,13 @@ const CourseDetail = () => {
         value: c.price,
         currency: "BDT",
       });
-      const [lessonsRes, reviewsRes, mfsRes] = await Promise.all([
+      const [lessonsRes, reviewsRes] = await Promise.all([
         supabase.from("lessons").select("*").eq("course_id", c.id).order("sort_order"),
         supabase.from("reviews").select("id, reviewer_name, rating, comment, created_at").eq("course_id", c.id).eq("is_active", true).order("created_at", { ascending: false }),
-        supabase.from("payment_methods").select("*").eq("is_active", true).order("sort_order"),
       ]);
       const lessonData = (lessonsRes.data as DbLesson[]) || [];
       setLessons(lessonData);
       setReviews((reviewsRes.data as DbReview[]) || []);
-      const mfsData = (mfsRes.data as MfsMethod[]) || [];
-      setMfsMethods(mfsData);
-      if (mfsData.length > 0) setPaymentMethod(mfsData[0].provider);
 
       const lessonIds = lessonData.map((l) => l.id);
       if (lessonIds.length > 0) {
@@ -163,13 +145,9 @@ const CourseDetail = () => {
     );
   }
 
-  const handlePurchase = async () => {
+  const handleMfsSubmit = async (provider: string, txnId: string) => {
     if (!user) {
       toast({ title: "প্রথমে লগইন করুন", description: "কোর্স কিনতে লগইন প্রয়োজন।", variant: "destructive" });
-      return;
-    }
-    if (!transactionId.trim()) {
-      toast({ title: "Transaction ID দিন", description: "পেমেন্ট করার পর Transaction ID লিখুন", variant: "destructive" });
       return;
     }
     setSubmitting(true);
@@ -181,9 +159,9 @@ const CourseDetail = () => {
       product_id: course.id,
       product_title: course.title,
       price: course.price,
-      payment_method: paymentMethod as any,
+      payment_method: provider as any,
       user_id: user.id,
-      transaction_id: transactionId.trim(),
+      transaction_id: txnId,
     }).select("order_id").single();
     setSubmitting(false);
 
@@ -204,7 +182,6 @@ const CourseDetail = () => {
         order_id: data.order_id,
       }, { em: user.email || undefined });
       setSuccessDialog({ open: true, orderId: data.order_id, message: "পেমেন্ট ভেরিফিকেশনের পর কোর্স অ্যাক্সেস পাবেন।" });
-      setTransactionId("");
       setOrderStatus("pending");
     }
   };
