@@ -21,6 +21,22 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
     document.documentElement.style.setProperty("--font-display", fonts.display);
   }, [settings.site_font]);
 
+  useEffect(() => {
+    const root = document.documentElement;
+    if (settings.theme_primary) {
+      root.style.setProperty("--primary", settings.theme_primary);
+      root.style.setProperty("--sidebar-primary", settings.theme_primary);
+    }
+    if (settings.theme_accent) {
+      root.style.setProperty("--accent", settings.theme_accent);
+    }
+    if (settings.theme_highlight) {
+      root.style.setProperty("--ring", settings.theme_highlight);
+      root.style.setProperty("--sidebar-ring", settings.theme_highlight);
+      root.style.setProperty("--highlight", settings.theme_highlight);
+    }
+  }, [settings.theme_primary, settings.theme_accent, settings.theme_highlight]);
+
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
