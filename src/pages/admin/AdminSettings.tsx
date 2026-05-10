@@ -11,6 +11,42 @@ import { useToast } from "@/hooks/use-toast";
 import { Save } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+// ---------- Color helpers ----------
+const hexToHsl = (hex: string): string | null => {
+  const m = hex.replace("#", "").match(/^([0-9a-f]{6})$/i);
+  if (!m) return null;
+  const num = parseInt(m[1], 16);
+  const r = ((num >> 16) & 255) / 255;
+  const g = ((num >> 8) & 255) / 255;
+  const b = (num & 255) / 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h = 0, s = 0; const l = (max + min) / 2;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+      case g: h = (b - r) / d + 2; break;
+      case b: h = (r - g) / d + 4; break;
+    }
+    h *= 60;
+  }
+  return `${Math.round(h)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+};
+
+const hslToHex = (hsl: string): string => {
+  const m = hsl.trim().match(/^(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)%\s+(\d+(?:\.\d+)?)%$/);
+  if (!m) return "#000000";
+  const h = parseFloat(m[1]) / 360, s = parseFloat(m[2]) / 100, l = parseFloat(m[3]) / 100;
+  const a = s * Math.min(l, 1 - l);
+  const f = (n: number) => {
+    const k = (n + h * 12) % 12;
+    const c = l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+    return Math.round(c * 255).toString(16).padStart(2, "0");
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
+};
+
 const FONT_OPTIONS = [
   { value: "sylheti-keteki", label: "সিলেটি কেতেকি (Galada)", family: "'Galada', cursive" },
   { value: "jami", label: "জামি (Hind Siliguri)", family: "'Hind Siliguri', sans-serif" },
@@ -71,6 +107,9 @@ interface BrandingFields {
   registered_address: string;
   company_details: string;
   payment_banner_url: string;
+  theme_primary: string;
+  theme_accent: string;
+  theme_highlight: string;
 }
 
 const defaultBranding: BrandingFields = {
@@ -126,6 +165,9 @@ const defaultBranding: BrandingFields = {
   registered_address: "",
   company_details: "",
   payment_banner_url: "",
+  theme_primary: "218 60% 20%",
+  theme_accent: "28 95% 55%",
+  theme_highlight: "200 90% 60%",
 };
 
 const PUBLIC_KEYS: (keyof BrandingFields)[] = [
@@ -141,6 +183,7 @@ const PUBLIC_KEYS: (keyof BrandingFields)[] = [
   "featured_course_ids", "featured_book_ids",
   "terms_content", "privacy_content", "refund_content", "refund_timeline_text",
   "trade_license_number", "registered_address", "company_details", "payment_banner_url",
+  "theme_primary", "theme_accent", "theme_highlight",
 ];
 
 const ALL_KEYS = Object.keys(defaultBranding) as (keyof BrandingFields)[];
@@ -181,6 +224,23 @@ const AdminSettings = () => {
   const handleChange = (key: keyof BrandingFields, value: string) => {
     setFields((prev) => ({ ...prev, [key]: value }));
   };
+
+  // Live theme preview — applies CSS vars while editing
+  useEffect(() => {
+    const root = document.documentElement;
+    if (fields.theme_primary) {
+      root.style.setProperty("--primary", fields.theme_primary);
+      root.style.setProperty("--sidebar-primary", fields.theme_primary);
+    }
+    if (fields.theme_accent) {
+      root.style.setProperty("--accent", fields.theme_accent);
+    }
+    if (fields.theme_highlight) {
+      root.style.setProperty("--ring", fields.theme_highlight);
+      root.style.setProperty("--sidebar-ring", fields.theme_highlight);
+      root.style.setProperty("--highlight", fields.theme_highlight);
+    }
+  }, [fields.theme_primary, fields.theme_accent, fields.theme_highlight]);
 
   const toggleFeaturedId = (key: "featured_course_ids" | "featured_book_ids", id: string) => {
     setFields((prev) => {
@@ -266,6 +326,87 @@ const AdminSettings = () => {
                 </div>
               )}
               <p className="mt-1 text-xs text-muted-foreground">পুরো ওয়েবসাইটের ফন্ট পরিবর্তন করুন।</p>
+            </div>
+          </div>
+        )}
+
+        {/* Theme Colors */}
+        {activeSection === "theme" && (
+          <div className="rounded-xl glass-card p-6 space-y-6">
+            <div>
+              <h3 className="font-display text-lg font-semibold text-foreground">থিম কালার</h3>
+              <p className="text-sm text-muted-foreground">
+                Navy primary, Orange accent ও Sky Blue highlight কালার এডিট করুন। নিচের পরিবর্তন তাৎক্ষণিকভাবে পুরো সাইটে দেখা যাবে — সংরক্ষণ করতে "সব সেভ করুন" বাটনে ক্লিক করুন।
+              </p>
+            </div>
+
+            {[
+              { key: "theme_primary" as const, label: "Primary (Navy)", desc: "প্রাইমারি বাটন, লিংক এবং সাইডবার রঙ।" },
+              { key: "theme_accent" as const, label: "Accent (Orange)", desc: "CTA বাটন, ব্যাজ এবং হাইলাইট রঙ।" },
+              { key: "theme_highlight" as const, label: "Highlight (Sky Blue)", desc: "ফোকাস রিং এবং সাব-হাইলাইট রঙ।" },
+            ].map(({ key, label, desc }) => {
+              const hsl = fields[key] || "0 0% 0%";
+              const hex = hslToHex(hsl);
+              return (
+                <div key={key} className="grid gap-3 rounded-lg border border-border p-4 sm:grid-cols-[auto_1fr_1fr_auto] sm:items-center">
+                  <div
+                    className="h-12 w-12 rounded-lg border border-border shadow-inner"
+                    style={{ backgroundColor: `hsl(${hsl})` }}
+                    aria-hidden
+                  />
+                  <div className="space-y-1">
+                    <Label className="text-sm font-semibold">{label}</Label>
+                    <p className="text-xs text-muted-foreground">{desc}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">HSL মান</Label>
+                    <Input
+                      value={hsl}
+                      onChange={(e) => handleChange(key, e.target.value)}
+                      placeholder="218 60% 20%"
+                      className="font-mono text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">কালার পিকার</Label>
+                    <input
+                      type="color"
+                      value={hex}
+                      onChange={(e) => {
+                        const newHsl = hexToHsl(e.target.value);
+                        if (newHsl) handleChange(key, newHsl);
+                      }}
+                      className="h-10 w-16 cursor-pointer rounded-md border border-border bg-transparent"
+                    />
+                  </div>
+                </div>
+              );
+            })}
+
+            <div className="rounded-lg border border-border p-4">
+              <p className="mb-3 text-sm font-semibold text-foreground">লাইভ প্রিভিউ</p>
+              <div className="flex flex-wrap items-center gap-3">
+                <Button>Primary বাটন</Button>
+                <Button variant="secondary">Secondary</Button>
+                <Button className="bg-accent text-accent-foreground hover:bg-accent/90">Accent CTA</Button>
+                <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">Primary Badge</span>
+                <span className="rounded-full bg-accent/15 px-3 py-1 text-xs font-semibold text-accent">Accent Badge</span>
+                <Input placeholder="ফোকাস রিং চেক করুন" className="max-w-[220px]" />
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  handleChange("theme_primary", "218 60% 20%");
+                  handleChange("theme_accent", "28 95% 55%");
+                  handleChange("theme_highlight", "200 90% 60%");
+                }}
+              >
+                ডিফল্ট থিম রিসেট
+              </Button>
             </div>
           </div>
         )}

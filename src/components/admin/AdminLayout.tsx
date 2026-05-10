@@ -6,6 +6,7 @@ import {
   BookOpen, GraduationCap, Users, ShoppingCart, Settings,
   LayoutDashboard, HelpCircle, LogOut, Menu, X, ChevronRight, ChevronDown, Star, FileText, MessageCircle, Mail, CreditCard, Truck, Image,
   Globe, Home, Phone, Megaphone, Package, MailCheck, Info, Layers, Tag, ShieldCheck
+  , Palette
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -29,6 +30,7 @@ const sidebarLinks = [
 
 const settingsSubLinks = [
   { hash: "branding", label: "সাইট ব্র্যান্ডিং", icon: Globe },
+  { hash: "theme", label: "থিম কালার", icon: Palette },
   { hash: "homepage", label: "হোমপেজ সেকশন", icon: Home },
   { hash: "logos", label: "লোগো ও আইকন", icon: Image },
   { hash: "pixel", label: "Meta Pixel", icon: Megaphone },
