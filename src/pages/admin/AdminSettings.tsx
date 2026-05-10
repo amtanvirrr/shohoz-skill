@@ -273,6 +273,8 @@ const AdminSettings = () => {
   });
   const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [previewDevice, setPreviewDevice] = useState<"mobile" | "tablet" | "desktop">("desktop");
+  const [customBg, setCustomBg] = useState<string>("0 0% 100%");
+  const [customFg, setCustomFg] = useState<string>("218 60% 20%");
 
   useEffect(() => {
     const fetchAll = async () => {
