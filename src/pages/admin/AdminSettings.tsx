@@ -90,6 +90,36 @@ const FONT_OPTIONS = [
   { value: "rupali", label: "রূপালি (Tiro Bangla)", family: "'Tiro Bangla', serif" },
 ];
 
+// ---------- Contrast helpers (WCAG) ----------
+const hslToRgb = (hsl: string): { r: number; g: number; b: number } | null => {
+  const m = hsl.trim().match(/^(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)%\s+(\d+(?:\.\d+)?)%$/);
+  if (!m) return null;
+  const h = parseFloat(m[1]) / 360, s = parseFloat(m[2]) / 100, l = parseFloat(m[3]) / 100;
+  const a = s * Math.min(l, 1 - l);
+  const f = (n: number) => {
+    const k = (n + h * 12) % 12;
+    return l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+  };
+  return { r: f(0), g: f(8), b: f(4) };
+};
+const relLuminance = ({ r, g, b }: { r: number; g: number; b: number }) => {
+  const lin = (c: number) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+};
+const contrastRatio = (hslA: string, hslB: string): number => {
+  const a = hslToRgb(hslA); const b = hslToRgb(hslB);
+  if (!a || !b) return 1;
+  const L1 = relLuminance(a), L2 = relLuminance(b);
+  const hi = Math.max(L1, L2), lo = Math.min(L1, L2);
+  return (hi + 0.05) / (lo + 0.05);
+};
+// Pick black or white as readable foreground based on the color's lightness/luminance.
+const pickForeground = (hsl: string): string => {
+  const rgb = hslToRgb(hsl);
+  if (!rgb) return "0 0% 100%";
+  return relLuminance(rgb) > 0.5 ? "0 0% 10%" : "0 0% 100%";
+};
+
 interface BrandingFields {
   site_name: string;
   site_description: string;
@@ -846,6 +876,52 @@ const AdminSettings = () => {
                       </AlertDialogContent>
                     </AlertDialog>
                     <span className="text-[10px] text-muted-foreground">Esc / Tab / Shift+Tab — সব কাজ করে।</span>
+                  </div>
+
+                  {/* Contrast checker (WCAG) */}
+                  <div className="rounded-md border border-dashed border-border bg-muted/20 p-2.5">
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <span className="text-[11px] font-medium text-muted-foreground">কনট্রাস্ট চেকার (WCAG)</span>
+                      <span className="text-[10px] text-muted-foreground">টেক্সট vs ব্যাকগ্রাউন্ড</span>
+                    </div>
+                    <div className="space-y-1.5">
+                      {[
+                        { key: "theme_primary" as const, label: "Primary" },
+                        { key: "theme_accent" as const, label: "Accent" },
+                        { key: "theme_highlight" as const, label: "Highlight" },
+                      ].map(({ key, label }) => {
+                        const bg = fields[key] || "0 0% 0%";
+                        const fg = pickForeground(bg);
+                        const ratio = contrastRatio(bg, fg);
+                        const r = ratio.toFixed(2);
+                        let badge = "ফেইল";
+                        let badgeCls = "bg-destructive/15 text-destructive border-destructive/30";
+                        if (ratio >= 7) { badge = "AAA পাস"; badgeCls = "bg-primary/15 text-primary border-primary/30"; }
+                        else if (ratio >= 4.5) { badge = "AA পাস"; badgeCls = "bg-accent/20 text-accent-foreground border-accent/40"; }
+                        else if (ratio >= 3) { badge = "AA Large only"; badgeCls = "bg-muted text-muted-foreground border-border"; }
+                        return (
+                          <div
+                            key={key}
+                            className="flex flex-wrap items-center gap-2 rounded-md border border-border/60 bg-background/60 p-1.5"
+                          >
+                            <span
+                              className="inline-flex h-7 min-w-[56px] items-center justify-center rounded px-2 text-xs font-semibold"
+                              style={{ backgroundColor: `hsl(${bg})`, color: `hsl(${fg})` }}
+                            >
+                              Aa
+                            </span>
+                            <span className="text-[11px] font-medium">{label}</span>
+                            <span className="ml-auto font-mono text-xs tabular-nums">{r} : 1</span>
+                            <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-medium ${badgeCls}`}>
+                              {badge}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <p className="mt-2 text-[10px] leading-snug text-muted-foreground">
+                      AA: ৪.৫:১ (নর্মাল টেক্সট) · AAA: ৭:১ · বড় টেক্সটের জন্য ৩:১ যথেষ্ট।
+                    </p>
                   </div>
                 </div>
                 </div>
