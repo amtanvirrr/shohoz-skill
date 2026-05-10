@@ -330,6 +330,87 @@ const AdminSettings = () => {
           </div>
         )}
 
+        {/* Theme Colors */}
+        {activeSection === "theme" && (
+          <div className="rounded-xl glass-card p-6 space-y-6">
+            <div>
+              <h3 className="font-display text-lg font-semibold text-foreground">থিম কালার</h3>
+              <p className="text-sm text-muted-foreground">
+                Navy primary, Orange accent ও Sky Blue highlight কালার এডিট করুন। নিচের পরিবর্তন তাৎক্ষণিকভাবে পুরো সাইটে দেখা যাবে — সংরক্ষণ করতে "সব সেভ করুন" বাটনে ক্লিক করুন।
+              </p>
+            </div>
+
+            {[
+              { key: "theme_primary" as const, label: "Primary (Navy)", desc: "প্রাইমারি বাটন, লিংক এবং সাইডবার রঙ।" },
+              { key: "theme_accent" as const, label: "Accent (Orange)", desc: "CTA বাটন, ব্যাজ এবং হাইলাইট রঙ।" },
+              { key: "theme_highlight" as const, label: "Highlight (Sky Blue)", desc: "ফোকাস রিং এবং সাব-হাইলাইট রঙ।" },
+            ].map(({ key, label, desc }) => {
+              const hsl = fields[key] || "0 0% 0%";
+              const hex = hslToHex(hsl);
+              return (
+                <div key={key} className="grid gap-3 rounded-lg border border-border p-4 sm:grid-cols-[auto_1fr_1fr_auto] sm:items-center">
+                  <div
+                    className="h-12 w-12 rounded-lg border border-border shadow-inner"
+                    style={{ backgroundColor: `hsl(${hsl})` }}
+                    aria-hidden
+                  />
+                  <div className="space-y-1">
+                    <Label className="text-sm font-semibold">{label}</Label>
+                    <p className="text-xs text-muted-foreground">{desc}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">HSL মান</Label>
+                    <Input
+                      value={hsl}
+                      onChange={(e) => handleChange(key, e.target.value)}
+                      placeholder="218 60% 20%"
+                      className="font-mono text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">কালার পিকার</Label>
+                    <input
+                      type="color"
+                      value={hex}
+                      onChange={(e) => {
+                        const newHsl = hexToHsl(e.target.value);
+                        if (newHsl) handleChange(key, newHsl);
+                      }}
+                      className="h-10 w-16 cursor-pointer rounded-md border border-border bg-transparent"
+                    />
+                  </div>
+                </div>
+              );
+            })}
+
+            <div className="rounded-lg border border-border p-4">
+              <p className="mb-3 text-sm font-semibold text-foreground">লাইভ প্রিভিউ</p>
+              <div className="flex flex-wrap items-center gap-3">
+                <Button>Primary বাটন</Button>
+                <Button variant="secondary">Secondary</Button>
+                <Button className="bg-accent text-accent-foreground hover:bg-accent/90">Accent CTA</Button>
+                <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">Primary Badge</span>
+                <span className="rounded-full bg-accent/15 px-3 py-1 text-xs font-semibold text-accent">Accent Badge</span>
+                <Input placeholder="ফোকাস রিং চেক করুন" className="max-w-[220px]" />
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  handleChange("theme_primary", "218 60% 20%");
+                  handleChange("theme_accent", "28 95% 55%");
+                  handleChange("theme_highlight", "200 90% 60%");
+                }}
+              >
+                ডিফল্ট থিম রিসেট
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Homepage Sections */}
         {activeSection === "homepage" && (
           <div className="rounded-xl glass-card p-6 space-y-6">
