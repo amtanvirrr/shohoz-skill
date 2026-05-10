@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import RichTextEditor from "@/components/RichTextEditor";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Save, Copy, Loader2 } from "lucide-react";
+import { Save, Copy, Loader2, RotateCcw } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // ---------- Color helpers ----------
@@ -595,18 +595,23 @@ const AdminSettings = () => {
               <Button
                 variant="outline"
                 size="sm"
+                className="gap-2"
                 onClick={() => {
-                  handleChange("theme_primary", "218 60% 20%");
-                  handleChange("theme_accent", "28 95% 55%");
-                  handleChange("theme_highlight", "200 90% 60%");
-                  setThemeRaw({
+                  const defaults = {
                     theme_primary: "218 60% 20%",
                     theme_accent: "28 95% 55%",
                     theme_highlight: "200 90% 60%",
-                  });
+                  };
+                  setFields((prev) => ({ ...prev, ...defaults }));
+                  setThemeRaw(defaults);
                   setThemeErrors({});
+                  toast({
+                    title: "ডিফল্ট থিম প্রয়োগ হয়েছে",
+                    description: "Navy / Orange / Sky Blue পুনরায় সেট করা হলো। সংরক্ষণ করতে \"সব সেভ করুন\" ক্লিক করুন।",
+                  });
                 }}
               >
+                <RotateCcw className="h-4 w-4" />
                 ডিফল্ট থিম রিসেট
               </Button>
               <Button
