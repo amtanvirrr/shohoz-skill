@@ -160,7 +160,7 @@ const AdminLandingPages = () => {
     reviews: [],
     faqs: [{ question: "", answer: "" }],
     cta_text: "এখনই অর্ডার করুন",
-    cta_color: "#e11d48",
+    cta_color: "#F58A1F",
     show_quantity: true,
     is_published: false,
     show_countdown: false,
