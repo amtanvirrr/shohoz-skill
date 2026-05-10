@@ -261,7 +261,7 @@ const AdminSettings = () => {
             };
             setFields((prev) => ({ ...prev, ...next }));
             setThemeRaw(next);
-            setActiveSection("theme");
+            window.location.hash = "theme";
             toast({
               title: "শেয়ার করা থিম লোড হয়েছে",
               description: 'সংরক্ষণ করতে "সব সেভ করুন" ক্লিক করুন।',
