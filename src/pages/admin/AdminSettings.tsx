@@ -222,6 +222,7 @@ const AdminSettings = () => {
   const [allBooks, setAllBooks] = useState<{ id: string; title: string }[]>([]);
   const [themeRaw, setThemeRaw] = useState<Record<string, string>>({});
   const [themeErrors, setThemeErrors] = useState<Record<string, boolean>>({});
+  const [lastSaved, setLastSaved] = useState<BrandingFields>(defaultBranding);
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -238,6 +239,7 @@ const AdminSettings = () => {
           }
         });
         setFields(merged);
+        setLastSaved(merged);
       }
       setAllCourses(coursesRes.data || []);
       setAllBooks(booksRes.data || []);
@@ -301,21 +303,57 @@ const AdminSettings = () => {
   };
 
   const saveAll = async () => {
+    // Block save while there are unresolved HSL errors
+    const hasThemeError = Object.values(themeErrors).some(Boolean);
+    if (hasThemeError) {
+      toast({
+        title: "সেভ ব্যর্থ",
+        description: "থিম কালার ইনপুটে ভুল ফরম্যাট আছে — আগে ঠিক করুন।",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSaving(true);
+    const snapshot = lastSaved;
+    const pending = { ...fields };
 
-    // Upsert all keys to site_settings
-    const siteOps = ALL_KEYS.map((key) =>
-      supabase.from("site_settings").upsert({ key, value: fields[key] }, { onConflict: "key" })
-    );
+    try {
+      const siteOps = ALL_KEYS.map((key) =>
+        supabase.from("site_settings").upsert({ key, value: pending[key] }, { onConflict: "key" })
+      );
+      const publicOps = PUBLIC_KEYS.map((key) =>
+        (supabase as any).from("public_site_settings").upsert({ key, value: pending[key] }, { onConflict: "key" })
+      );
 
-    // Upsert public keys to public_site_settings
-    const publicOps = PUBLIC_KEYS.map((key) =>
-      (supabase as any).from("public_site_settings").upsert({ key, value: fields[key] }, { onConflict: "key" })
-    );
+      const results = await Promise.all([...siteOps, ...publicOps]);
+      const firstError = results.find((r: any) => r?.error)?.error;
+      if (firstError) throw firstError;
 
-    await Promise.all([...siteOps, ...publicOps]);
-    setSaving(false);
-    toast({ title: "সেটিংস সেভ হয়েছে" });
+      setLastSaved(pending);
+      toast({
+        title: "সেটিংস আপডেট হয়েছে",
+        description: "সব পরিবর্তন সফলভাবে সংরক্ষণ করা হয়েছে।",
+      });
+    } catch (err: any) {
+      // Rollback in-memory state to last successfully saved snapshot
+      setFields(snapshot);
+      setThemeRaw({
+        theme_primary: snapshot.theme_primary,
+        theme_accent: snapshot.theme_accent,
+        theme_highlight: snapshot.theme_highlight,
+      });
+      setThemeErrors({});
+      toast({
+        title: "সংরক্ষণ ব্যর্থ হয়েছে",
+        description: err?.message
+          ? `${err.message} — পরিবর্তনগুলো রোলব্যাক করা হয়েছে।`
+          : "সার্ভারে সংযোগ করা যায়নি — পরিবর্তনগুলো রোলব্যাক করা হয়েছে।",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) return <p className="text-muted-foreground">Loading...</p>;
