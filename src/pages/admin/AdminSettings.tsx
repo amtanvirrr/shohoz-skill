@@ -1016,7 +1016,7 @@ const AdminSettings = () => {
             </div>
           </div>
         )}
-      </div>
+      </fieldset>
     </div>
   );
 };
