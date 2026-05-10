@@ -220,6 +220,8 @@ const AdminSettings = () => {
   const [saving, setSaving] = useState(false);
   const [allCourses, setAllCourses] = useState<{ id: string; title: string }[]>([]);
   const [allBooks, setAllBooks] = useState<{ id: string; title: string }[]>([]);
+  const [themeRaw, setThemeRaw] = useState<Record<string, string>>({});
+  const [themeErrors, setThemeErrors] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -264,6 +266,31 @@ const AdminSettings = () => {
       root.style.setProperty("--highlight", fields.theme_highlight);
     }
   }, [fields.theme_primary, fields.theme_accent, fields.theme_highlight]);
+
+  const commitThemeHsl = (key: keyof BrandingFields, label: string) => {
+    const raw = themeRaw[key] ?? fields[key];
+    if (raw === fields[key]) {
+      setThemeErrors((prev) => ({ ...prev, [key]: false }));
+      return;
+    }
+    const normalized = normalizeHsl(raw);
+    if (!normalized) {
+      toast({
+        title: `${label} — ভুল HSL ফরম্যাট`,
+        description: `সঠিক ফরম্যাট: "218 60% 20%" (H 0–360, S/L 0–100%)। আগের মান ফিরিয়ে আনা হলো।`,
+        variant: "destructive",
+      });
+      setThemeRaw((prev) => ({ ...prev, [key]: fields[key] }));
+      setThemeErrors((prev) => ({ ...prev, [key]: false }));
+      return;
+    }
+    setThemeErrors((prev) => ({ ...prev, [key]: false }));
+    setThemeRaw((prev) => ({ ...prev, [key]: normalized }));
+    if (normalized !== raw) {
+      toast({ title: `${label} অটো-সংশোধন হয়েছে`, description: `→ ${normalized}` });
+    }
+    handleChange(key, normalized);
+  };
 
   const toggleFeaturedId = (key: "featured_course_ids" | "featured_book_ids", id: string) => {
     setFields((prev) => {
