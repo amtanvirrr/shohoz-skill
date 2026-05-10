@@ -223,6 +223,7 @@ const AdminSettings = () => {
   const [themeRaw, setThemeRaw] = useState<Record<string, string>>({});
   const [themeErrors, setThemeErrors] = useState<Record<string, boolean>>({});
   const [lastSaved, setLastSaved] = useState<BrandingFields>(defaultBranding);
+  const [cssCopied, setCssCopied] = useState(false);
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -654,7 +655,7 @@ const AdminSettings = () => {
                 ডিফল্ট থিম রিসেট
               </Button>
               <Button
-                variant="outline"
+                variant={cssCopied ? "default" : "outline"}
                 size="sm"
                 className="gap-2"
                 onClick={async () => {
@@ -672,10 +673,8 @@ const AdminSettings = () => {
                       document.execCommand("copy");
                       document.body.removeChild(ta);
                     }
-                    toast({
-                      title: "CSS ভ্যারিয়েবল কপি হয়েছে",
-                      description: "ক্লিপবোর্ডে :root ব্লক প্রস্তুত — পেস্ট করে শেয়ার করুন।",
-                    });
+                    setCssCopied(true);
+                    window.setTimeout(() => setCssCopied(false), 2000);
                   } catch {
                     toast({
                       title: "কপি ব্যর্থ",
@@ -685,8 +684,8 @@ const AdminSettings = () => {
                   }
                 }}
               >
-                <Copy className="h-4 w-4" />
-                CSS ভ্যারিয়েবল কপি করুন
+                {cssCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                {cssCopied ? "কপি হয়েছে" : "CSS ভ্যারিয়েবল কপি করুন"}
               </Button>
               <Button
                 variant="outline"
