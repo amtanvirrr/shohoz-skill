@@ -120,7 +120,7 @@ Deno.serve(async (req) => {
           subject: `📖 নতুন আর্টিকেল: ${post.title}`,
           html: `
             <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
-              <div style="background: linear-gradient(135deg, #0d7377, #14919b); padding: 32px 24px; text-align: center;">
+              <div style="background: linear-gradient(135deg, #14315C, #1F4A8A); padding: 32px 24px; text-align: center;">
                 <h1 style="color: #ffffff; margin: 0; font-size: 24px;">সহজ স্কিল</h1>
                 <p style="color: rgba(255,255,255,0.85); margin: 8px 0 0; font-size: 14px;">নিউজলেটার</p>
               </div>
@@ -129,7 +129,7 @@ Deno.serve(async (req) => {
                 <h2 style="color: #1a1a2e; margin: 0 0 12px; font-size: 22px; line-height: 1.4;">${post.title}</h2>
                 <p style="color: #666; font-size: 13px; margin: 0 0 16px;">লেখক: ${post.author_name}</p>
                 <p style="color: #444; font-size: 15px; line-height: 1.7; margin: 0 0 24px;">${post.excerpt}</p>
-                <a href="${postUrl}" style="display: inline-block; background: #0d7377; color: #fff; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px;">পুরো আর্টিকেল পড়ুন →</a>
+                <a href="${postUrl}" style="display: inline-block; background: #14315C; color: #fff; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px;">পুরো আর্টিকেল পড়ুন →</a>
               </div>
               <div style="border-top: 1px solid #eee; padding: 20px 24px; text-align: center;">
                 <p style="color: #999; font-size: 12px; margin: 0;">এই ইমেইল পেয়েছেন কারণ আপনি সহজ স্কিলের নিউজলেটারে সাবস্ক্রাইব করেছেন।</p>
