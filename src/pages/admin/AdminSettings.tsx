@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import RichTextEditor from "@/components/RichTextEditor";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Save } from "lucide-react";
+import { Save, Copy } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // ---------- Color helpers ----------
@@ -522,7 +522,48 @@ const AdminSettings = () => {
               >
                 ডিফল্ট থিম রিসেট
               </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={async () => {
+                  const css = `:root {\n  --primary: ${fields.theme_primary};\n  --accent: ${fields.theme_accent};\n  --highlight: ${fields.theme_highlight};\n}`;
+                  try {
+                    if (navigator.clipboard?.writeText) {
+                      await navigator.clipboard.writeText(css);
+                    } else {
+                      const ta = document.createElement("textarea");
+                      ta.value = css;
+                      ta.style.position = "fixed";
+                      ta.style.opacity = "0";
+                      document.body.appendChild(ta);
+                      ta.select();
+                      document.execCommand("copy");
+                      document.body.removeChild(ta);
+                    }
+                    toast({
+                      title: "CSS ভ্যারিয়েবল কপি হয়েছে",
+                      description: "ক্লিপবোর্ডে :root ব্লক প্রস্তুত — পেস্ট করে শেয়ার করুন।",
+                    });
+                  } catch {
+                    toast({
+                      title: "কপি ব্যর্থ",
+                      description: "ক্লিপবোর্ড অ্যাক্সেস পাওয়া যায়নি।",
+                      variant: "destructive",
+                    });
+                  }
+                }}
+              >
+                <Copy className="h-4 w-4" />
+                CSS ভ্যারিয়েবল কপি করুন
+              </Button>
             </div>
+
+            <pre className="overflow-x-auto rounded-lg border border-border bg-muted/40 p-3 font-mono text-xs text-foreground">{`:root {
+  --primary: ${fields.theme_primary};
+  --accent: ${fields.theme_accent};
+  --highlight: ${fields.theme_highlight};
+}`}</pre>
           </div>
         )}
 
