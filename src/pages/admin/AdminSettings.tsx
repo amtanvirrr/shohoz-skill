@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import RichTextEditor from "@/components/RichTextEditor";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { Save, Copy, Loader2, RotateCcw, Download, Share2, Check, Smartphone, Tablet, Monitor } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -761,6 +762,53 @@ const AdminSettings = () => {
                     <a className="font-semibold text-accent underline underline-offset-2 hover:text-accent/80">অ্যাকসেন্ট লিংক</a>
                     {" "}কেমন দেখাচ্ছে যাচাই করুন।
                   </p>
+
+                  {/* Tooltip + hover states */}
+                  <TooltipProvider delayDuration={150}>
+                    <div className="flex flex-wrap items-center gap-3 rounded-md border border-dashed border-border bg-muted/20 p-2.5">
+                      <span className="text-[11px] font-medium text-muted-foreground">হোভার করে দেখুন:</span>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            type="button"
+                            className="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-md hover:-translate-y-0.5"
+                          >
+                            Primary হোভার
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent>প্রাইমারি বাটনের টুলটিপ</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            type="button"
+                            className="rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-accent-foreground transition-all hover:bg-accent/90 hover:shadow-md hover:-translate-y-0.5"
+                          >
+                            Accent হোভার
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent>অ্যাকসেন্ট CTA টুলটিপ</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span
+                            tabIndex={0}
+                            className="cursor-help rounded-full border border-border bg-card px-2.5 py-1 text-[11px] font-medium text-card-foreground transition-colors hover:bg-muted"
+                          >
+                            ℹ️ তথ্য চিপ
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent
+                          style={{
+                            backgroundColor: `hsl(${fields.theme_highlight})`,
+                            color: "hsl(var(--primary-foreground))",
+                          }}
+                        >
+                          Highlight কালারে কাস্টম টুলটিপ
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </TooltipProvider>
                 </div>
                 </div>
                 </div>
