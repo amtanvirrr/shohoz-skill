@@ -225,6 +225,23 @@ const AdminSettings = () => {
     setFields((prev) => ({ ...prev, [key]: value }));
   };
 
+  // Live theme preview — applies CSS vars while editing
+  useEffect(() => {
+    const root = document.documentElement;
+    if (fields.theme_primary) {
+      root.style.setProperty("--primary", fields.theme_primary);
+      root.style.setProperty("--sidebar-primary", fields.theme_primary);
+    }
+    if (fields.theme_accent) {
+      root.style.setProperty("--accent", fields.theme_accent);
+    }
+    if (fields.theme_highlight) {
+      root.style.setProperty("--ring", fields.theme_highlight);
+      root.style.setProperty("--sidebar-ring", fields.theme_highlight);
+      root.style.setProperty("--highlight", fields.theme_highlight);
+    }
+  }, [fields.theme_primary, fields.theme_accent, fields.theme_highlight]);
+
   const toggleFeaturedId = (key: "featured_course_ids" | "featured_book_ids", id: string) => {
     setFields((prev) => {
       const ids = prev[key] ? prev[key].split(",").filter(Boolean) : [];
