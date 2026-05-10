@@ -9,6 +9,17 @@ import RichTextEditor from "@/components/RichTextEditor";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Save, Copy, Loader2, RotateCcw, Download, Share2, Check, Smartphone, Tablet, Monitor } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -809,6 +820,33 @@ const AdminSettings = () => {
                       </Tooltip>
                     </div>
                   </TooltipProvider>
+
+                  {/* Confirm dialog / modal preview */}
+                  <div className="flex flex-wrap items-center gap-3 rounded-md border border-dashed border-border bg-muted/20 p-2.5">
+                    <span className="text-[11px] font-medium text-muted-foreground">মোডাল প্রিভিউ:</span>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button size="sm" variant="outline">
+                          কনফার্ম ডায়ালগ খুলুন
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>আপনি কি নিশ্চিত?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            এটি একটি নমুনা কনফার্মেশন মোডাল — হেডিং, বর্ণনা, এবং বাটনে আপনার থিম কালার প্রয়োগ হয়েছে কিনা যাচাই করুন। ফোকাস স্বয়ংক্রিয়ভাবে এই ডায়ালগের মধ্যে আটকে থাকবে (Tab চাপুন পরীক্ষা করতে)।
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>বাতিল</AlertDialogCancel>
+                          <AlertDialogAction className="bg-accent text-accent-foreground hover:bg-accent/90">
+                            নিশ্চিত করুন
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                    <span className="text-[10px] text-muted-foreground">Esc / Tab / Shift+Tab — সব কাজ করে।</span>
+                  </div>
                 </div>
                 </div>
                 </div>
