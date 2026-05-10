@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import RichTextEditor from "@/components/RichTextEditor";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Save, Copy, Loader2, RotateCcw, Download, Share2, Check } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -224,6 +225,11 @@ const AdminSettings = () => {
   const [themeErrors, setThemeErrors] = useState<Record<string, boolean>>({});
   const [lastSaved, setLastSaved] = useState<BrandingFields>(defaultBranding);
   const [cssCopied, setCssCopied] = useState(false);
+  const [autoSaveTheme, setAutoSaveTheme] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("admin_theme_autosave") === "1";
+  });
+  const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -308,6 +314,52 @@ const AdminSettings = () => {
       root.style.setProperty("--highlight", fields.theme_highlight);
     }
   }, [fields.theme_primary, fields.theme_accent, fields.theme_highlight]);
+
+  // Persist auto-save toggle preference
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("admin_theme_autosave", autoSaveTheme ? "1" : "0");
+    }
+  }, [autoSaveTheme]);
+
+  // Debounced auto-save for the 3 theme keys
+  useEffect(() => {
+    if (!autoSaveTheme || loading) return;
+    const hasError = Object.values(themeErrors).some(Boolean);
+    if (hasError) return;
+    const themeKeys = ["theme_primary", "theme_accent", "theme_highlight"] as const;
+    const dirty = themeKeys.some((k) => fields[k] !== lastSaved[k]);
+    if (!dirty) return;
+
+    const handle = window.setTimeout(async () => {
+      setAutoSaveStatus("saving");
+      try {
+        const ops = themeKeys.map((key) =>
+          supabase.from("site_settings").upsert({ key, value: fields[key] }, { onConflict: "key" })
+        );
+        const results = await Promise.all(ops);
+        const firstError = results.find((r: any) => r?.error)?.error;
+        if (firstError) throw firstError;
+        setLastSaved((prev) => ({
+          ...prev,
+          theme_primary: fields.theme_primary,
+          theme_accent: fields.theme_accent,
+          theme_highlight: fields.theme_highlight,
+        }));
+        setAutoSaveStatus("saved");
+        window.setTimeout(() => setAutoSaveStatus("idle"), 1500);
+      } catch (err: any) {
+        setAutoSaveStatus("error");
+        toast({
+          title: "অটো-সেভ ব্যর্থ",
+          description: err?.message || "সার্ভারে সংযোগ করা যায়নি।",
+          variant: "destructive",
+        });
+      }
+    }, 800);
+
+    return () => window.clearTimeout(handle);
+  }, [autoSaveTheme, fields.theme_primary, fields.theme_accent, fields.theme_highlight, themeErrors, lastSaved, loading]);
 
   const commitThemeHsl = (key: keyof BrandingFields, label: string) => {
     const raw = themeRaw[key] ?? fields[key];
@@ -472,6 +524,44 @@ const AdminSettings = () => {
               <p className="text-sm text-muted-foreground">
                 Navy primary, Orange accent ও Sky Blue highlight কালার এডিট করুন। নিচের পরিবর্তন তাৎক্ষণিকভাবে পুরো সাইটে দেখা যাবে — সংরক্ষণ করতে "সব সেভ করুন" বাটনে ক্লিক করুন।
               </p>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-muted/30 p-3">
+              <div className="flex items-center gap-3">
+                <Switch
+                  id="theme-autosave"
+                  checked={autoSaveTheme}
+                  onCheckedChange={setAutoSaveTheme}
+                />
+                <div>
+                  <Label htmlFor="theme-autosave" className="text-sm font-semibold">
+                    অটো-সেভ থিম
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    চালু থাকলে কালার পরিবর্তন ০.৮ সেকেন্ড পর স্বয়ংক্রিয়ভাবে সংরক্ষণ হবে।
+                  </p>
+                </div>
+              </div>
+              {autoSaveTheme && (
+                <span className="flex items-center gap-1.5 text-xs font-medium">
+                  {autoSaveStatus === "saving" && (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+                      <span className="text-muted-foreground">সংরক্ষণ হচ্ছে...</span>
+                    </>
+                  )}
+                  {autoSaveStatus === "saved" && (
+                    <>
+                      <Check className="h-3.5 w-3.5 text-success" />
+                      <span className="text-success">সংরক্ষিত</span>
+                    </>
+                  )}
+                  {autoSaveStatus === "error" && <span className="text-destructive">ব্যর্থ</span>}
+                  {autoSaveStatus === "idle" && (
+                    <span className="text-muted-foreground">প্রস্তুত</span>
+                  )}
+                </span>
+              )}
             </div>
 
             {[
