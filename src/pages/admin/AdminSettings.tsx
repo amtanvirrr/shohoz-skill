@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import RichTextEditor from "@/components/RichTextEditor";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Save, Copy, Loader2, RotateCcw } from "lucide-react";
+import { Save, Copy, Loader2, RotateCcw, Download } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // ---------- Color helpers ----------
@@ -648,6 +648,39 @@ const AdminSettings = () => {
               >
                 <Copy className="h-4 w-4" />
                 CSS ভ্যারিয়েবল কপি করুন
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={() => {
+                  const css = `/* Theme exported from admin settings */\n:root {\n  --primary: ${fields.theme_primary};\n  --accent: ${fields.theme_accent};\n  --highlight: ${fields.theme_highlight};\n  --ring: ${fields.theme_highlight};\n  --sidebar-primary: ${fields.theme_primary};\n  --sidebar-ring: ${fields.theme_highlight};\n}\n`;
+                  try {
+                    const blob = new Blob([css], { type: "text/css;charset=utf-8" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    const stamp = new Date().toISOString().slice(0, 10);
+                    a.href = url;
+                    a.download = `theme-${stamp}.css`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    toast({
+                      title: "থিম ডাউনলোড হয়েছে",
+                      description: `theme-${stamp}.css ফাইল সংরক্ষিত হলো।`,
+                    });
+                  } catch {
+                    toast({
+                      title: "ডাউনলোড ব্যর্থ",
+                      description: "ফাইল তৈরি করা যায়নি — আবার চেষ্টা করুন।",
+                      variant: "destructive",
+                    });
+                  }
+                }}
+              >
+                <Download className="h-4 w-4" />
+                .css ফাইল ডাউনলোড
               </Button>
             </div>
 
