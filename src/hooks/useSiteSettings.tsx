@@ -37,6 +37,9 @@ export interface SiteSettings {
   registered_address: string;
   company_details: string;
   payment_banner_url: string;
+  theme_primary: string;
+  theme_accent: string;
+  theme_highlight: string;
 }
 
 const defaults: SiteSettings = {
@@ -75,6 +78,9 @@ const defaults: SiteSettings = {
   registered_address: "",
   company_details: "",
   payment_banner_url: "",
+  theme_primary: "218 60% 20%",
+  theme_accent: "28 95% 55%",
+  theme_highlight: "200 90% 60%",
 };
 
 const SETTING_KEYS = Object.keys(defaults) as (keyof SiteSettings)[];
