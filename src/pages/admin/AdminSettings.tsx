@@ -721,6 +721,40 @@ const AdminSettings = () => {
                 <Download className="h-4 w-4" />
                 .css ফাইল ডাউনলোড
               </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={async () => {
+                  try {
+                    const payload = btoa(
+                      JSON.stringify({
+                        p: fields.theme_primary,
+                        a: fields.theme_accent,
+                        h: fields.theme_highlight,
+                      })
+                    );
+                    const url = new URL(window.location.href);
+                    url.searchParams.set("themeShare", payload);
+                    url.hash = "theme";
+                    const link = url.toString();
+                    await navigator.clipboard.writeText(link);
+                    toast({
+                      title: "শেয়ার লিংক কপি হয়েছে",
+                      description: "অন্য অ্যাডমিনের সাথে শেয়ার করুন — খোলামাত্রই থিম প্রিভিউ হবে।",
+                    });
+                  } catch {
+                    toast({
+                      title: "কপি ব্যর্থ",
+                      description: "ক্লিপবোর্ড অ্যাক্সেস পাওয়া যায়নি।",
+                      variant: "destructive",
+                    });
+                  }
+                }}
+              >
+                <Share2 className="h-4 w-4" />
+                শেয়ার লিংক তৈরি
+              </Button>
             </div>
 
             <pre className="overflow-x-auto rounded-lg border border-border bg-muted/40 p-3 font-mono text-xs text-foreground">{`:root {
