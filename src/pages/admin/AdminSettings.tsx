@@ -71,6 +71,9 @@ interface BrandingFields {
   registered_address: string;
   company_details: string;
   payment_banner_url: string;
+  theme_primary: string;
+  theme_accent: string;
+  theme_highlight: string;
 }
 
 const defaultBranding: BrandingFields = {
