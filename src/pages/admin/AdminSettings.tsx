@@ -492,15 +492,96 @@ const AdminSettings = () => {
               );
             })}
 
-            <div className="rounded-lg border border-border p-4">
-              <p className="mb-3 text-sm font-semibold text-foreground">লাইভ প্রিভিউ</p>
-              <div className="flex flex-wrap items-center gap-3">
-                <Button>Primary বাটন</Button>
-                <Button variant="secondary">Secondary</Button>
-                <Button className="bg-accent text-accent-foreground hover:bg-accent/90">Accent CTA</Button>
-                <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">Primary Badge</span>
-                <span className="rounded-full bg-accent/15 px-3 py-1 text-xs font-semibold text-accent">Accent Badge</span>
-                <Input placeholder="ফোকাস রিং চেক করুন" className="max-w-[220px]" />
+            <div className="space-y-4 rounded-lg border border-border p-4">
+              <p className="text-sm font-semibold text-foreground">লাইভ প্রিভিউ</p>
+
+              {/* Navbar mock */}
+              <div className="flex items-center justify-between gap-3 rounded-md bg-primary px-4 py-2.5 text-primary-foreground shadow">
+                <div className="flex items-center gap-4">
+                  <span className="font-display text-sm font-bold">আপনার সাইট</span>
+                  <nav className="hidden gap-3 text-xs sm:flex">
+                    <a className="opacity-90 hover:opacity-100">হোম</a>
+                    <a className="opacity-90 hover:opacity-100">কোর্স</a>
+                    <a className="opacity-90 hover:opacity-100">বই</a>
+                  </nav>
+                </div>
+                <button className="rounded-md bg-accent px-3 py-1 text-xs font-semibold text-accent-foreground">
+                  সাইন ইন
+                </button>
+              </div>
+
+              {/* Sidebar + Card layout */}
+              <div className="grid gap-3 sm:grid-cols-[160px_1fr]">
+                <div className="rounded-md bg-sidebar p-2 text-sidebar-foreground">
+                  <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide opacity-70">সাইডবার</p>
+                  <ul className="space-y-1 text-xs">
+                    <li className="rounded bg-sidebar-primary px-2 py-1.5 font-medium text-sidebar-primary-foreground">
+                      ড্যাশবোর্ড
+                    </li>
+                    <li className="rounded px-2 py-1.5 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+                      অর্ডারস
+                    </li>
+                    <li className="rounded px-2 py-1.5 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+                      সেটিংস
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="space-y-3">
+                  {/* Card */}
+                  <div className="rounded-lg border border-border bg-card p-3 text-card-foreground shadow-sm">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="font-display text-sm font-semibold">নমুনা কোর্স কার্ড</p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">কালার থিম কেমন দেখাচ্ছে যাচাই করুন।</p>
+                      </div>
+                      <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-semibold text-accent-foreground">
+                        নতুন
+                      </span>
+                    </div>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">Primary</span>
+                      <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-semibold text-accent">Accent</span>
+                      <span
+                        className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                        style={{ backgroundColor: `hsl(${fields.theme_highlight} / 0.18)`, color: `hsl(${fields.theme_highlight})` }}
+                      >
+                        Highlight
+                      </span>
+                      <span className="rounded-full bg-success/15 px-2 py-0.5 text-[10px] font-semibold text-success">সফল</span>
+                      <span className="rounded-full bg-warning/15 px-2 py-0.5 text-[10px] font-semibold text-warning">সতর্ক</span>
+                      <span className="rounded-full bg-destructive/15 px-2 py-0.5 text-[10px] font-semibold text-destructive">এরর</span>
+                    </div>
+                  </div>
+
+                  {/* Buttons */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button size="sm">Primary</Button>
+                    <Button size="sm" variant="secondary">Secondary</Button>
+                    <Button size="sm" variant="outline">Outline</Button>
+                    <Button size="sm" variant="ghost">Ghost</Button>
+                    <Button size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90">Accent CTA</Button>
+                  </div>
+
+                  {/* Form / focus ring */}
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <Input placeholder="ফোকাস রিং চেক করুন" />
+                    <Input
+                      placeholder="হাইলাইট রিং"
+                      style={{ outline: "none" }}
+                      className="focus-visible:ring-2"
+                    />
+                  </div>
+
+                  {/* Links */}
+                  <p className="text-xs text-muted-foreground">
+                    এটি একটি নমুনা প্যারাগ্রাফ —{" "}
+                    <a className="font-semibold text-primary underline underline-offset-2 hover:text-primary/80">প্রাইমারি লিংক</a>
+                    {" "}এবং{" "}
+                    <a className="font-semibold text-accent underline underline-offset-2 hover:text-accent/80">অ্যাকসেন্ট লিংক</a>
+                    {" "}কেমন দেখাচ্ছে যাচাই করুন।
+                  </p>
+                </div>
               </div>
             </div>
 
