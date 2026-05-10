@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import RichTextEditor from "@/components/RichTextEditor";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Save, Copy } from "lucide-react";
+import { Save, Copy, Loader2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // ---------- Color helpers ----------
@@ -362,13 +362,19 @@ const AdminSettings = () => {
     <div>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-xl font-bold text-foreground sm:text-2xl">Settings</h1>
-        <Button onClick={saveAll} disabled={saving} className="gap-2">
-          <Save className="h-4 w-4" />
+        <Button onClick={saveAll} disabled={saving} aria-busy={saving} className="gap-2">
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           {saving ? "সেভ হচ্ছে..." : "সব সেভ করুন"}
         </Button>
       </div>
 
-      <div className="mt-6 max-w-2xl">
+      <fieldset disabled={saving} aria-busy={saving} className={`mt-6 max-w-2xl ${saving ? "pointer-events-none opacity-60" : ""}`}>
+        {saving && (
+          <div className="mb-4 flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin text-primary" />
+            সেটিংস সংরক্ষণ হচ্ছে — অনুগ্রহ করে অপেক্ষা করুন...
+          </div>
+        )}
         {/* Site Branding */}
         {activeSection === "branding" && (
           <div className="rounded-xl glass-card p-6 space-y-4">
@@ -1010,7 +1016,7 @@ const AdminSettings = () => {
             </div>
           </div>
         )}
-      </div>
+      </fieldset>
     </div>
   );
 };
