@@ -85,8 +85,8 @@ function renderHTML(message: string, success: boolean): string {
     .icon { font-size: 48px; margin-bottom: 16px; }
     h1 { color: #1a1a2e; font-size: 22px; margin: 0 0 16px; }
     p { color: #555; font-size: 15px; line-height: 1.7; margin: 0 0 24px; }
-    a { display: inline-block; background: #0d7377; color: #fff; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; }
-    a:hover { background: #0a5c5f; }
+    a { display: inline-block; background: #14315C; color: #fff; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; }
+    a:hover { background: #0E2547; }
   </style>
 </head>
 <body>

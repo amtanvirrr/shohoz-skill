@@ -115,7 +115,7 @@ Deno.serve(async (req) => {
 
     const emailHtml = `
       <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
-        <div style="background: linear-gradient(135deg, #0d7377, #14919b); padding: 24px; text-align: center;">
+        <div style="background: linear-gradient(135deg, #14315C, #1F4A8A); padding: 24px; text-align: center;">
           <h1 style="color: #fff; margin: 0; font-size: 22px;">🛒 নতুন অর্ডার এসেছে!</h1>
         </div>
         <div style="padding: 24px;">
