@@ -129,6 +129,9 @@ const defaultBranding: BrandingFields = {
   registered_address: "",
   company_details: "",
   payment_banner_url: "",
+  theme_primary: "218 60% 20%",
+  theme_accent: "28 95% 55%",
+  theme_highlight: "200 90% 60%",
 };
 
 const PUBLIC_KEYS: (keyof BrandingFields)[] = [
@@ -144,6 +147,7 @@ const PUBLIC_KEYS: (keyof BrandingFields)[] = [
   "featured_course_ids", "featured_book_ids",
   "terms_content", "privacy_content", "refund_content", "refund_timeline_text",
   "trade_license_number", "registered_address", "company_details", "payment_banner_url",
+  "theme_primary", "theme_accent", "theme_highlight",
 ];
 
 const ALL_KEYS = Object.keys(defaultBranding) as (keyof BrandingFields)[];
