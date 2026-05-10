@@ -1,63 +1,50 @@
-## Overview
+## লক্ষ্য
 
-SSLCommerz/Payment Gateway compliance বাস্তবায়ন — তিনটি লিগ্যাল পেজ, ফুটার আপডেট, চেকআউট কনসেন্ট চেকবক্স, পেমেন্ট ব্যানার, ট্রেড লাইসেন্স/রেজিস্টার্ড অ্যাড্রেস ও সবকিছু অ্যাডমিন প্যানেল থেকে এডিটেবল।
+Mobile ইউজারদের জন্য একটি app-style bottom navigation bar যোগ করা, যাতে সাইটের প্রধান মেনুগুলো এক হাতেই accessible হয় এবং নেভিগেশন অনেক বেশি ইউজারফ্রেন্ডলি হয়।
 
-## Database (1 migration)
+## ডিজাইন স্ট্রাকচার
 
-`public_site_settings`-এ নতুন key গুলো যোগ হবে (text rows): `terms_content`, `privacy_content`, `refund_content`, `refund_timeline_text`, `trade_license_number`, `registered_address`, `company_details`, `payment_banner_url`. কোনো নতুন টেবিল লাগবে না — বিদ্যমান key/value প্যাটার্ন ব্যবহার হবে।
+Bottom nav-এ ৫টি প্রাইমারি স্লট থাকবে (অপ্টিমাল mobile UX, ৫-এর বেশি হলে ভিড় লাগে):
 
-## নতুন পাবলিক পেজ (৩টি)
+```text
+┌──────────────────────────────────────────┐
+│  হোম   কোর্স   বই   কুইজ   মেনু          │
+│  🏠     📚      📖    ❓     ☰           │
+└──────────────────────────────────────────┘
+```
 
-1. `/terms` — Terms & Conditions
-2. `/privacy` — Privacy Policy  
-3. `/refund` — Return & Refund Policy (ডিফল্ট কপিতে **৭–১০ কর্মদিবস** টাইমলাইন স্পষ্টভাবে লেখা)
+1. হোম — `/`
+2. কোর্স — `/courses`
+3. বই — `/books`
+4. কুইজ — `/quizzes`
+5. মেনু — একটি sheet/drawer খুলবে যেখানে বাকি সব আইটেম থাকবে: ব্লগ, আমাদের সম্পর্কে, যোগাযোগ, ড্যাশবোর্ড/লগইন/রেজিস্টার, অ্যাডমিন (admin হলে), ডার্ক/লাইট মোড টগল, লগআউট।
 
-তিনটিই `About.tsx`-এর মতো সরল প্যাটার্ন: `useSiteSettings` থেকে HTML কনটেন্ট লোড → `DOMPurify.sanitize` → render। ডেটাবেসে কনটেন্ট না থাকলে কম্প্লায়েন্ট ডিফল্ট Bengali টেক্সট দেখাবে। `App.tsx`-এ রুট যোগ হবে।
+প্রতিটি item-এ Lucide আইকন + Bengali লেবেল। Active route-এ primary color + subtle background highlight (existing design tokens ব্যবহার করে glassmorphism মেনে)।
 
-## Footer আপডেট (`src/components/layout/Footer.tsx`)
+## আচরণ
 
-- "সাপোর্ট" কলামের প্লেইন `<span>` গুলো `<Link>`-এ পরিবর্তন: প্রাইভেসি পলিসি → `/privacy`, ব্যবহারের শর্তাবলী → `/terms`, রিফান্ড পলিসি → `/refund`। About link আগে থেকেই আছে।
-- নতুন "কোম্পানি তথ্য" ব্লক: Trade License No. + Registered Address (settings থেকে)।
-- Payment banner: settings এর `payment_banner_url` ইমেজ ফুটারে দেখাবে (fallback হিসেবে SSLCommerz-এর স্ট্যান্ডার্ড পেমেন্ট মেথড ব্যানার `src/assets/`-এ রাখা একটি ডিফল্ট ইমেজ — bKash/Nagad/Rocket/Visa/Master/Amex)।
+- শুধু `md` breakpoint-এর নিচে দেখাবে (`md:hidden`); desktop-এ existing header অপরিবর্তিত।
+- `fixed bottom-0` + `z-50` + glass effect, safe-area inset (`pb-[env(safe-area-inset-bottom)]`) iOS-এর জন্য।
+- পেজের content যাতে bottom bar-এর নিচে hide না হয়: `Layout.tsx`-এ mobile-only `pb-16` `<main>`-এ যোগ করা হবে।
+- "মেনু" বাটনে Shadcn `Sheet` (bottom side) খুলবে; user/auth state অনুযায়ী dynamic options দেখাবে।
+- বিদ্যমান mobile hamburger drawer (Header-এর) সরিয়ে ফেলা হবে যাতে duplicate না হয় — Header mobile-এ শুধু logo + theme toggle + avatar/auth-shortcut রাখবে। (অথবা পুরো hamburger সরিয়ে শুধু logo রাখা যাবে যেহেতু সব কিছু bottom nav-এ আছে।)
+- Active state detection: `useLocation().pathname` দিয়ে।
+- Landing pages (`/lp/:slug`) এবং admin routes-এ bottom nav দেখাবে না — Layout-এ থাকা route-গুলোতেই দেখাবে (Layout-এর ভিতরে থাকায় এটা automatic)।
 
-## About পেজ আপডেট
+## প্রযুক্তিগত পরিবর্তন
 
-`About.tsx`-এ কোম্পানি ও ম্যানেজমেন্ট ডিটেলস + Trade License Number সেকশন যোগ হবে (settings থেকে পড়ে)।
+নতুন ফাইল:
+- `src/components/layout/MobileBottomNav.tsx` — bottom nav UI + "More" sheet সহ।
 
-## চেকআউট কনসেন্ট চেকবক্স (MANDATORY)
+সম্পাদনা:
+- `src/components/layout/Layout.tsx` — `<MobileBottomNav />` mount, `<main>`-এ `pb-20 md:pb-0` যোগ।
+- `src/components/layout/Header.tsx` — mobile hamburger drawer সরানো, ছোট header রাখা (logo + theme toggle + avatar shortcut)।
 
-প্রতিটি অর্ডার সাবমিট পয়েন্টে কনসেন্ট চেকবক্স যোগ:
-- `src/pages/BookDetail.tsx` (অর্ডার ফর্ম)
-- `src/pages/CourseDetail.tsx`
-- `src/pages/QuizPage.tsx`
-- `src/pages/LandingPage.tsx` (অর্ডার ফর্ম সেকশন)
+কোনো backend/business logic পরিবর্তন নেই — শুধু presentation।
 
-প্যাটার্ন: "Place Order" বাটনের ঠিক আগে blank `Checkbox` (Radix) + লেবেল: *"আমি [শর্তাবলী](/terms), [প্রাইভেসি পলিসি](/privacy) এবং [রিফান্ড পলিসি](/refund) পড়েছি ও সম্মত আছি।"* — আনচেকড থাকলে সাবমিট বাটন `disabled`। ৪টি পেজের একই UX-এর জন্য `src/components/CheckoutConsent.tsx` নামে ছোট shared component তৈরি হবে।
+## ভেরিফিকেশন
 
-## অ্যাডমিন প্যানেল এক্সটেনশন
-
-`src/pages/admin/AdminSettings.tsx`-এ নতুন ট্যাব **"আইনি ও কম্প্লায়েন্স"** যোগ হবে যেখানে অ্যাডমিন এডিট করতে পারবে:
-
-- Terms & Conditions (RichTextEditor)
-- Privacy Policy (RichTextEditor)
-- Return & Refund Policy (RichTextEditor) — ডিফল্ট প্রি-ফিল্ড টেমপ্লেটে ৭–১০ কর্মদিবস উল্লেখ।
-- Refund timeline text (Input — ফলব্যাক/সারাংশ)
-- Trade License Number (Input — MANDATORY মার্ক)
-- Registered Address (Textarea)
-- Company & Management details (RichTextEditor — About-এ দেখাবে)
-- Payment banner image (URL/আপলোড — `hero-media` বাকেট রিইউজ)
-
-### Technical Details
-
-- `useSiteSettings` hook এবং `SiteSettings` interface-এ ৮টি নতুন key যোগ; `defaults` আপডেট।
-- `AdminSettings.tsx`-এর `BrandingFields` interface ও `defaultBranding` object-এ একই key যোগ হবে।
-- Payment banner-এর জন্য প্রয়োজনে `imagegen--generate_image` (premium) ব্যবহার করে একটি ক্লিন ডিফল্ট "Accepted Payment Methods" ব্যানার generate হবে (bKash, Nagad, Rocket, Visa, Mastercard, Amex লোগোসহ) `src/assets/payment-methods.png`-এ।
-- কনসেন্ট চেকবক্স স্টেট প্রতি পেজে লোকাল `useState<boolean>`; submit handler-এ guard: `if (!agreed) { toast.error("শর্তাবলীতে সম্মতি দিন"); return; }`।
-
-## নিরাপত্তা
-
-লিগ্যাল কনটেন্ট পাবলিক — `public_site_settings` ইতিমধ্যে public read RLS-এ আছে, কোনো পরিবর্তন লাগবে না। `DOMPurify.sanitize` সব রেন্ডারে।
-
-## Out of scope
-
-কোনো বিদ্যমান পেমেন্ট/অর্ডার বিজনেস লজিকে পরিবর্তন নেই — শুধু কনসেন্ট গার্ড যুক্ত হবে।
+- 384px viewport-এ bottom nav fixed থেকে দেখা যায়, পেজ scroll করলে content lower bar-এর পিছনে যায় না।
+- প্রতিটি tab navigate করে, active state ঠিকঠাক highlight হয়।
+- "মেনু" sheet auth state অনুযায়ী সঠিক options দেখায় (logged-in/logged-out/admin), ডার্ক মোড toggle এবং লগআউট কাজ করে।
+- Desktop (≥768px)-এ bottom nav দেখায় না, header আগের মতো থাকে।
