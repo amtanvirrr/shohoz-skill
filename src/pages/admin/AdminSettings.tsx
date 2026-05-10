@@ -877,6 +877,52 @@ const AdminSettings = () => {
                     </AlertDialog>
                     <span className="text-[10px] text-muted-foreground">Esc / Tab / Shift+Tab — সব কাজ করে।</span>
                   </div>
+
+                  {/* Contrast checker (WCAG) */}
+                  <div className="rounded-md border border-dashed border-border bg-muted/20 p-2.5">
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <span className="text-[11px] font-medium text-muted-foreground">কনট্রাস্ট চেকার (WCAG)</span>
+                      <span className="text-[10px] text-muted-foreground">টেক্সট vs ব্যাকগ্রাউন্ড</span>
+                    </div>
+                    <div className="space-y-1.5">
+                      {[
+                        { key: "theme_primary" as const, label: "Primary" },
+                        { key: "theme_accent" as const, label: "Accent" },
+                        { key: "theme_highlight" as const, label: "Highlight" },
+                      ].map(({ key, label }) => {
+                        const bg = fields[key] || "0 0% 0%";
+                        const fg = pickForeground(bg);
+                        const ratio = contrastRatio(bg, fg);
+                        const r = ratio.toFixed(2);
+                        let badge = "ফেইল";
+                        let badgeCls = "bg-destructive/15 text-destructive border-destructive/30";
+                        if (ratio >= 7) { badge = "AAA পাস"; badgeCls = "bg-primary/15 text-primary border-primary/30"; }
+                        else if (ratio >= 4.5) { badge = "AA পাস"; badgeCls = "bg-accent/20 text-accent-foreground border-accent/40"; }
+                        else if (ratio >= 3) { badge = "AA Large only"; badgeCls = "bg-muted text-muted-foreground border-border"; }
+                        return (
+                          <div
+                            key={key}
+                            className="flex flex-wrap items-center gap-2 rounded-md border border-border/60 bg-background/60 p-1.5"
+                          >
+                            <span
+                              className="inline-flex h-7 min-w-[56px] items-center justify-center rounded px-2 text-xs font-semibold"
+                              style={{ backgroundColor: `hsl(${bg})`, color: `hsl(${fg})` }}
+                            >
+                              Aa
+                            </span>
+                            <span className="text-[11px] font-medium">{label}</span>
+                            <span className="ml-auto font-mono text-xs tabular-nums">{r} : 1</span>
+                            <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-medium ${badgeCls}`}>
+                              {badge}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <p className="mt-2 text-[10px] leading-snug text-muted-foreground">
+                      AA: ৪.৫:১ (নর্মাল টেক্সট) · AAA: ৭:১ · বড় টেক্সটের জন্য ৩:১ যথেষ্ট।
+                    </p>
+                  </div>
                 </div>
                 </div>
                 </div>
