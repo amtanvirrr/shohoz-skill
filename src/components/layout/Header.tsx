@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { Menu, X, Moon, Sun } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,7 +18,6 @@ const navLinks = [
 ];
 
 const Header = () => {
-  const [mobileOpen, setMobileOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [profileName, setProfileName] = useState("");
   const location = useLocation();
@@ -119,82 +118,32 @@ const Header = () => {
           )}
         </div>
 
-        <button
-          onClick={() => setMobileOpen(!mobileOpen)}
-          className="rounded-lg p-2 text-foreground hover:bg-secondary md:hidden"
-        >
-          {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </button>
-      </div>
-
-      {mobileOpen && (
-        <div className="border-t border-border/50 glass px-4 py-4 md:hidden animate-slide-up-fade">
-          {user && (
-            <Link to="/dashboard" onClick={() => setMobileOpen(false)} className="mb-3 flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-secondary">
-              <Avatar className="h-9 w-9 border border-border">
-                {avatarUrl ? <AvatarImage src={avatarUrl} alt={profileName} /> : null}
-                <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">{initials}</AvatarFallback>
-              </Avatar>
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-foreground">{profileName || user.email}</p>
-                {profileName && <p className="truncate text-xs text-muted-foreground">{user.email}</p>}
-              </div>
-            </Link>
-          )}
-          <nav className="flex flex-col gap-1">
-            {navLinks.map((link) => (
-              <Link
-                key={link.to}
-                to={link.to}
-                onClick={() => setMobileOpen(false)}
-                className={`rounded-lg px-4 py-2.5 text-sm font-medium transition-colors ${
-                  location.pathname === link.to
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:bg-secondary"
-                }`}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
+        <div className="flex items-center gap-2 md:hidden">
           <button
             onClick={() => {
               document.documentElement.classList.toggle("dark");
               localStorage.setItem("theme", document.documentElement.classList.contains("dark") ? "dark" : "light");
             }}
-            className="mt-3 flex w-full items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-secondary transition-colors"
+            className="rounded-lg p-2 text-muted-foreground hover:bg-secondary"
+            aria-label="Toggle dark mode"
           >
-            <Sun className="h-4 w-4 hidden dark:block" />
-            <Moon className="h-4 w-4 block dark:hidden" />
-            <span className="dark:hidden">ডার্ক মোড</span>
-            <span className="hidden dark:inline">লাইট মোড</span>
+            <Sun className="h-5 w-5 hidden dark:block" />
+            <Moon className="h-5 w-5 block dark:hidden" />
           </button>
-          <div className="mt-4 flex gap-3">
-            {user ? (
-              <>
-                <Button variant="outline" size="sm" className="flex-1" asChild>
-                  <Link to="/dashboard" onClick={() => setMobileOpen(false)}>ড্যাশবোর্ড</Link>
-                </Button>
-                {isAdmin && (
-                  <Button variant="outline" size="sm" className="flex-1" asChild>
-                    <Link to="/admin" onClick={() => setMobileOpen(false)}>অ্যাডমিন</Link>
-                  </Button>
-                )}
-                <Button variant="ghost" size="sm" className="flex-1" onClick={handleSignOut}>লগআউট</Button>
-              </>
-            ) : (
-              <>
-                <Button variant="outline" size="sm" className="flex-1" asChild>
-                  <Link to="/login">লগইন</Link>
-                </Button>
-                <Button size="sm" className="flex-1" asChild>
-                  <Link to="/register">রেজিস্টার</Link>
-                </Button>
-              </>
-            )}
-          </div>
+          {user ? (
+            <Link to="/dashboard" aria-label="ড্যাশবোর্ড">
+              <Avatar className="h-8 w-8 border border-border">
+                {avatarUrl ? <AvatarImage src={avatarUrl} alt={profileName} /> : null}
+                <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">{initials}</AvatarFallback>
+              </Avatar>
+            </Link>
+          ) : (
+            <Button size="sm" asChild>
+              <Link to="/login">লগইন</Link>
+            </Button>
+          )}
         </div>
-      )}
+      </div>
     </header>
   );
 };
