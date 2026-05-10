@@ -129,7 +129,7 @@ Deno.serve(async (req) => {
                 <h2 style="color: #1a1a2e; margin: 0 0 12px; font-size: 22px; line-height: 1.4;">${post.title}</h2>
                 <p style="color: #666; font-size: 13px; margin: 0 0 16px;">লেখক: ${post.author_name}</p>
                 <p style="color: #444; font-size: 15px; line-height: 1.7; margin: 0 0 24px;">${post.excerpt}</p>
-                <a href="${postUrl}" style="display: inline-block; background: #14315C; color: #fff; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px;">পুরো আর্টিকেল পড়ুন →</a>
+                <a href="${postUrl}" style="display: inline-block; background: #F58A1F; color: #ffffff; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 15px; box-shadow: 0 2px 8px rgba(245,138,31,0.25);">পুরো আর্টিকেল পড়ুন →</a>
               </div>
               <div style="border-top: 1px solid #eee; padding: 20px 24px; text-align: center;">
                 <p style="color: #999; font-size: 12px; margin: 0;">এই ইমেইল পেয়েছেন কারণ আপনি সহজ স্কিলের নিউজলেটারে সাবস্ক্রাইব করেছেন।</p>
