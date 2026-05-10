@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import RichTextEditor from "@/components/RichTextEditor";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Save, Copy, Loader2, RotateCcw, Download } from "lucide-react";
+import { Save, Copy, Loader2, RotateCcw, Download, Share2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // ---------- Color helpers ----------
@@ -244,6 +244,45 @@ const AdminSettings = () => {
       setAllCourses(coursesRes.data || []);
       setAllBooks(booksRes.data || []);
       setLoading(false);
+
+      // Apply shared theme from URL (?themeShare=BASE64) if present
+      try {
+        const url = new URL(window.location.href);
+        const shared = url.searchParams.get("themeShare");
+        if (shared) {
+          const decoded = JSON.parse(atob(decodeURIComponent(shared)));
+          const isHsl = (v: unknown) =>
+            typeof v === "string" && /^\d{1,3}\s+\d{1,3}%\s+\d{1,3}%$/.test(v.trim());
+          if (isHsl(decoded.p) && isHsl(decoded.a) && isHsl(decoded.h)) {
+            const next = {
+              theme_primary: decoded.p.trim(),
+              theme_accent: decoded.a.trim(),
+              theme_highlight: decoded.h.trim(),
+            };
+            setFields((prev) => ({ ...prev, ...next }));
+            setThemeRaw(next);
+            setActiveSection("theme");
+            toast({
+              title: "শেয়ার করা থিম লোড হয়েছে",
+              description: 'সংরক্ষণ করতে "সব সেভ করুন" ক্লিক করুন।',
+            });
+          } else {
+            toast({
+              title: "শেয়ার লিংক ত্রুটিপূর্ণ",
+              description: "থিম ভ্যালু পড়া যায়নি।",
+              variant: "destructive",
+            });
+          }
+          url.searchParams.delete("themeShare");
+          window.history.replaceState({}, "", url.toString() + (window.location.hash || ""));
+        }
+      } catch {
+        toast({
+          title: "শেয়ার লিংক ডিকোড ব্যর্থ",
+          description: "লিংকটি যাচাই করুন।",
+          variant: "destructive",
+        });
+      }
     };
     fetchAll();
   }, []);
