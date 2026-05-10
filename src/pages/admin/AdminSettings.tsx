@@ -273,6 +273,8 @@ const AdminSettings = () => {
   });
   const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [previewDevice, setPreviewDevice] = useState<"mobile" | "tablet" | "desktop">("desktop");
+  const [customBg, setCustomBg] = useState<string>("0 0% 100%");
+  const [customFg, setCustomFg] = useState<string>("218 60% 20%");
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -923,6 +925,110 @@ const AdminSettings = () => {
                       AA: ৪.৫:১ (নর্মাল টেক্সট) · AAA: ৭:১ · বড় টেক্সটের জন্য ৩:১ যথেষ্ট।
                     </p>
                   </div>
+
+                  {/* Custom HSL pair tester */}
+                  {(() => {
+                    const ratio = contrastRatio(customFg, customBg);
+                    const r = ratio.toFixed(2);
+                    let badge = "ফেইল";
+                    let badgeCls = "bg-destructive/15 text-destructive border-destructive/30";
+                    if (ratio >= 7) { badge = "AAA পাস"; badgeCls = "bg-primary/15 text-primary border-primary/30"; }
+                    else if (ratio >= 4.5) { badge = "AA পাস"; badgeCls = "bg-accent/20 text-accent-foreground border-accent/40"; }
+                    else if (ratio >= 3) { badge = "AA Large only"; badgeCls = "bg-muted text-muted-foreground border-border"; }
+                    const bgHex = hslToHex(customBg);
+                    const fgHex = hslToHex(customFg);
+                    return (
+                      <div className="rounded-md border border-dashed border-border bg-muted/20 p-2.5">
+                        <div className="mb-2 flex items-center justify-between gap-2">
+                          <span className="text-[11px] font-medium text-muted-foreground">কাস্টম HSL জোড়া পরীক্ষা</span>
+                          <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-medium ${badgeCls}`}>
+                            {badge}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+                          <div className="space-y-1">
+                            <Label className="text-[10px] text-muted-foreground">ব্যাকগ্রাউন্ড</Label>
+                            <div className="flex gap-1.5">
+                              <input
+                                type="color"
+                                value={bgHex}
+                                onChange={(e) => {
+                                  const hsl = hexToHsl(e.target.value);
+                                  if (hsl) setCustomBg(hsl);
+                                }}
+                                className="h-9 w-10 cursor-pointer rounded border border-input bg-background"
+                                aria-label="ব্যাকগ্রাউন্ড রঙ বাছুন"
+                              />
+                              <Input
+                                value={customBg}
+                                onChange={(e) => setCustomBg(e.target.value)}
+                                placeholder="218 60% 20%"
+                                className="h-9 font-mono text-xs"
+                              />
+                            </div>
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-[10px] text-muted-foreground">ফোরগ্রাউন্ড (টেক্সট)</Label>
+                            <div className="flex gap-1.5">
+                              <input
+                                type="color"
+                                value={fgHex}
+                                onChange={(e) => {
+                                  const hsl = hexToHsl(e.target.value);
+                                  if (hsl) setCustomFg(hsl);
+                                }}
+                                className="h-9 w-10 cursor-pointer rounded border border-input bg-background"
+                                aria-label="ফোরগ্রাউন্ড রঙ বাছুন"
+                              />
+                              <Input
+                                value={customFg}
+                                onChange={(e) => setCustomFg(e.target.value)}
+                                placeholder="0 0% 100%"
+                                className="h-9 font-mono text-xs"
+                              />
+                            </div>
+                          </div>
+                          <div
+                            className="flex h-[68px] min-w-[120px] flex-col items-center justify-center rounded border border-border/60 px-3 text-center"
+                            style={{ backgroundColor: `hsl(${customBg})`, color: `hsl(${customFg})` }}
+                          >
+                            <span className="text-base font-semibold leading-tight">Aa স্যাম্পল</span>
+                            <span className="font-mono text-[11px] tabular-nums opacity-90">{r} : 1</span>
+                          </div>
+                        </div>
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => { const t = customBg; setCustomBg(customFg); setCustomFg(t); }}
+                            className="rounded border border-border bg-background/60 px-2 py-0.5 text-[10px] hover:bg-muted"
+                          >
+                            অদলবদল
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { setCustomBg(fields.theme_primary); setCustomFg(pickForeground(fields.theme_primary)); }}
+                            className="rounded border border-border bg-background/60 px-2 py-0.5 text-[10px] hover:bg-muted"
+                          >
+                            Primary লোড
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { setCustomBg(fields.theme_accent); setCustomFg(pickForeground(fields.theme_accent)); }}
+                            className="rounded border border-border bg-background/60 px-2 py-0.5 text-[10px] hover:bg-muted"
+                          >
+                            Accent লোড
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { setCustomBg(fields.theme_highlight); setCustomFg(pickForeground(fields.theme_highlight)); }}
+                            className="rounded border border-border bg-background/60 px-2 py-0.5 text-[10px] hover:bg-muted"
+                          >
+                            Highlight লোড
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
                 </div>
                 </div>
