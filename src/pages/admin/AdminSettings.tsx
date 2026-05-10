@@ -9,7 +9,7 @@ import RichTextEditor from "@/components/RichTextEditor";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Save, Copy, Loader2, RotateCcw, Download, Share2, Check } from "lucide-react";
+import { Save, Copy, Loader2, RotateCcw, Download, Share2, Check, Smartphone, Tablet, Monitor } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // ---------- Color helpers ----------
@@ -230,6 +230,7 @@ const AdminSettings = () => {
     return window.localStorage.getItem("admin_theme_autosave") === "1";
   });
   const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [previewDevice, setPreviewDevice] = useState<"mobile" | "tablet" | "desktop">("desktop");
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -628,26 +629,69 @@ const AdminSettings = () => {
               );
             })}
 
-            <div className="space-y-4 rounded-lg border border-border p-4">
-              <p className="text-sm font-semibold text-foreground">লাইভ প্রিভিউ</p>
-
-              {/* Navbar mock */}
-              <div className="flex items-center justify-between gap-3 rounded-md bg-primary px-4 py-2.5 text-primary-foreground shadow">
-                <div className="flex items-center gap-4">
-                  <span className="font-display text-sm font-bold">আপনার সাইট</span>
-                  <nav className="hidden gap-3 text-xs sm:flex">
-                    <a className="opacity-90 hover:opacity-100">হোম</a>
-                    <a className="opacity-90 hover:opacity-100">কোর্স</a>
-                    <a className="opacity-90 hover:opacity-100">বই</a>
-                  </nav>
+            <div className="space-y-4 rounded-lg border border-border p-3 sm:p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm font-semibold text-foreground">লাইভ প্রিভিউ</p>
+                <div className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/40 p-0.5">
+                  {([
+                    { id: "mobile", label: "মোবাইল", Icon: Smartphone },
+                    { id: "tablet", label: "ট্যাবলেট", Icon: Tablet },
+                    { id: "desktop", label: "ডেস্কটপ", Icon: Monitor },
+                  ] as const).map(({ id, label, Icon }) => (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => setPreviewDevice(id)}
+                      aria-pressed={previewDevice === id}
+                      title={label}
+                      className={`flex items-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition-colors ${
+                        previewDevice === id
+                          ? "bg-background text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline">{label}</span>
+                    </button>
+                  ))}
                 </div>
-                <button className="rounded-md bg-accent px-3 py-1 text-xs font-semibold text-accent-foreground">
-                  সাইন ইন
-                </button>
               </div>
 
-              {/* Sidebar + Card layout */}
-              <div className="grid gap-3 sm:grid-cols-[160px_1fr]">
+              <div className="overflow-x-auto rounded-md bg-muted/20 p-2 sm:p-3">
+                <div
+                  className={`mx-auto space-y-3 rounded-md bg-background p-3 ring-1 ring-border transition-[max-width] duration-300 ${
+                    previewDevice === "mobile"
+                      ? "max-w-[360px]"
+                      : previewDevice === "tablet"
+                      ? "max-w-[768px]"
+                      : "max-w-full"
+                  }`}
+                >
+                  <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                    {previewDevice === "mobile" ? "৩৬০px" : previewDevice === "tablet" ? "৭৬৮px" : "ফুল প্রস্থ"}
+                  </p>
+
+                {/* Navbar mock */}
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-primary px-3 py-2 text-primary-foreground shadow sm:px-4 sm:py-2.5">
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    <span className="font-display text-sm font-bold">আপনার সাইট</span>
+                    <nav className={`gap-3 text-xs ${previewDevice === "mobile" ? "hidden" : "flex"}`}>
+                      <a className="opacity-90 hover:opacity-100">হোম</a>
+                      <a className="opacity-90 hover:opacity-100">কোর্স</a>
+                      <a className="opacity-90 hover:opacity-100">বই</a>
+                    </nav>
+                  </div>
+                  <button className="rounded-md bg-accent px-2.5 py-1 text-[11px] font-semibold text-accent-foreground sm:px-3 sm:text-xs">
+                    সাইন ইন
+                  </button>
+                </div>
+
+                {/* Sidebar + Card layout */}
+                <div
+                  className={`grid gap-3 ${
+                    previewDevice === "mobile" ? "grid-cols-1" : "grid-cols-[140px_1fr] sm:grid-cols-[160px_1fr]"
+                  }`}
+                >
                 <div className="rounded-md bg-sidebar p-2 text-sidebar-foreground">
                   <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide opacity-70">সাইডবার</p>
                   <ul className="space-y-1 text-xs">
@@ -700,7 +744,7 @@ const AdminSettings = () => {
                   </div>
 
                   {/* Form / focus ring */}
-                  <div className="grid gap-2 sm:grid-cols-2">
+                  <div className={`grid gap-2 ${previewDevice === "mobile" ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2"}`}>
                     <Input placeholder="ফোকাস রিং চেক করুন" />
                     <Input
                       placeholder="হাইলাইট রিং"
@@ -717,6 +761,8 @@ const AdminSettings = () => {
                     <a className="font-semibold text-accent underline underline-offset-2 hover:text-accent/80">অ্যাকসেন্ট লিংক</a>
                     {" "}কেমন দেখাচ্ছে যাচাই করুন।
                   </p>
+                </div>
+                </div>
                 </div>
               </div>
             </div>
