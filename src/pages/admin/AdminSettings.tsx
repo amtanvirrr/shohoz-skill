@@ -47,6 +47,29 @@ const hslToHex = (hsl: string): string => {
   return `#${f(0)}${f(8)}${f(4)}`;
 };
 
+// Parse loose HSL inputs and normalize to "H S% L%". Returns null if unparseable.
+const normalizeHsl = (raw: string): string | null => {
+  if (!raw) return null;
+  const cleaned = raw
+    .toLowerCase()
+    .replace(/hsla?\(/g, "")
+    .replace(/\)/g, "")
+    .replace(/deg/g, "")
+    .replace(/%/g, "")
+    .replace(/,/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const parts = cleaned.split(" ").filter(Boolean);
+  if (parts.length < 3) return null;
+  const nums = parts.slice(0, 3).map((p) => parseFloat(p));
+  if (nums.some((n) => Number.isNaN(n))) return null;
+  const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
+  const h = Math.round(((nums[0] % 360) + 360) % 360);
+  const s = Math.round(clamp(nums[1], 0, 100));
+  const l = Math.round(clamp(nums[2], 0, 100));
+  return `${h} ${s}% ${l}%`;
+};
+
 const FONT_OPTIONS = [
   { value: "sylheti-keteki", label: "সিলেটি কেতেকি (Galada)", family: "'Galada', cursive" },
   { value: "jami", label: "জামি (Hind Siliguri)", family: "'Hind Siliguri', sans-serif" },
@@ -197,6 +220,8 @@ const AdminSettings = () => {
   const [saving, setSaving] = useState(false);
   const [allCourses, setAllCourses] = useState<{ id: string; title: string }[]>([]);
   const [allBooks, setAllBooks] = useState<{ id: string; title: string }[]>([]);
+  const [themeRaw, setThemeRaw] = useState<Record<string, string>>({});
+  const [themeErrors, setThemeErrors] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -241,6 +266,31 @@ const AdminSettings = () => {
       root.style.setProperty("--highlight", fields.theme_highlight);
     }
   }, [fields.theme_primary, fields.theme_accent, fields.theme_highlight]);
+
+  const commitThemeHsl = (key: keyof BrandingFields, label: string) => {
+    const raw = themeRaw[key] ?? fields[key];
+    if (raw === fields[key]) {
+      setThemeErrors((prev) => ({ ...prev, [key]: false }));
+      return;
+    }
+    const normalized = normalizeHsl(raw);
+    if (!normalized) {
+      toast({
+        title: `${label} — ভুল HSL ফরম্যাট`,
+        description: `সঠিক ফরম্যাট: "218 60% 20%" (H 0–360, S/L 0–100%)। আগের মান ফিরিয়ে আনা হলো।`,
+        variant: "destructive",
+      });
+      setThemeRaw((prev) => ({ ...prev, [key]: fields[key] }));
+      setThemeErrors((prev) => ({ ...prev, [key]: false }));
+      return;
+    }
+    setThemeErrors((prev) => ({ ...prev, [key]: false }));
+    setThemeRaw((prev) => ({ ...prev, [key]: normalized }));
+    if (normalized !== raw) {
+      toast({ title: `${label} অটো-সংশোধন হয়েছে`, description: `→ ${normalized}` });
+    }
+    handleChange(key, normalized);
+  };
 
   const toggleFeaturedId = (key: "featured_course_ids" | "featured_book_ids", id: string) => {
     setFields((prev) => {
@@ -347,6 +397,8 @@ const AdminSettings = () => {
             ].map(({ key, label, desc }) => {
               const hsl = fields[key] || "0 0% 0%";
               const hex = hslToHex(hsl);
+              const rawValue = themeRaw[key] ?? hsl;
+              const hasError = !!themeErrors[key];
               return (
                 <div key={key} className="grid gap-3 rounded-lg border border-border p-4 sm:grid-cols-[auto_1fr_1fr_auto] sm:items-center">
                   <div
@@ -361,11 +413,26 @@ const AdminSettings = () => {
                   <div className="space-y-1">
                     <Label className="text-xs text-muted-foreground">HSL মান</Label>
                     <Input
-                      value={hsl}
-                      onChange={(e) => handleChange(key, e.target.value)}
+                      value={rawValue}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setThemeRaw((prev) => ({ ...prev, [key]: v }));
+                        setThemeErrors((prev) => ({ ...prev, [key]: !normalizeHsl(v) }));
+                      }}
+                      onBlur={() => commitThemeHsl(key, label)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          commitThemeHsl(key, label);
+                        }
+                      }}
                       placeholder="218 60% 20%"
-                      className="font-mono text-sm"
+                      className={`font-mono text-sm ${hasError ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                      aria-invalid={hasError}
                     />
+                    {hasError && (
+                      <p className="text-xs text-destructive">ফরম্যাট: "H S% L%" — যেমন 218 60% 20%</p>
+                    )}
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs text-muted-foreground">কালার পিকার</Label>
@@ -374,7 +441,11 @@ const AdminSettings = () => {
                       value={hex}
                       onChange={(e) => {
                         const newHsl = hexToHsl(e.target.value);
-                        if (newHsl) handleChange(key, newHsl);
+                        if (newHsl) {
+                          handleChange(key, newHsl);
+                          setThemeRaw((prev) => ({ ...prev, [key]: newHsl }));
+                          setThemeErrors((prev) => ({ ...prev, [key]: false }));
+                        }
                       }}
                       className="h-10 w-16 cursor-pointer rounded-md border border-border bg-transparent"
                     />
@@ -403,6 +474,12 @@ const AdminSettings = () => {
                   handleChange("theme_primary", "218 60% 20%");
                   handleChange("theme_accent", "28 95% 55%");
                   handleChange("theme_highlight", "200 90% 60%");
+                  setThemeRaw({
+                    theme_primary: "218 60% 20%",
+                    theme_accent: "28 95% 55%",
+                    theme_highlight: "200 90% 60%",
+                  });
+                  setThemeErrors({});
                 }}
               >
                 ডিফল্ট থিম রিসেট
