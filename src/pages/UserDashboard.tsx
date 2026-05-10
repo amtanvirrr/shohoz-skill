@@ -649,7 +649,7 @@ const UserDashboard = () => {
                   <Badge variant={sc.variant} className="gap-1">
                     <StatusIcon className="h-3.5 w-3.5" /> {sc.label}
                   </Badge>
-                  {detailOrder.payment_verified && <Badge className="bg-green-500/15 text-green-600">✅ পেমেন্ট ভেরিফাইড</Badge>}
+                  {detailOrder.payment_verified && <Badge className="bg-success/15 text-success">✅ পেমেন্ট ভেরিফাইড</Badge>}
                 </div>
 
                 <Separator />

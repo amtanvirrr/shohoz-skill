@@ -357,7 +357,7 @@ const AdminLandingPages = () => {
                       <CardTitle className="text-base">{page.headline || "Untitled"}</CardTitle>
                       <p className="text-xs text-muted-foreground mt-1">{product?.title || "Unknown product"}</p>
                     </div>
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${page.is_published ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"}`}>
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${page.is_published ? "bg-success/15 text-success" : "bg-warning/15 text-warning"}`}>
                       {page.is_published ? "Published" : "Draft"}
                     </span>
                   </div>

@@ -128,9 +128,9 @@ const OrderSuccessDialog = ({
         <div className="flex flex-col items-center gap-4 py-4">
           {/* Animated checkmark */}
           <div className="relative flex h-20 w-20 items-center justify-center">
-            <div className="absolute inset-0 animate-ping rounded-full bg-green-400/20" />
-            <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-              <CheckCircle className="h-10 w-10 text-green-600 dark:text-green-400" />
+            <div className="absolute inset-0 animate-ping rounded-full bg-success/20" />
+            <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-success dark:bg-success/30">
+              <CheckCircle className="h-10 w-10 text-success dark:text-success" />
             </div>
           </div>
 
@@ -155,9 +155,9 @@ const OrderSuccessDialog = ({
           </div>
 
           {showVerificationHint && (
-            <div className="flex items-start gap-2 rounded-lg bg-yellow-50 px-4 py-3 text-left dark:bg-yellow-900/10">
-              <Package className="mt-0.5 h-4 w-4 shrink-0 text-yellow-600" />
-              <p className="text-xs text-yellow-700 dark:text-yellow-400">
+            <div className="flex items-start gap-2 rounded-lg bg-warning px-4 py-3 text-left dark:bg-warning/10">
+              <Package className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+              <p className="text-xs text-warning dark:text-warning">
                 এই অর্ডার আইডিটি সংরক্ষণ করুন। পেমেন্ট যাচাইয়ের পর আপনার অর্ডার প্রসেস করা হবে।
               </p>
             </div>

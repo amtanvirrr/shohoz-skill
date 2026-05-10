@@ -468,7 +468,7 @@ const AdminQuizzes = () => {
                   {quiz.price > 0 ? (
                     <span className="font-medium text-primary">৳{quiz.price}</span>
                   ) : (
-                    <span className="text-green-600 font-medium">ফ্রি</span>
+                    <span className="text-success font-medium">ফ্রি</span>
                   )}
                   {!quiz.is_published && <span className="text-destructive font-medium">Draft</span>}
                 </div>

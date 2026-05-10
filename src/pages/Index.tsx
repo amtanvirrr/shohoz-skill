@@ -140,7 +140,7 @@ const Index = () => {
       const hasConfirmed = info.confirmed > 0 || info.delivered > 0;
       return (
         <div className={`absolute top-3 right-3 z-10 flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
-          hasConfirmed ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+          hasConfirmed ? "bg-success/15 text-success" : "bg-warning/15 text-warning"
         }`}>
           {hasConfirmed ? <><CheckCircle className="h-3 w-3" /> কেনা হয়েছে</> : <><Clock className="h-3 w-3" /> পেন্ডিং</>}
         </div>
@@ -154,10 +154,10 @@ const Index = () => {
             <span>{info.total} বার কেনা হয়েছে</span>
           </div>
           <div className="mt-1 flex flex-wrap gap-1.5">
-            {info.delivered > 0 && <span className="inline-flex items-center gap-0.5 rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400"><CheckCircle className="h-2.5 w-2.5" /> {info.delivered} ডেলিভারি</span>}
-            {info.shipped > 0 && <span className="inline-flex items-center gap-0.5 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"><Truck className="h-2.5 w-2.5" /> {info.shipped} শিপড</span>}
-            {info.confirmed > 0 && <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"><CheckCircle className="h-2.5 w-2.5" /> {info.confirmed} কনফার্মড</span>}
-            {info.pending > 0 && <span className="inline-flex items-center gap-0.5 rounded-full bg-yellow-100 px-2 py-0.5 text-[10px] font-medium text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"><Clock className="h-2.5 w-2.5" /> {info.pending} পেন্ডিং</span>}
+            {info.delivered > 0 && <span className="inline-flex items-center gap-0.5 rounded-full bg-success px-2 py-0.5 text-[10px] font-medium text-success dark:bg-success/30 dark:text-success"><CheckCircle className="h-2.5 w-2.5" /> {info.delivered} ডেলিভারি</span>}
+            {info.shipped > 0 && <span className="inline-flex items-center gap-0.5 rounded-full bg-primary px-2 py-0.5 text-[10px] font-medium text-primary dark:bg-primary/30 dark:text-primary"><Truck className="h-2.5 w-2.5" /> {info.shipped} শিপড</span>}
+            {info.confirmed > 0 && <span className="inline-flex items-center gap-0.5 rounded-full bg-success px-2 py-0.5 text-[10px] font-medium text-success dark:bg-success/30 dark:text-success"><CheckCircle className="h-2.5 w-2.5" /> {info.confirmed} কনফার্মড</span>}
+            {info.pending > 0 && <span className="inline-flex items-center gap-0.5 rounded-full bg-warning px-2 py-0.5 text-[10px] font-medium text-warning dark:bg-warning/30 dark:text-warning"><Clock className="h-2.5 w-2.5" /> {info.pending} পেন্ডিং</span>}
           </div>
         </div>
       </div>
@@ -170,8 +170,8 @@ const Index = () => {
     return (
       <div className={`absolute top-3 right-3 z-10 flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
         ["confirmed", "delivered"].includes(status)
-          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-          : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+          ? "bg-success/15 text-success"
+          : "bg-warning/15 text-warning"
       }`}>
         {["confirmed", "delivered"].includes(status) ? <><CheckCircle className="h-3 w-3" /> কেনা হয়েছে</> : <><Clock className="h-3 w-3" /> পেন্ডিং</>}
       </div>
@@ -245,7 +245,7 @@ const Index = () => {
                     <div className="p-5">
                       <div className="flex flex-wrap gap-2">
                         <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">{course.category}</span>
-                        <span className="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2.5 py-1 text-xs font-medium text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">🎓 অনলাইন কোর্স</span>
+                        <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-xs font-medium text-primary dark:bg-primary/30 dark:text-primary">🎓 অনলাইন কোর্স</span>
                       </div>
                       <h3 className="mt-3 font-display text-lg font-semibold text-card-foreground line-clamp-2 transition-colors group-hover:text-primary">{course.title}</h3>
                       <p className="mt-1 text-sm text-muted-foreground">{course.instructor}</p>
@@ -256,7 +256,7 @@ const Index = () => {
                         <div className="flex items-center gap-2">
                           {course.price === 0 ? (
                             <>
-                              <span className="text-lg font-bold text-green-600">ফ্রি</span>
+                              <span className="text-lg font-bold text-success">ফ্রি</span>
                               {course.original_price && course.original_price > 0 && <span className="text-sm text-muted-foreground line-through">৳{course.original_price.toLocaleString()}</span>}
                             </>
                           ) : (
@@ -320,8 +320,8 @@ const Index = () => {
                         <span className="inline-block rounded-full bg-accent/15 px-3 py-1 text-xs font-medium text-accent">{book.category}</span>
                         <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
                           book.book_type === "ebook"
-                            ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-                            : "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
+                            ? "bg-primary/10 text-primary"
+                            : "bg-accent/15 text-accent"
                         }`}>
                           {book.book_type === "ebook" ? "📱 ইবুক" : "📦 ফিজিক্যাল বই"}
                         </span>
@@ -332,7 +332,7 @@ const Index = () => {
                         <div className="flex items-center gap-2">
                           {book.price === 0 ? (
                             <>
-                              <span className="text-lg font-bold text-green-600">ফ্রি</span>
+                              <span className="text-lg font-bold text-success">ফ্রি</span>
                               {book.original_price && book.original_price > 0 && <span className="text-sm text-muted-foreground line-through">৳{book.original_price}</span>}
                             </>
                           ) : (
