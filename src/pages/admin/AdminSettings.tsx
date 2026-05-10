@@ -474,6 +474,12 @@ const AdminSettings = () => {
                   handleChange("theme_primary", "218 60% 20%");
                   handleChange("theme_accent", "28 95% 55%");
                   handleChange("theme_highlight", "200 90% 60%");
+                  setThemeRaw({
+                    theme_primary: "218 60% 20%",
+                    theme_accent: "28 95% 55%",
+                    theme_highlight: "200 90% 60%",
+                  });
+                  setThemeErrors({});
                 }}
               >
                 ডিফল্ট থিম রিসেট
