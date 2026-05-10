@@ -397,6 +397,8 @@ const AdminSettings = () => {
             ].map(({ key, label, desc }) => {
               const hsl = fields[key] || "0 0% 0%";
               const hex = hslToHex(hsl);
+              const rawValue = themeRaw[key] ?? hsl;
+              const hasError = !!themeErrors[key];
               return (
                 <div key={key} className="grid gap-3 rounded-lg border border-border p-4 sm:grid-cols-[auto_1fr_1fr_auto] sm:items-center">
                   <div
@@ -411,11 +413,26 @@ const AdminSettings = () => {
                   <div className="space-y-1">
                     <Label className="text-xs text-muted-foreground">HSL মান</Label>
                     <Input
-                      value={hsl}
-                      onChange={(e) => handleChange(key, e.target.value)}
+                      value={rawValue}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setThemeRaw((prev) => ({ ...prev, [key]: v }));
+                        setThemeErrors((prev) => ({ ...prev, [key]: !normalizeHsl(v) }));
+                      }}
+                      onBlur={() => commitThemeHsl(key, label)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          commitThemeHsl(key, label);
+                        }
+                      }}
                       placeholder="218 60% 20%"
-                      className="font-mono text-sm"
+                      className={`font-mono text-sm ${hasError ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                      aria-invalid={hasError}
                     />
+                    {hasError && (
+                      <p className="text-xs text-destructive">ফরম্যাট: "H S% L%" — যেমন 218 60% 20%</p>
+                    )}
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs text-muted-foreground">কালার পিকার</Label>
@@ -424,7 +441,11 @@ const AdminSettings = () => {
                       value={hex}
                       onChange={(e) => {
                         const newHsl = hexToHsl(e.target.value);
-                        if (newHsl) handleChange(key, newHsl);
+                        if (newHsl) {
+                          handleChange(key, newHsl);
+                          setThemeRaw((prev) => ({ ...prev, [key]: newHsl }));
+                          setThemeErrors((prev) => ({ ...prev, [key]: false }));
+                        }
                       }}
                       className="h-10 w-16 cursor-pointer rounded-md border border-border bg-transparent"
                     />
