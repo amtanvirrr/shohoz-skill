@@ -17,8 +17,14 @@ const MobileBottomNav = () => {
   const { user, isAdmin, signOut } = useAuth();
   const [open, setOpen] = useState(false);
 
-  const isActive = (to: string) =>
-    to === "/" ? location.pathname === "/" : location.pathname.startsWith(to);
+  const isActive = (to: string) => {
+    const p = location.pathname;
+    if (to === "/") return p === "/";
+    if (to === "/courses") return p === "/courses" || p.startsWith("/course/") || p.startsWith("/enrolled/");
+    if (to === "/books") return p === "/books" || p.startsWith("/book/") || p.startsWith("/read/");
+    if (to === "/quizzes") return p === "/quizzes" || p.startsWith("/quiz/");
+    return p.startsWith(to);
+  };
 
   const moreActive = !tabs.some((t) => isActive(t.to));
 
