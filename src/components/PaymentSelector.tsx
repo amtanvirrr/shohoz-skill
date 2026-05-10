@@ -675,11 +675,11 @@ export const PaymentSelector = ({
       )}
 
       {fallbackNotice && (
-        <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-xs">
+        <div className="rounded-lg border border-warning/40 bg-warning/10 p-3 text-xs">
           <div className="flex items-start gap-2">
-            <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <AlertCircle className="h-4 w-4 text-warning dark:text-warning shrink-0 mt-0.5" />
             <div className="flex-1">
-              <p className="font-medium text-amber-700 dark:text-amber-300">
+              <p className="font-medium text-warning dark:text-warning">
                 পেমেন্ট পদ্ধতি পরিবর্তন হয়েছে
               </p>
               <p className="mt-1 text-muted-foreground">
@@ -699,7 +699,7 @@ export const PaymentSelector = ({
             <button
               type="button"
               onClick={() => setFallbackNotice(null)}
-              className="text-amber-600 dark:text-amber-400 hover:opacity-70 text-lg leading-none"
+              className="text-warning dark:text-warning hover:opacity-70 text-lg leading-none"
               aria-label="বন্ধ করুন"
             >
               ×

@@ -76,8 +76,8 @@ const CoursesPage = () => {
                     {status && (
                       <div className={`absolute top-3 right-3 z-10 flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
                         ["confirmed", "delivered"].includes(status)
-                          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                          : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                          ? "bg-success/15 text-success"
+                          : "bg-warning/15 text-warning"
                       }`}>
                         {["confirmed", "delivered"].includes(status) ? (
                           <><CheckCircle className="h-3 w-3" /> কেনা হয়েছে</>
@@ -95,7 +95,7 @@ const CoursesPage = () => {
                     <div className="p-5">
                       <div className="flex flex-wrap gap-2">
                         <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">{course.category}</span>
-                        <span className="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2.5 py-1 text-xs font-medium text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">🎓 অনলাইন কোর্স</span>
+                        <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-xs font-medium text-primary dark:bg-primary/30 dark:text-primary">🎓 অনলাইন কোর্স</span>
                       </div>
                       <h3 className="mt-3 font-display text-lg font-semibold text-card-foreground line-clamp-2 transition-colors group-hover:text-primary">{course.title}</h3>
                       <p className="mt-1 text-sm text-muted-foreground">{course.instructor}</p>
@@ -107,7 +107,7 @@ const CoursesPage = () => {
                         <div className="flex items-center gap-2">
                           {course.price === 0 ? (
                             <>
-                              <span className="text-lg font-bold text-green-600">ফ্রি</span>
+                              <span className="text-lg font-bold text-success">ফ্রি</span>
                               {course.original_price && course.original_price > 0 && (
                                 <span className="text-sm text-muted-foreground line-through">৳{course.original_price.toLocaleString()}</span>
                               )}

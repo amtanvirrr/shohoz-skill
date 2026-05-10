@@ -246,7 +246,7 @@ const AdminShipping = () => {
                 {" — "}
                 শিপিং: <span className="font-semibold text-foreground">৳{zone.shipping_rate}</span>
                 {zone.free_shipping_minimum && (
-                  <> | ৳{zone.free_shipping_minimum}+ অর্ডারে <span className="text-green-600 font-medium">ফ্রি</span></>
+                  <> | ৳{zone.free_shipping_minimum}+ অর্ডারে <span className="text-success font-medium">ফ্রি</span></>
                 )}
                 {" | "}
                 ডেলিভারি: <span className="font-semibold text-foreground">{zone.delivery_time_min}-{zone.delivery_time_max} {zone.delivery_time_unit === "days" ? "দিন" : zone.delivery_time_unit === "hours" ? "ঘণ্টা" : "সপ্তাহ"}</span>

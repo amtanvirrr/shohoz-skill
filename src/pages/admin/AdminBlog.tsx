@@ -315,7 +315,7 @@ const AdminBlog = () => {
                   <div>
                     <Label className="cursor-pointer">পাবলিশের সাথে নিউজলেটার পাঠান</Label>
                     {editing?.newsletter_sent_at ? (
-                      <p className="text-xs text-amber-600">⚠️ এই পোস্টের নিউজলেটার আগেই পাঠানো হয়েছে ({new Date(editing.newsletter_sent_at).toLocaleDateString("bn-BD")})</p>
+                      <p className="text-xs text-warning">⚠️ এই পোস্টের নিউজলেটার আগেই পাঠানো হয়েছে ({new Date(editing.newsletter_sent_at).toLocaleDateString("bn-BD")})</p>
                     ) : (
                       <p className="text-xs text-muted-foreground">সকল সাবস্ক্রাইবারকে ইমেইল নোটিফিকেশন পাঠানো হবে</p>
                     )}

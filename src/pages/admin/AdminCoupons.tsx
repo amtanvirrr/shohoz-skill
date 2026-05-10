@@ -146,7 +146,7 @@ const AdminCoupons = () => {
                     {!c.is_active && <Badge variant="secondary">নিষ্ক্রিয়</Badge>}
                     {isExpired(c) && <Badge variant="destructive">মেয়াদ শেষ</Badge>}
                     {isMaxed(c) && <Badge variant="secondary">সীমা পূর্ণ</Badge>}
-                    {c.is_active && !isExpired(c) && !isMaxed(c) && <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">সক্রিয়</Badge>}
+                    {c.is_active && !isExpired(c) && !isMaxed(c) && <Badge className="bg-success/15 text-success">সক্রিয়</Badge>}
                   </div>
                 </div>
               </CardHeader>

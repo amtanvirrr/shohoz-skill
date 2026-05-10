@@ -361,10 +361,10 @@ const QuizPage = () => {
     if (quiz.price === 0) return null;
     const status = quizOrderStatus[quiz.id];
     if (status === "confirmed" || status === "delivered") {
-      return <span className="rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-medium text-green-600">✅ কেনা হয়েছে</span>;
+      return <span className="rounded-full bg-success/10 px-2 py-0.5 text-xs font-medium text-success">✅ কেনা হয়েছে</span>;
     }
     if (status === "pending") {
-      return <span className="rounded-full bg-yellow-500/10 px-2 py-0.5 text-xs font-medium text-yellow-600">⏳ যাচাই অপেক্ষমাণ</span>;
+      return <span className="rounded-full bg-warning/10 px-2 py-0.5 text-xs font-medium text-warning">⏳ যাচাই অপেক্ষমাণ</span>;
     }
     return null;
   };
@@ -627,7 +627,7 @@ const QuizPage = () => {
                           )}
                         </div>
                       ) : (
-                        <span className="inline-block rounded-full bg-green-500/10 px-3 py-1 text-sm font-semibold text-green-600">ফ্রি</span>
+                        <span className="inline-block rounded-full bg-success/10 px-3 py-1 text-sm font-semibold text-success">ফ্রি</span>
                       )}
                     </div>
 
@@ -762,14 +762,14 @@ const QuizPage = () => {
                     {previewQuiz.original_price && previewQuiz.original_price > previewQuiz.price && (
                       <>
                         <span className="text-base text-muted-foreground line-through">৳{previewQuiz.original_price}</span>
-                        <span className="rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-semibold text-green-600">
+                        <span className="rounded-full bg-success/10 px-2 py-0.5 text-xs font-semibold text-success">
                           {Math.round(((previewQuiz.original_price - previewQuiz.price) / previewQuiz.original_price) * 100)}% ছাড়
                         </span>
                       </>
                     )}
                   </div>
                 ) : (
-                  <span className="inline-block rounded-full bg-green-500/10 px-4 py-1.5 text-sm font-semibold text-green-600">🎉 সম্পূর্ণ ফ্রি</span>
+                  <span className="inline-block rounded-full bg-success/10 px-4 py-1.5 text-sm font-semibold text-success">🎉 সম্পূর্ণ ফ্রি</span>
                 )}
               </div>
 

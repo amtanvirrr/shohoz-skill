@@ -240,7 +240,7 @@ const CourseDetail = () => {
                   <GraduationCap className="h-3.5 w-3.5" />
                   {course.category}
                 </span>
-                <span className="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2.5 py-1 text-xs font-medium text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">🎓 অনলাইন কোর্স</span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-xs font-medium text-primary dark:bg-primary/30 dark:text-primary">🎓 অনলাইন কোর্স</span>
               </div>
               <h1 className="mt-3 text-3xl font-bold text-foreground lg:text-4xl">{course.title}</h1>
               <p className="mt-2 text-muted-foreground">ইন্সট্রাক্টর: {course.instructor}</p>
@@ -403,7 +403,7 @@ const CourseDetail = () => {
             <div className="sticky top-20 rounded-xl glass-card p-6 glow-hover">
               <div className="flex items-baseline gap-2">
                 {course.price === 0 ? (
-                  <span className="text-3xl font-bold text-green-600">ফ্রি</span>
+                  <span className="text-3xl font-bold text-success">ফ্রি</span>
                 ) : (
                   <>
                     <span className="text-3xl font-bold text-foreground">৳{course.price.toLocaleString()}</span>
@@ -423,8 +423,8 @@ const CourseDetail = () => {
                 </Button>
               ) : orderStatus === "pending" ? (
                 <div className="mt-6">
-                  <div className="rounded-lg bg-yellow-500/10 p-4 text-center">
-                    <Clock className="mx-auto h-6 w-6 text-yellow-500" />
+                  <div className="rounded-lg bg-warning/10 p-4 text-center">
+                    <Clock className="mx-auto h-6 w-6 text-warning" />
                     <p className="mt-2 text-sm font-medium text-foreground">পেমেন্ট যাচাই অপেক্ষমাণ</p>
                     <p className="mt-1 text-xs text-muted-foreground">অ্যাডমিন পেমেন্ট যাচাই করার পর আপনি কোর্সটি অ্যাক্সেস করতে পারবেন।</p>
                   </div>

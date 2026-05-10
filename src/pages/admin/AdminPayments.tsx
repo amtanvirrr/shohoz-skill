@@ -255,9 +255,9 @@ const AdminPayments = () => {
   const getProviderColor = (provider: string) => {
     switch (provider) {
       case "bkash": return "bg-pink-500/10 text-pink-600";
-      case "nagad": return "bg-orange-500/10 text-orange-600";
-      case "rocket": return "bg-purple-500/10 text-purple-600";
-      case "upay": return "bg-green-500/10 text-green-600";
+      case "nagad": return "bg-accent/10 text-accent";
+      case "rocket": return "bg-primary/10 text-primary";
+      case "upay": return "bg-success/10 text-success";
       default: return "bg-muted text-muted-foreground";
     }
   };

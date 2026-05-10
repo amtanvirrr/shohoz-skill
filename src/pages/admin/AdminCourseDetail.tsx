@@ -610,7 +610,7 @@ const AdminCourseDetail = () => {
           </div>
           <div className="mt-2 grid grid-cols-2 gap-1 text-xs">
             {["a", "b", "c", "d"].map((opt) => (
-              <span key={opt} className={`rounded px-2 py-1 ${q.correct_option === opt ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 font-semibold" : "bg-muted text-muted-foreground"}`}>
+              <span key={opt} className={`rounded px-2 py-1 ${q.correct_option === opt ? "bg-success text-success dark:bg-success/30 dark:text-success font-semibold" : "bg-muted text-muted-foreground"}`}>
                 {opt.toUpperCase()}: {(q as any)[`option_${opt}`]}
               </span>
             ))}

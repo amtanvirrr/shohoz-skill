@@ -49,8 +49,8 @@ const statusColors: Record<string, string> = {
 
 const courierStatusStyle = (status: string): string => {
   switch (status) {
-    case "delivered": return "bg-green-500/15 text-green-600";
-    case "in_transit": return "bg-blue-500/15 text-blue-600";
+    case "delivered": return "bg-success/15 text-success";
+    case "in_transit": return "bg-primary/15 text-primary";
     case "cancelled": return "bg-destructive/15 text-destructive";
     case "pending_pickup": return "bg-warning/15 text-warning";
     case "dispatched": return "bg-accent/15 text-accent-foreground";
@@ -423,7 +423,7 @@ const AdminOrders = () => {
                         <div className="flex items-center gap-1.5">
                           <span className="font-mono text-xs text-foreground">{order.transaction_id}</span>
                           <button onClick={() => togglePaymentVerified(order.id, order.payment_verified)} title={order.payment_verified ? "ভেরিফাইড" : "ভেরিফাই করুন"}>
-                            {order.payment_verified ? <CheckCircle className="h-4 w-4 text-green-500" /> : <XCircle className="h-4 w-4 text-muted-foreground hover:text-green-500" />}
+                            {order.payment_verified ? <CheckCircle className="h-4 w-4 text-success" /> : <XCircle className="h-4 w-4 text-muted-foreground hover:text-success" />}
                           </button>
                         </div>
                       ) : <span className="text-xs text-muted-foreground">—</span>}
@@ -546,7 +546,7 @@ const AdminOrders = () => {
                     <div className="flex items-center gap-1">
                       <span className="font-mono text-muted-foreground">{order.transaction_id}</span>
                       <button onClick={() => togglePaymentVerified(order.id, order.payment_verified)}>
-                        {order.payment_verified ? <CheckCircle className="h-3.5 w-3.5 text-green-500" /> : <XCircle className="h-3.5 w-3.5 text-muted-foreground" />}
+                        {order.payment_verified ? <CheckCircle className="h-3.5 w-3.5 text-success" /> : <XCircle className="h-3.5 w-3.5 text-muted-foreground" />}
                       </button>
                     </div>
                   )}
@@ -654,7 +654,7 @@ const AdminOrders = () => {
               <div className="flex flex-wrap items-center gap-2">
                 <Badge className={statusColors[detailOrder.status] || "bg-muted text-muted-foreground"}>{detailOrder.status}</Badge>
                 {detailOrder.is_fraud_flagged && <Badge variant="destructive">⚠️ সন্দেহজনক</Badge>}
-                {detailOrder.payment_verified && <Badge className="bg-green-500/15 text-green-600">✅ পেমেন্ট ভেরিফাইড</Badge>}
+                {detailOrder.payment_verified && <Badge className="bg-success/15 text-success">✅ পেমেন্ট ভেরিফাইড</Badge>}
               </div>
 
               <Separator />

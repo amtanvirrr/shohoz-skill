@@ -43,7 +43,7 @@ const ERROR_TYPES = new Set([
 const eventStyle = (type: string) => {
   if (ERROR_TYPES.has(type)) return { color: "text-destructive", bg: "bg-destructive/10", Icon: AlertTriangle };
   if (type === "ssl_redirect") return { color: "text-primary", bg: "bg-primary/10", Icon: ArrowRightCircle };
-  if (type === "mfs_submit_success") return { color: "text-emerald-600", bg: "bg-emerald-500/10", Icon: CheckCircle2 };
+  if (type === "mfs_submit_success") return { color: "text-success", bg: "bg-success/10", Icon: CheckCircle2 };
   return { color: "text-muted-foreground", bg: "bg-muted", Icon: Activity };
 };
 

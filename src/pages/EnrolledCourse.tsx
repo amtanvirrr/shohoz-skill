@@ -327,11 +327,11 @@ const EnrolledCourse = () => {
                         {quizzes.filter((q) => q.lesson_id === currentLesson.id).map((quiz) => {
                           const isPassed = quizPassStatus[quiz.id];
                           return (
-                            <div key={quiz.id} className={`flex items-center gap-2 rounded-lg border p-3 text-sm transition-colors ${isPassed ? "border-green-500/30 bg-green-500/5" : "border-border"}`}>
-                              <HelpCircle className={`h-4 w-4 ${isPassed ? "text-green-500" : "text-primary"}`} />
+                            <div key={quiz.id} className={`flex items-center gap-2 rounded-lg border p-3 text-sm transition-colors ${isPassed ? "border-success/30 bg-success/5" : "border-border"}`}>
+                              <HelpCircle className={`h-4 w-4 ${isPassed ? "text-success" : "text-primary"}`} />
                               <span className="flex-1 text-foreground">{quiz.title}</span>
                               {quiz.pass_mark > 0 && (
-                                <span className={`text-xs ${isPassed ? "text-green-600 font-medium" : "text-muted-foreground"}`}>
+                                <span className={`text-xs ${isPassed ? "text-success font-medium" : "text-muted-foreground"}`}>
                                   {isPassed ? "✅ পাস" : `পাস মার্ক: ${quiz.pass_mark}`}
                                 </span>
                               )}
@@ -390,7 +390,7 @@ const EnrolledCourse = () => {
                           lockInfo.locked
                             ? "bg-muted text-muted-foreground"
                             : isCompleted
-                            ? "bg-green-500 text-white"
+                            ? "bg-success text-white"
                             : isActive
                             ? "bg-primary text-primary-foreground"
                             : "bg-muted text-muted-foreground"
@@ -399,7 +399,7 @@ const EnrolledCourse = () => {
                         {lockInfo.locked ? <Lock className="h-3 w-3" /> : isCompleted ? <Check className="h-3.5 w-3.5" /> : i + 1}
                       </span>
                       <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-medium line-clamp-2 ${lockInfo.locked ? "text-muted-foreground" : isCompleted ? "text-green-600 dark:text-green-400" : isActive ? "text-primary" : "text-foreground"}`}>
+                        <p className={`text-sm font-medium line-clamp-2 ${lockInfo.locked ? "text-muted-foreground" : isCompleted ? "text-success dark:text-success" : isActive ? "text-primary" : "text-foreground"}`}>
                           {lesson.title}
                         </p>
                         <div className="mt-0.5 flex flex-wrap gap-2 text-xs text-muted-foreground">

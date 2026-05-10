@@ -124,7 +124,7 @@ const AdminComments = () => {
                         onClick={() => toggleApproval(c.id, c.is_approved)}
                         title={c.is_approved ? "লুকান" : "অনুমোদন করুন"}
                       >
-                        {c.is_approved ? <XCircle className="h-4 w-4 text-muted-foreground" /> : <CheckCircle className="h-4 w-4 text-green-600" />}
+                        {c.is_approved ? <XCircle className="h-4 w-4 text-muted-foreground" /> : <CheckCircle className="h-4 w-4 text-success" />}
                       </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>

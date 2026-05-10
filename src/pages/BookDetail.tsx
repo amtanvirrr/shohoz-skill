@@ -217,8 +217,8 @@ const BookDetail = () => {
                 </span>
                 <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
                   isEbook
-                    ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-                    : "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
+                    ? "bg-primary/10 text-primary"
+                    : "bg-accent/15 text-accent"
                 }`}>
                   {isEbook ? "📱 ইবুক" : "📦 ফিজিক্যাল বই"}
                 </span>
@@ -228,7 +228,7 @@ const BookDetail = () => {
 
               <div className="mt-4 flex items-baseline gap-3">
                 {book.price === 0 ? (
-                  <span className="text-3xl font-bold text-green-600">ফ্রি</span>
+                  <span className="text-3xl font-bold text-success">ফ্রি</span>
                 ) : (
                   <>
                     <span className="text-3xl font-bold text-foreground">৳{book.price}</span>
@@ -273,12 +273,12 @@ const BookDetail = () => {
             ) : isEbook && orderStatus === "pending" ? (
               <div className="mt-8 rounded-xl glass-card p-6">
                 <h3 className="flex items-center gap-2 font-display text-lg font-semibold text-foreground">
-                  <Clock className="h-5 w-5 text-yellow-500" /> পেমেন্ট যাচাই অপেক্ষমাণ
+                  <Clock className="h-5 w-5 text-warning" /> পেমেন্ট যাচাই অপেক্ষমাণ
                 </h3>
                 <p className="mt-2 text-sm text-muted-foreground">
                   আপনার অর্ডারটি সফলভাবে জমা হয়েছে। অ্যাডমিন পেমেন্ট যাচাই করার পর আপনি বইটি পড়তে পারবেন।
                 </p>
-                <div className="mt-3 rounded-lg bg-yellow-500/10 p-3 text-center text-sm font-medium text-yellow-600">
+                <div className="mt-3 rounded-lg bg-warning/10 p-3 text-center text-sm font-medium text-warning">
                   ⏳ অপেক্ষমাণ
                 </div>
               </div>
@@ -367,7 +367,7 @@ const BookDetail = () => {
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">শিপিং চার্জ:</span>
                             {shippingCost === 0 ? (
-                              <span className="font-medium text-green-600">ফ্রি শিপিং ✅</span>
+                              <span className="font-medium text-success">ফ্রি শিপিং ✅</span>
                             ) : (
                               <span className="font-medium text-foreground">৳{shippingCost}</span>
                             )}
@@ -398,7 +398,7 @@ const BookDetail = () => {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">শিপিং:</span>
-                        <span className={`font-medium ${shippingCost === 0 ? "text-green-600" : "text-foreground"}`}>
+                        <span className={`font-medium ${shippingCost === 0 ? "text-success" : "text-foreground"}`}>
                           {shippingCost === 0 ? "ফ্রি" : `৳${shippingCost}`}
                         </span>
                       </div>
