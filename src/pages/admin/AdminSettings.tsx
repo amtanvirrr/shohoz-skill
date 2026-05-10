@@ -47,6 +47,29 @@ const hslToHex = (hsl: string): string => {
   return `#${f(0)}${f(8)}${f(4)}`;
 };
 
+// Parse loose HSL inputs and normalize to "H S% L%". Returns null if unparseable.
+const normalizeHsl = (raw: string): string | null => {
+  if (!raw) return null;
+  const cleaned = raw
+    .toLowerCase()
+    .replace(/hsla?\(/g, "")
+    .replace(/\)/g, "")
+    .replace(/deg/g, "")
+    .replace(/%/g, "")
+    .replace(/,/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const parts = cleaned.split(" ").filter(Boolean);
+  if (parts.length < 3) return null;
+  const nums = parts.slice(0, 3).map((p) => parseFloat(p));
+  if (nums.some((n) => Number.isNaN(n))) return null;
+  const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
+  const h = Math.round(((nums[0] % 360) + 360) % 360);
+  const s = Math.round(clamp(nums[1], 0, 100));
+  const l = Math.round(clamp(nums[2], 0, 100));
+  return `${h} ${s}% ${l}%`;
+};
+
 const FONT_OPTIONS = [
   { value: "sylheti-keteki", label: "সিলেটি কেতেকি (Galada)", family: "'Galada', cursive" },
   { value: "jami", label: "জামি (Hind Siliguri)", family: "'Hind Siliguri', sans-serif" },
