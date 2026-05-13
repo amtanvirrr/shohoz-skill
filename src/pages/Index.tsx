@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Star, Search, ArrowRight, BookOpen, GraduationCap, Clock, Users, CheckCircle, Package, Truck, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,8 +69,8 @@ const Index = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { settings } = useSiteSettings();
+  const navigate = useNavigate();
   const [trackQuery, setTrackQuery] = useState("");
-  const [trackResult, setTrackResult] = useState<any>(null);
   const [dbBooks, setDbBooks] = useState<DbBook[]>(() => featuredCache.books ?? []);
   const [dbCourses, setDbCourses] = useState<DbCourse[]>(() => featuredCache.courses ?? []);
   // Only show skeleton on the very first fetch — keep cached cards visible
@@ -264,23 +264,23 @@ const Index = () => {
     return "bg-primary text-primary-foreground sm:bg-primary/10 sm:text-primary sm:shadow-none";
   };
 
-  const handleTrack = async () => {
+  /**
+   * Homepage track handler — sends the user to the dedicated /track-order
+   * page with the typed value pre-filled into the matching field
+   * (Order ID vs Phone). Full order details require BOTH fields verified
+   * on the next page.
+   */
+  const handleTrack = () => {
     const q = trackQuery.trim();
     if (!q) {
       toast({ title: "তথ্য দিন", description: "অর্ডার আইডি অথবা ফোন নম্বর দিন।", variant: "destructive" });
       return;
     }
-
-    const { data: result, error } = await supabase.functions.invoke("track-order", {
-      body: { query: q },
-    });
-
-    if (error || !result?.data || result.data.length === 0) {
-      setTrackResult(null);
-      toast({ title: "অর্ডার পাওয়া যায়নি", description: "সঠিক অর্ডার আইডি বা ফোন নম্বর দিয়ে আবার চেষ্টা করুন।", variant: "destructive" });
-    } else {
-      setTrackResult(result.data);
-    }
+    const looksLikeOrderId = /[a-zA-Z]/.test(q) || /^ord-/i.test(q);
+    const params = new URLSearchParams();
+    if (looksLikeOrderId) params.set("order_id", q);
+    else params.set("phone", q);
+    navigate(`/track-order?${params.toString()}`);
   };
 
   const statusLabels: Record<string, string> = {
@@ -528,21 +528,9 @@ const Index = () => {
                   <Input className="glass-input" placeholder="অর্ডার আইডি অথবা ফোন নম্বর" value={trackQuery} onChange={(e) => setTrackQuery(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleTrack()} />
                   <Button className="shrink-0 glow-hover" onClick={handleTrack}>ট্র্যাক করুন</Button>
                 </div>
-                <p className="mt-2 text-xs text-muted-foreground">অর্ডার আইডি বা ফোন নম্বর দিয়ে অর্ডার খুঁজুন</p>
-                {trackResult && (
-                  <div className="mt-4 space-y-3">
-                    {trackResult.map((order: any, idx: number) => (
-                      <ScrollReveal key={idx} delay={idx * 100}>
-                        <div className="rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm p-4 text-left transition-all hover:border-primary/20">
-                          <p className="text-sm"><span className="font-medium">অর্ডার:</span> {order.order_id}</p>
-                          <p className="text-sm"><span className="font-medium">প্রোডাক্ট:</span> {order.product_title}</p>
-                          <p className="text-sm"><span className="font-medium">স্ট্যাটাস:</span> {statusLabels[order.status] || order.status}</p>
-                          <p className="text-xs text-muted-foreground mt-1">অর্ডারের তারিখ: {new Date(order.created_at).toLocaleDateString("bn-BD")}</p>
-                        </div>
-                      </ScrollReveal>
-                    ))}
-                  </div>
-                )}
+                <p className="mt-2 text-xs text-muted-foreground">
+                  পরবর্তী পেজে অর্ডার আইডি ও ফোন নম্বর — দুটোই যাচাই হলে সম্পূর্ণ বিস্তারিত দেখানো হবে।
+                </p>
               </div>
             </div>
           </ScrollReveal>
