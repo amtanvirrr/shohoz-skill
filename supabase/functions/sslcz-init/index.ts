@@ -49,6 +49,13 @@ Deno.serve(async (req) => {
       return json({ error: "Invalid customer fields" }, 400);
     }
 
+    // Normalize phone (digits + leading +) and validate length 10–15.
+    const normalizedPhone = String(body.customer_phone).replace(/[^\d+]/g, "");
+    const digitsOnly = normalizedPhone.replace(/\D/g, "");
+    if (digitsOnly.length < 10 || digitsOnly.length > 15) {
+      return json({ error: "Invalid phone number" }, 400);
+    }
+
     const admin = createClient(SUPABASE_URL, SERVICE);
 
     // SERVER-SIDE PRICE LOOKUP — never trust client price
@@ -87,6 +94,30 @@ Deno.serve(async (req) => {
     const isLive = settings.sslcz_mode === "live";
     const baseUrl = isLive ? "https://securepay.sslcommerz.com" : "https://sandbox.sslcommerz.com";
 
+    // Reuse: if user has a recent pending SSL order for the same product+price
+    // with a saved gateway URL, hand back that one instead of creating duplicates.
+    const REUSE_WINDOW_MIN = 30;
+    const sinceIso = new Date(Date.now() - REUSE_WINDOW_MIN * 60 * 1000).toISOString();
+    const { data: existing } = await admin
+      .from("orders")
+      .select("id, order_id, gateway_response, gateway_session_key, created_at")
+      .eq("user_id", userId)
+      .eq("product_id", body.product_id)
+      .eq("product_type", body.product_type)
+      .eq("payment_method", "sslcommerz")
+      .eq("status", "pending")
+      .eq("payment_verified", false)
+      .eq("price", finalPrice)
+      .gte("created_at", sinceIso)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const cachedUrl = (existing?.gateway_response as any)?.GatewayPageURL as string | undefined;
+    if (existing && cachedUrl) {
+      return json({ gateway_url: cachedUrl, order_id: existing.order_id, reused: true });
+    }
+
     // Create order (pending)
     const { data: order, error: oErr } = await admin
       .from("orders")
@@ -97,7 +128,7 @@ Deno.serve(async (req) => {
         product_title: productTitle,
         price: finalPrice,
         customer_name: body.customer_name,
-        customer_phone: body.customer_phone,
+        customer_phone: normalizedPhone,
         customer_email: body.customer_email || null,
         customer_address: body.customer_address || null,
         payment_method: "sslcommerz",
@@ -113,6 +144,12 @@ Deno.serve(async (req) => {
     const origin = req.headers.get("origin") || req.headers.get("referer")?.replace(/\/$/, "") || "";
     const fnBase = `${SUPABASE_URL}/functions/v1`;
 
+    // SSL is picky about cus_email — fall back to a phone-derived placeholder
+    // (rather than the generic "noemail@example.com") so risk engine is happier.
+    const cusEmail = (body.customer_email && body.customer_email.includes("@"))
+      ? body.customer_email
+      : `${digitsOnly}@noemail.local`;
+
     const params = new URLSearchParams();
     params.set("store_id", settings.sslcz_store_id);
     params.set("store_passwd", settings.sslcz_store_password);
@@ -124,8 +161,8 @@ Deno.serve(async (req) => {
     params.set("cancel_url", `${fnBase}/sslcz-redirect?status=cancel&site=${encodeURIComponent(origin)}`);
     params.set("ipn_url", `${fnBase}/sslcz-ipn`);
     params.set("cus_name", body.customer_name);
-    params.set("cus_email", body.customer_email || "noemail@example.com");
-    params.set("cus_phone", body.customer_phone);
+    params.set("cus_email", cusEmail);
+    params.set("cus_phone", normalizedPhone);
     params.set("cus_add1", body.customer_address || "N/A");
     params.set("cus_city", "Dhaka");
     params.set("cus_country", "Bangladesh");
@@ -135,19 +172,31 @@ Deno.serve(async (req) => {
     params.set("product_profile", body.product_type === "book" ? "physical-goods" : "non-physical-goods");
     params.set("num_of_item", "1");
 
-    const resp = await fetch(`${baseUrl}/gwprocess/v4/api.php`, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: params.toString(),
-    });
-    const data = await resp.json();
+    let data: any;
+    try {
+      const resp = await fetch(`${baseUrl}/gwprocess/v4/api.php`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: params.toString(),
+      });
+      data = await resp.json();
+    } catch (netErr) {
+      const msg = (netErr as Error).message || "Gateway unreachable";
+      await admin.from("orders").update({
+        status: "cancelled",
+        notes: `গেটওয়ের সাথে সংযোগ ব্যর্থ — ${msg}`.slice(0, 500),
+      }).eq("id", order.id);
+      return json({ error: `Gateway unreachable: ${msg}` }, 502);
+    }
 
     if (data.status !== "SUCCESS" || !data.GatewayPageURL) {
+      const reason = (data.failedreason || "Gateway init failed").toString().slice(0, 500);
       await admin.from("orders").update({
         status: "cancelled",
         gateway_response: data,
+        notes: `পেমেন্ট গেটওয়ে শুরু করা যায়নি — কারণ: ${reason}`.slice(0, 500),
       }).eq("id", order.id);
-      return json({ error: data.failedreason || "Gateway init failed", details: data }, 200);
+      return json({ error: reason, details: data }, 400);
     }
 
     await admin.from("orders").update({
