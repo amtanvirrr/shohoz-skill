@@ -84,6 +84,7 @@ const QuizPage = () => {
   const [quizSections, setQuizSections] = useState<QuizSection[]>([]);
   const [submitted, setSubmitted] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
+  const [timeExpired, setTimeExpired] = useState(false);
   const [attempts, setAttempts] = useState<Record<string, QuizAttempt[]>>({});
   const [leaderboard, setLeaderboard] = useState<Record<string, LeaderboardEntry[]>>({});
   const [sectionCounts, setSectionCounts] = useState<Record<string, number>>({});
@@ -213,6 +214,12 @@ const QuizPage = () => {
   useEffect(() => {
     if (!selectedQuiz || submitted) return;
     if (timeLeft <= 0 && selectedQuiz) {
+      setTimeExpired(true);
+      toast({
+        title: "⏰ সময় শেষ!",
+        description: "উত্তর লক করা হয়েছে এবং কুইজ স্বয়ংক্রিয়ভাবে সাবমিট হচ্ছে।",
+        variant: "destructive",
+      });
       handleSubmit();
       return;
     }
@@ -232,6 +239,7 @@ const QuizPage = () => {
     setSelectedQuiz(quiz);
     setAnswers({});
     setSubmitted(false);
+    setTimeExpired(false);
     setCurrentIndex(0);
     setTimeLeft(quiz.duration_minutes * 60);
     const [qRes, secRes] = await Promise.all([
@@ -472,6 +480,23 @@ const QuizPage = () => {
                 </div>
               )}
             </>
+          )}
+
+          {/* Time-up / auto-submit lock banner */}
+          {timeExpired && (
+            <div
+              role="alert"
+              aria-live="assertive"
+              className="mt-4 flex items-start gap-3 rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm text-foreground animate-fade-in"
+            >
+              <Lock className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
+              <div>
+                <p className="font-semibold text-destructive">সময় শেষ — উত্তর লক করা হয়েছে</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  আপনি আর কোনো উত্তর পরিবর্তন করতে পারবেন না। ফলাফল প্রস্তুত হচ্ছে…
+                </p>
+              </div>
+            </div>
           )}
 
           {/* Result summary */}
