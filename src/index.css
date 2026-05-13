@@ -704,3 +704,54 @@
   }
   img { max-width: 100% !important; }
 }
+
+/* Invoice / receipt print mode — isolates [data-invoice-print] block */
+@media print {
+  @page { margin: 14mm; size: A4; }
+
+  body.printing-invoice * { visibility: hidden !important; }
+  body.printing-invoice [data-invoice-print],
+  body.printing-invoice [data-invoice-print] * { visibility: visible !important; }
+
+  body.printing-invoice [data-invoice-print] {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: white !important;
+    color: black !important;
+    font-family: 'Hind Siliguri', system-ui, sans-serif;
+    font-size: 11pt;
+    line-height: 1.55;
+  }
+
+  /* Reset Radix Dialog positioning so it flows as a normal block */
+  body.printing-invoice [role="dialog"] {
+    position: static !important;
+    transform: none !important;
+    inset: auto !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    max-height: none !important;
+    height: auto !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: white !important;
+    padding: 0 !important;
+  }
+
+  /* Hide the dim overlay and dialog close button while printing */
+  body.printing-invoice [data-radix-dialog-overlay],
+  body.printing-invoice [data-invoice-print] button,
+  body.printing-invoice [data-invoice-print] [data-no-print] {
+    display: none !important;
+  }
+
+  body.printing-invoice [data-invoice-print] .invoice-section {
+    page-break-inside: avoid;
+  }
+}
