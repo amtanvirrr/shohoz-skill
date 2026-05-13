@@ -746,6 +746,28 @@ const QuizPage = () => {
                 )}
               </div>
 
+              {/* Keyboard shortcut hint (desktop only) */}
+              <div className="mt-3 hidden flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground sm:flex">
+                <span className="flex items-center gap-1">
+                  <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px]">←</kbd>
+                  <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px]">→</kbd>
+                  নেভিগেট
+                </span>
+                <span className="flex items-center gap-1">
+                  <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px]">1-4</kbd>
+                  / <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px]">A-D</kbd>
+                  উত্তর
+                </span>
+                <span className="flex items-center gap-1">
+                  <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px]">P</kbd>
+                  প্যালেট
+                </span>
+                <span className="flex items-center gap-1">
+                  <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px]">Enter</kbd>
+                  পরবর্তী/জমা
+                </span>
+              </div>
+
               {/* Question palette (jump) */}
               {showPalette && (
                 <div className="mt-4 rounded-xl glass-card p-4 animate-fade-in">
