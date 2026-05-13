@@ -314,6 +314,10 @@ const HeroBanner = () => {
                     ) : (
                       <img
                         src={slide.media_url}
+                        srcSet={buildHeroSrcSet(slide.media_url)}
+                        sizes={HERO_SIZES}
+                        width={1600}
+                        height={1000}
                         alt=""
                         decoding="async"
                         loading={idx === 0 ? "eager" : "lazy"}
