@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CheckCircle, XCircle, Clock, ArrowLeft, AlertTriangle, History, Trophy, Medal, Lock, Smartphone, Eye } from "lucide-react";
+import { CheckCircle, XCircle, Clock, ArrowLeft, AlertTriangle, History, Trophy, Medal, Lock, Smartphone, Eye, ChevronLeft, ChevronRight, Info, Lightbulb } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { format } from "date-fns";
@@ -90,6 +90,8 @@ const QuizPage = () => {
   const [showLeaderboard, setShowLeaderboard] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [directQuizStarted, setDirectQuizStarted] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [showPalette, setShowPalette] = useState(false);
 
   // Purchase state
   const [quizOrderStatus, setQuizOrderStatus] = useState<Record<string, string>>({});
@@ -230,6 +232,7 @@ const QuizPage = () => {
     setSelectedQuiz(quiz);
     setAnswers({});
     setSubmitted(false);
+    setCurrentIndex(0);
     setTimeLeft(quiz.duration_minutes * 60);
     const [qRes, secRes] = await Promise.all([
       supabase.rpc("get_quiz_questions", { _quiz_id: quiz.id }),
@@ -415,6 +418,10 @@ const QuizPage = () => {
     const results = submitted ? getResults() : null;
     const timePercent = selectedQuiz.duration_minutes > 0 ? (timeLeft / (selectedQuiz.duration_minutes * 60)) * 100 : 0;
     const isLowTime = timeLeft < 60 && timeLeft > 0;
+    const answeredCount = Object.keys(answers).filter((k) => answers[k]).length;
+    const progressPercent = questions.length > 0 ? (answeredCount / questions.length) * 100 : 0;
+    const safeIndex = Math.min(currentIndex, questions.length - 1);
+    const currentQ = !submitted ? questions[safeIndex] : null;
 
     return (
       <div className="py-16">
@@ -435,13 +442,36 @@ const QuizPage = () => {
           <h1 className="text-2xl font-bold text-foreground sm:text-3xl">{selectedQuiz.title}</h1>
 
           {!submitted && (
-            <div className="mt-3">
-              <Progress value={timePercent} className="h-2" />
-              <div className="mt-2 flex justify-between text-xs text-muted-foreground">
-                <span>{Object.keys(answers).length}/{questions.length} উত্তর দেওয়া হয়েছে</span>
-                <span>{formatTime(timeLeft)} বাকি</span>
+            <>
+              <div className="mt-4 space-y-3">
+                <div>
+                  <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                    <span>প্রশ্ন {safeIndex + 1} / {questions.length}</span>
+                    <span>{answeredCount} টি উত্তর দেওয়া হয়েছে</span>
+                  </div>
+                  <Progress value={progressPercent} className="h-2" />
+                </div>
+                <div>
+                  <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                    <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> সময়</span>
+                    <span>{formatTime(timeLeft)} বাকি</span>
+                  </div>
+                  <Progress value={timePercent} className={`h-1.5 ${isLowTime ? "[&>div]:bg-destructive" : ""}`} />
+                </div>
               </div>
-            </div>
+
+              {selectedQuiz.negative_marking && (
+                <div className="mt-4 flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/5 p-3 text-xs text-foreground">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+                  <div>
+                    <p className="font-semibold">নেগেটিভ মার্কিং সক্রিয়</p>
+                    <p className="text-muted-foreground mt-0.5">
+                      প্রতিটি ভুল উত্তরের জন্য <strong className="text-destructive">-{selectedQuiz.negative_mark_value}</strong> মার্ক কাটা হবে। অনুমান করার আগে ভাবুন — উত্তর না দিলে কোনো মার্ক কাটা যাবে না।
+                    </p>
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
           {/* Result summary */}
@@ -516,8 +546,101 @@ const QuizPage = () => {
             </div>
           )}
 
-          {/* Questions */}
+          {/* Questions: single-question mode while taking, full review after submit */}
+          {!submitted && currentQ ? (
+            <div className="mt-6">
+              {(() => {
+                const sec = quizSections.find((s) => s.id === currentQ.section_id);
+                return sec ? (
+                  <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-medium text-primary">
+                    📖 {sec.title}
+                  </div>
+                ) : null;
+              })()}
+              <div key={currentQ.id} className="animate-fade-in">
+                {renderQuestion(currentQ, safeIndex)}
+              </div>
+
+              {/* Nav controls */}
+              <div className="mt-5 flex items-center justify-between gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
+                  disabled={safeIndex === 0}
+                  className="flex-1 sm:flex-none"
+                >
+                  <ChevronLeft className="mr-1 h-4 w-4" /> পেছনে
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowPalette((v) => !v)}
+                  className="text-xs"
+                >
+                  সব প্রশ্ন
+                </Button>
+                {safeIndex < questions.length - 1 ? (
+                  <Button
+                    onClick={() => setCurrentIndex((i) => Math.min(questions.length - 1, i + 1))}
+                    className="flex-1 sm:flex-none"
+                  >
+                    পরবর্তী <ChevronRight className="ml-1 h-4 w-4" />
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleSubmit}
+                    className="flex-1 sm:flex-none"
+                    disabled={answeredCount === 0}
+                  >
+                    জমা দিন <CheckCircle className="ml-1 h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+
+              {/* Question palette (jump) */}
+              {showPalette && (
+                <div className="mt-4 rounded-xl glass-card p-4 animate-fade-in">
+                  <p className="mb-3 text-xs text-muted-foreground">যেকোনো প্রশ্নে যান:</p>
+                  <div className="grid grid-cols-8 gap-2 sm:grid-cols-10">
+                    {questions.map((q, qi) => {
+                      const isAnswered = !!answers[q.id];
+                      const isCurrent = qi === safeIndex;
+                      return (
+                        <button
+                          key={q.id}
+                          type="button"
+                          onClick={() => { setCurrentIndex(qi); setShowPalette(false); }}
+                          className={`h-9 w-9 rounded-md border text-xs font-semibold transition-all ${
+                            isCurrent
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : isAnswered
+                              ? "border-success/40 bg-success/10 text-success"
+                              : "border-border bg-background text-muted-foreground hover:border-primary/40"
+                          }`}
+                        >
+                          {qi + 1}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-3 text-[11px] text-muted-foreground">
+                    <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-primary inline-block" /> বর্তমান</span>
+                    <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-success/40 inline-block" /> উত্তরিত</span>
+                    <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm border border-border inline-block" /> বাকি</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
           <div className="mt-8 space-y-6">
+            {submitted && selectedQuiz.negative_marking && (
+              <div className="flex items-start gap-2 rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs text-foreground">
+                <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                <p>
+                  <span className="font-semibold">স্কোরিং:</span> প্রতিটি সঠিক উত্তরে <strong className="text-success">+1</strong>, প্রতিটি ভুল উত্তরে <strong className="text-destructive">-{selectedQuiz.negative_mark_value}</strong>। উত্তর না দিলে কোনো মার্ক যোগ বা বিয়োগ হয় না।
+                </p>
+              </div>
+            )}
             {quizSections.length > 0 ? (
               <>
                 {quizSections.map((sec) => {
@@ -558,11 +681,6 @@ const QuizPage = () => {
               questions.map((q, i) => renderQuestion(q, i))
             )}
           </div>
-
-          {!submitted && (
-            <Button onClick={handleSubmit} size="lg" className="mt-8 w-full" disabled={Object.keys(answers).length === 0}>
-              কুইজ জমা দিন
-            </Button>
           )}
 
           {submitted && (
