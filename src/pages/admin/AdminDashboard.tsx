@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { BookOpen, GraduationCap, ShoppingCart, Users } from "lucide-react";
+import CtaAnalyticsPanel from "@/components/admin/CtaAnalyticsPanel";
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({ books: 0, courses: 0, orders: 0, users: 0 });
@@ -46,6 +47,10 @@ const AdminDashboard = () => {
             </div>
           );
         })}
+      </div>
+
+      <div className="mt-6">
+        <CtaAnalyticsPanel />
       </div>
     </div>
   );
