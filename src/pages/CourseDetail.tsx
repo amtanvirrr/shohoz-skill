@@ -264,7 +264,7 @@ const CourseDetail = () => {
             <ScrollReveal delay={100}>
               <div className="mt-8 glass-card rounded-xl p-6">
                 <h2 className="text-2xl font-bold text-foreground">কোর্স বিবরণ</h2>
-                <p className="mt-4 leading-relaxed text-muted-foreground">{course.description}</p>
+                <RichText content={course.description} className="mt-4" />
               </div>
             </ScrollReveal>
 
