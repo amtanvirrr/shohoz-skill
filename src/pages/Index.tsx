@@ -62,7 +62,8 @@ const featuredCache: {
   books: DbBook[] | null;
   coursesKey: string;
   booksKey: string;
-} = { courses: null, books: null, coursesKey: "", booksKey: "" };
+  reviews: (DbReview & { course_title?: string })[] | null;
+} = { courses: null, books: null, coursesKey: "", booksKey: "", reviews: null };
 
 const Index = () => {
   const { user } = useAuth();
@@ -76,7 +77,8 @@ const Index = () => {
   // while the background refresh runs on subsequent visits.
   const [coursesLoading, setCoursesLoading] = useState(() => featuredCache.courses === null);
   const [booksLoading, setBooksLoading] = useState(() => featuredCache.books === null);
-  const [dbReviews, setDbReviews] = useState<(DbReview & { course_title?: string })[]>([]);
+  const [dbReviews, setDbReviews] = useState<(DbReview & { course_title?: string })[]>(() => featuredCache.reviews ?? []);
+  const [reviewsLoading, setReviewsLoading] = useState(() => featuredCache.reviews === null);
   const [bookOrderMap, setBookOrderMap] = useState<Record<string, OrderInfo>>({});
   const [courseOrderMap, setCourseOrderMap] = useState<Record<string, string>>({});
 
@@ -144,7 +146,9 @@ const Index = () => {
         id: r.id, reviewer_name: r.reviewer_name, rating: r.rating, comment: r.comment,
         course_id: r.course_id, course_title: r.courses?.title || "",
       }));
+      featuredCache.reviews = mapped;
       setDbReviews(mapped);
+      setReviewsLoading(false);
     });
   }, [settings.featured_course_ids, settings.featured_book_ids]);
 
@@ -452,7 +456,7 @@ const Index = () => {
       </section>
 
       {/* Reviews */}
-      {dbReviews.length > 0 && (
+      {(reviewsLoading || dbReviews.length > 0) && (
       <section className="relative py-10 sm:py-16 lg:py-20">
         <div className="absolute inset-0 bg-gradient-to-b from-background via-accent/[0.02] to-background pointer-events-none" />
           <div className="container relative mx-auto px-4">
@@ -467,7 +471,27 @@ const Index = () => {
               </div>
             </ScrollReveal>
             <div className="mt-6 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 sm:mt-10 sm:gap-6">
-              {dbReviews.map((review, idx) => (
+              {reviewsLoading ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="glass-card rounded-xl p-5 h-full" aria-hidden="true">
+                    <div className="flex gap-1">
+                      {Array.from({ length: 5 }).map((_, s) => (
+                        <div key={s} className="h-4 w-4 rounded-sm skeleton-shimmer bg-muted/50" />
+                      ))}
+                    </div>
+                    <div className="mt-4 space-y-2">
+                      <div className="h-3 w-full rounded skeleton-shimmer bg-muted/50" />
+                      <div className="h-3 w-[92%] rounded skeleton-shimmer bg-muted/50" />
+                      <div className="h-3 w-[78%] rounded skeleton-shimmer bg-muted/50" />
+                    </div>
+                    <div className="mt-4 border-t border-border/50 pt-3 space-y-2">
+                      <div className="h-3.5 w-32 rounded skeleton-shimmer bg-muted/50" />
+                      <div className="h-3 w-24 rounded skeleton-shimmer bg-muted/40" />
+                    </div>
+                    <span className="sr-only">রিভিউ লোড হচ্ছে…</span>
+                  </div>
+                ))
+              ) : dbReviews.map((review, idx) => (
                 <ScrollReveal key={review.id} delay={idx * 80}>
                   <div className="glass-card rounded-xl p-5 h-full">
                     <div className="flex gap-0.5">
