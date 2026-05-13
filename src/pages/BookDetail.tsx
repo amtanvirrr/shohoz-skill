@@ -434,12 +434,13 @@ const BookDetail = () => {
                             type="button"
                             variant={selectedZone === z.zone_name ? "default" : "outline"}
                             className="flex-1"
-                            onClick={() => setSelectedZone(z.zone_name)}
+                            onClick={() => { setSelectedZone(z.zone_name); if (errors.zone) setErrors((e) => { const n = { ...e }; delete n.zone; return n; }); }}
                           >
                             {z.zone_label}
                           </Button>
                         ))}
                       </div>
+                      <FieldError name="zone" />
                       {activeZone && (
                         <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-2 text-sm">
                           <div className="flex justify-between">
