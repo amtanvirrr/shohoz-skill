@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { BookOpen, GraduationCap, Users, Sparkles, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
@@ -32,6 +32,15 @@ const HERO_KEYS: (keyof HeroSettings)[] = [
   "hero_stat2_value", "hero_stat2_label",
   "hero_stat3_value", "hero_stat3_label",
 ];
+
+/** Map admin-configured links to in-page anchors when we're on the homepage. */
+const sectionAnchorFor = (link: string): string | null => {
+  if (!link) return null;
+  if (link.startsWith("#")) return link.slice(1);
+  if (link === "/courses" || link === "/#featured-courses") return "featured-courses";
+  if (link === "/books" || link === "/#featured-books") return "featured-books";
+  return null;
+};
 
 const defaults: HeroSettings = {
   hero_title: "শেখার নতুন দিগন্ত — কোর্স ও বই এক জায়গায়",
