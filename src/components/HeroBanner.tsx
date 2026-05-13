@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { BookOpen, GraduationCap, Users, Sparkles, ShieldCheck, Star, Truck } from "lucide-react";
+import { BookOpen, GraduationCap, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -167,15 +167,7 @@ const HeroBanner = () => {
 
         {/* Left — content */}
         <div className="relative z-10 flex w-full flex-col justify-center px-5 py-10 sm:px-8 sm:py-14 md:w-1/2 md:py-0 lg:px-16">
-          <span
-            className="inline-flex w-fit items-center gap-1.5 rounded-full border border-primary-foreground/25 bg-primary-foreground/10 px-3 py-1 text-xs font-medium text-primary-foreground/90 backdrop-blur-md opacity-0"
-            style={{ animation: "word-reveal 0.6s var(--ease-spring) 0.05s forwards" }}
-          >
-            <Sparkles className="h-3.5 w-3.5 text-accent-foreground" />
-            শিখুন, এগিয়ে যান
-          </span>
-
-          <h1 className="mt-4 font-display text-3xl font-bold leading-[1.15] text-primary-foreground sm:text-4xl lg:text-5xl xl:text-6xl">
+          <h1 className="font-display text-3xl font-bold leading-[1.15] text-primary-foreground sm:text-4xl lg:text-5xl xl:text-6xl">
             {settings.hero_title.split(" ").map((word, i) => (
               <span
                 key={i}
@@ -213,47 +205,6 @@ const HeroBanner = () => {
                 {settings.hero_btn2_text}
               </Link>
             </Button>
-          </div>
-
-          {/* Trust strip — rating + payment methods (mobile prominent) */}
-          <div
-            className="mt-4 flex flex-col gap-2 opacity-0"
-            style={{ animation: "word-reveal 0.7s var(--ease-spring) 0.72s forwards" }}
-          >
-            {/* Row 1 — rating + secure payment */}
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/15 px-3 py-1.5 backdrop-blur-md">
-                <div className="flex items-center" aria-hidden="true">
-                  {[0, 1, 2, 3, 4].map((i) => (
-                    <Star key={i} className="h-3.5 w-3.5 fill-accent text-accent" />
-                  ))}
-                </div>
-                <span className="text-xs font-bold text-primary-foreground sm:text-sm">
-                  {rating.count > 0 ? toBnNum(rating.avg.toFixed(1)) : "৫.০"}
-                </span>
-                <span className="text-[11px] text-primary-foreground/80 sm:text-xs">
-                  {rating.count > 0 ? `• ${formatCount(rating.count)} রিভিউ` : "• শিক্ষার্থীদের প্রিয়"}
-                </span>
-              </div>
-              <div className="inline-flex items-center gap-1 rounded-full border border-success/40 bg-success/15 px-3 py-1.5 text-[11px] font-semibold text-primary-foreground backdrop-blur-md sm:text-xs">
-                <ShieldCheck className="h-3.5 w-3.5 text-success" />
-                নিরাপদ পেমেন্ট
-              </div>
-            </div>
-
-            {/* Row 2 — supported payments */}
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center rounded-md bg-[#E2136E] px-2 py-1 text-[11px] font-extrabold tracking-tight text-white shadow-sm sm:text-xs">
-                bKash
-              </span>
-              <span className="inline-flex items-center rounded-md bg-[#EB6E1F] px-2 py-1 text-[11px] font-extrabold tracking-tight text-white shadow-sm sm:text-xs">
-                Nagad
-              </span>
-              <span className="inline-flex items-center gap-1 rounded-md border border-primary-foreground/25 bg-primary-foreground/10 px-2 py-1 text-[11px] font-semibold text-primary-foreground backdrop-blur-md sm:text-xs">
-                <Truck className="h-3.5 w-3.5" />
-                ক্যাশ অন ডেলিভারি
-              </span>
-            </div>
           </div>
 
           <div
