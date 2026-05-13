@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { ScrollReveal } from "@/hooks/useScrollReveal";
+import FeaturedImage from "@/components/FeaturedImage";
 
 import HeroBanner from "@/components/HeroBanner";
 import MobileCarousel from "@/components/MobileCarousel";
