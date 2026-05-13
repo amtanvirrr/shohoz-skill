@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ImageOff } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { prefetchImage } from "@/lib/prefetch";
 
 interface Props {
   src?: string | null;
@@ -19,6 +20,7 @@ interface Props {
 const FeaturedImage = ({ src, alt, aspect, className }: Props) => {
   const [loaded, setLoaded] = useState(false);
   const [errored, setErrored] = useState(false);
+  const wrapRef = useRef<HTMLDivElement | null>(null);
 
   const aspectClass = aspect === "portrait" ? "aspect-[3/4]" : "aspect-video";
   // Intrinsic size hints — same ratio, helps browser compute box pre-paint.
@@ -27,8 +29,38 @@ const FeaturedImage = ({ src, alt, aspect, className }: Props) => {
 
   const showPlaceholder = !src || errored;
 
+  // Warm the HTTP cache as soon as the card approaches the viewport.
+  // Larger rootMargin than the browser's lazy-load threshold so the request
+  // fires earlier — by the time the user scrolls the card into view the
+  // image is decoded and paints instantly. Same URL is reused on the
+  // detail page, so navigation also feels instant.
+  useEffect(() => {
+    if (!src || errored) return;
+    if (typeof IntersectionObserver === "undefined") {
+      prefetchImage(src);
+      return;
+    }
+    const node = wrapRef.current;
+    if (!node) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            prefetchImage(src);
+            io.disconnect();
+            break;
+          }
+        }
+      },
+      { rootMargin: "600px 0px", threshold: 0.01 },
+    );
+    io.observe(node);
+    return () => io.disconnect();
+  }, [src, errored]);
+
   return (
     <div
+      ref={wrapRef}
       className={cn(
         "relative w-full overflow-hidden bg-muted/40",
         aspectClass,
