@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
-import { BookOpen, GraduationCap, Users } from "lucide-react";
+import { BookOpen, GraduationCap, Users, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface HeroSettings {
@@ -96,46 +96,85 @@ const HeroBanner = () => {
   ];
 
   return (
-    <section className="relative overflow-hidden bg-primary">
-      {/* Desktop: fixed 2.5:1 aspect ratio, Mobile: auto height stacked */}
-      <div className="flex flex-col md:flex-row md:items-stretch" style={{ aspectRatio: undefined }}>
-        {/* On md+, use aspect-ratio on the wrapper */}
-        <div className="hidden md:block absolute inset-0" style={{ aspectRatio: "2.5 / 1" }} />
-        
-        {/* Left half - content */}
-        <div className="relative z-10 flex w-full flex-col justify-center px-5 py-8 sm:px-8 sm:py-10 md:w-1/2 md:py-0 lg:px-16">
-          <h1 className="text-2xl font-bold text-primary-foreground sm:text-3xl lg:text-4xl xl:text-5xl leading-tight">
-            {settings.hero_title}
+    <section className="relative overflow-hidden bg-gradient-hero">
+      {/* Animated mesh blobs */}
+      <div className="hero-mesh" aria-hidden="true" />
+      {/* Subtle grain */}
+      <div className="grain-overlay" aria-hidden="true" />
+      {/* Soft top/bottom fades for depth */}
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary-foreground/20 to-transparent" aria-hidden="true" />
+
+      <div className="flex flex-col md:flex-row md:items-stretch">
+        <div className="hidden md:block absolute inset-0 pointer-events-none" style={{ aspectRatio: "2.5 / 1" }} />
+
+        {/* Left — content */}
+        <div className="relative z-10 flex w-full flex-col justify-center px-5 py-10 sm:px-8 sm:py-14 md:w-1/2 md:py-0 lg:px-16">
+          <span
+            className="inline-flex w-fit items-center gap-1.5 rounded-full border border-primary-foreground/25 bg-primary-foreground/10 px-3 py-1 text-xs font-medium text-primary-foreground/90 backdrop-blur-md opacity-0"
+            style={{ animation: "word-reveal 0.6s var(--ease-spring) 0.05s forwards" }}
+          >
+            <Sparkles className="h-3.5 w-3.5 text-accent-foreground" />
+            শিখুন, এগিয়ে যান
+          </span>
+
+          <h1 className="mt-4 font-display text-3xl font-bold leading-[1.15] text-primary-foreground sm:text-4xl lg:text-5xl xl:text-6xl">
+            {settings.hero_title.split(" ").map((word, i) => (
+              <span
+                key={i}
+                className="inline-block opacity-0"
+                style={{
+                  animation: `word-reveal 0.6s var(--ease-spring) ${0.15 + i * 0.06}s forwards`,
+                  marginRight: "0.25em",
+                }}
+              >
+                {word}
+              </span>
+            ))}
           </h1>
-          <p className="mt-3 text-sm text-primary-foreground/80 sm:text-base lg:text-lg max-w-lg">
+
+          <p
+            className="mt-4 max-w-lg text-sm text-primary-foreground/80 sm:text-base lg:text-lg opacity-0"
+            style={{ animation: "word-reveal 0.7s var(--ease-spring) 0.5s forwards" }}
+          >
             {settings.hero_subtitle}
           </p>
-          <div className="mt-4 flex flex-wrap gap-2 sm:gap-3 lg:mt-6">
-            <Button variant="accent" size="sm" asChild className="text-xs sm:text-sm lg:text-base lg:px-6 lg:py-3">
+
+          <div
+            className="mt-6 flex flex-wrap gap-3 opacity-0"
+            style={{ animation: "word-reveal 0.7s var(--ease-spring) 0.65s forwards" }}
+          >
+            <Button variant="premium-accent" size="lg" asChild className="text-sm sm:text-base">
               <Link to={settings.hero_btn1_link}>
-                <GraduationCap className="mr-1.5 h-4 w-4" />
+                <GraduationCap className="mr-1 h-4 w-4" />
                 {settings.hero_btn1_text}
               </Link>
             </Button>
-            <Button
-              variant="hero"
-              size="sm"
-              className="bg-primary-foreground/15 hover:bg-primary-foreground/25 border border-primary-foreground/30 text-xs sm:text-sm lg:text-base lg:px-6 lg:py-3"
-              asChild
-            >
+            <Button variant="glass" size="lg" asChild className="text-sm sm:text-base">
               <Link to={settings.hero_btn2_link}>
-                <BookOpen className="mr-1.5 h-4 w-4" />
+                <BookOpen className="mr-1 h-4 w-4" />
                 {settings.hero_btn2_text}
               </Link>
             </Button>
           </div>
-          <div className="mt-4 flex flex-wrap gap-4 text-xs text-primary-foreground/70 sm:text-sm lg:mt-8 lg:gap-6">
+
+          <div
+            className="mt-8 flex flex-wrap gap-3 opacity-0 sm:gap-4"
+            style={{ animation: "word-reveal 0.7s var(--ease-spring) 0.8s forwards" }}
+          >
             {stats.map((stat, i) => {
               const Icon = statIcons[i];
               return (
-                <div key={i} className="flex items-center gap-1.5">
-                  <Icon className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
-                  {stat.value} {stat.label}
+                <div
+                  key={i}
+                  className="flex items-center gap-2 rounded-xl border border-primary-foreground/15 bg-primary-foreground/5 px-3 py-2 backdrop-blur-md"
+                >
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent/20 text-accent-foreground">
+                    <Icon className="h-3.5 w-3.5 text-accent" />
+                  </span>
+                  <div className="flex flex-col leading-tight">
+                    <span className="text-sm font-bold text-primary-foreground sm:text-base">{stat.value}</span>
+                    <span className="text-[10px] text-primary-foreground/70 sm:text-xs">{stat.label}</span>
+                  </div>
                 </div>
               );
             })}
@@ -144,7 +183,6 @@ const HeroBanner = () => {
 
         {/* Right half - media slider */}
         <div className="relative w-full overflow-hidden md:w-1/2" style={{ minHeight: "200px" }}>
-          {/* Mobile: aspect-video, Desktop: fill parent */}
           <div className="aspect-video md:aspect-auto md:absolute md:inset-0">
             {slides.length > 0 ? (
               <>
@@ -170,6 +208,8 @@ const HeroBanner = () => {
                         className="h-full w-full object-cover"
                       />
                     )}
+                    {/* Gradient scrim for legibility on mobile stacked layout */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-primary/40 via-transparent to-transparent md:bg-gradient-to-l md:from-transparent md:to-primary/30 pointer-events-none" />
                   </div>
                 ))}
                 {/* Dots */}
@@ -184,14 +224,15 @@ const HeroBanner = () => {
                             ? "bg-primary-foreground w-5"
                             : "bg-primary-foreground/40"
                         }`}
+                        aria-label={`স্লাইড ${i + 1}`}
                       />
                     ))}
                   </div>
                 )}
               </>
             ) : (
-              <div className="flex h-full items-center justify-center bg-primary-foreground/5">
-                <p className="text-primary-foreground/30 text-sm">No media added</p>
+              <div className="flex h-full min-h-[260px] items-center justify-center bg-primary-foreground/5">
+                <p className="text-primary-foreground/30 text-sm">কোনো মিডিয়া নেই</p>
               </div>
             )}
           </div>
@@ -201,7 +242,7 @@ const HeroBanner = () => {
       {/* Desktop aspect ratio overlay */}
       <style>{`
         @media (min-width: 768px) {
-          section.relative.overflow-hidden.bg-primary > div:first-child {
+          section.bg-gradient-hero > div.flex.flex-col.md\\:flex-row {
             aspect-ratio: 2.5 / 1;
           }
         }

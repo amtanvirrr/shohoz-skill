@@ -1,86 +1,96 @@
-# SSLCommerz পেমেন্ট ফ্লো অপটিমাইজেশন প্ল্যান
+# Modern UI/UX Upgrade Plan — ShohozSkill
 
-বর্তমান ফ্লো বিশ্লেষণ করে যে issueগুলো পেলাম এবং যেগুলো ঠিক করব:
+বর্তমান সাইটটি functional কিন্তু visual identity তে "টেমপ্লেট-look" — flat cards, static hero, simple typography hierarchy, কম depth, কম motion. লক্ষ্য: একটি **premium, modern, brand-forward** experience — Apple/Notion/Hashnode-class polish, কিন্তু আপনার navy + orange brand-এ ও সম্পূর্ণ বাংলা typography তে।
 
-## যা পেয়েছি
+নিচের planটা **৬টি phase** এ ভাগ করা — প্রতি phase আলাদা ভাবে approve করে ship করা যাবে। সবকিছু একসাথে করতে গেলে regression risk বেশি।
 
-1. **৳1 অর্ডার fail হয়েছে গেটওয়ে থেকে** — SSL response: `"The minimum transaction amount is not allowed as per admin configuration!"`। অর্থাৎ আপনার live store-এ SSL panel থেকে minimum ৳10 (বা তার বেশি) সেট করা আছে। SSL API spec-এ ৳1 allowed হলেও merchant account-level minimum SSL admin panel থেকে আলাদাভাবে কনফিগার হয়। এই minimum কোডে override করা সম্ভব না — তবে এটা নিয়ে UX ও সঠিক error message অনেক ভাল করা যায়।
-2. **Init-এ fail হলে `orders.notes` লেখা হয় না** — শুধু redirect এ গিয়ে fail হলে notes লেখা হয়। ফলে admin dashboard / PaymentResult-এ "ব্যর্থতার কারণ" অংশ ফাঁকা থাকে।
-3. **Init failure HTTP 200** রিটার্ন করে `{error,...}` সহ — ক্লায়েন্ট পড়তে পারলেও observability/standard semantic হিসেবে 400 ভাল।
-4. **`sslcz_min_amount` ডিফল্ট কোডে ১০, DB-তে ৩০** — মিল নেই। কোডের ডিফল্ট কম রেখে admin-set value-কে authoritative করি; gateway থেকে যদি "minimum transaction amount" failedreason আসে তাহলে UI-তে স্পষ্টভাবে "এটি গেটওয়ে কনফিগারেশন থেকে নির্ধারিত — অন্য পদ্ধতি ব্যবহার করুন" বলবে।
-5. **Duplicate pending orders** — ব্যবহারকারী একটু পরপর ক্লিক করলে multiple pending order তৈরি হয়। যদি একই (user, product, price) এর জন্য ৩০ মিনিটের মধ্যে existing pending order থাকে এবং gateway URL valid থাকে, সেটা reuse করব।
-6. **`cus_email` ডিফল্ট `noemail@example.com`** — SSL কখনো এটা rejection-এ ব্যবহার করে। email না থাকলে user.email বা phone-derived placeholder ব্যবহার করব।
-7. **Verification timeout (40s)** — slow IPN-এ user "Timeout" দেখে। Polling-কে progressive backoff এবং auto-validator fallback দিয়ে আরো resilient করব।
-8. **Validator fallback** — IPN delay হলে PaymentResult থেকে server-এ একটা lightweight `sslcz-verify` call করে validator API-তে check করার সুযোগ রাখব (best-effort, server-only call)।
+---
 
-## যা পরিবর্তন করব
+## Phase 1 — Design System Foundation (high impact, low risk)
 
-### supabase/functions/sslcz-init/index.ts
-- Server-এ existing pending SSL order খুঁজব (same user + product + price + status='pending' + created_at < 30 min) — থাকলে নতুন তৈরি না করে আগের `gateway_session_key` থেকে gateway URL reconstruct করে রিটার্ন করব।
-- Gateway init fail হলে: `orders.notes` ফিল্ডে `failedreason` লিখব (বাংলা prefix সহ) যেন PaymentResult পেজে এবং admin order list-এ কারণ দেখা যায়।
-- HTTP status 400 দেব gateway init fail-এ (200 না)।
-- `cus_email` placeholder: ইমেইল না থাকলে `<phone>@noemail.local` ব্যবহার করব (SSL কম reject করে)।
-- `phone` validation: শুধু digits ও + রাখব, length 10–15।
-- `customer_address` থাকলে `cus_city` নির্ণয়ের চেষ্টা থাকবে না, "Dhaka" রেখে দেব (SSL এ city required), তবে field cap বাড়াব।
+বর্তমান tokens (`index.css`) basic shadcn defaults এর উপর। এগুলোকে rich, layered design language এ upgrade.
 
-### supabase/functions/sslcz-ipn/index.ts
-- Validator response-এ `currency_amount`/`currency_type` না মিললে স্পষ্ট notes লিখে cancel।
-- IPN duplicate prevention: যদি `payment_verified=true` থাকে, 200 OK রিটার্ন (আগেই করছি, ঠিক রাখব)।
-- `notes` সবসময় meaningful রাখব success/fail উভয় ক্ষেত্রে।
+- **Color tokens সম্প্রসারণ**: `--primary-glow`, `--accent-glow`, `--surface-1/2/3` (elevation tiers), `--border-subtle`, `--border-strong`, semantic gradients (`--gradient-hero`, `--gradient-card`, `--gradient-mesh`).
+- **Shadow system**: 5-tier elevation (`--shadow-xs` → `--shadow-2xl`) plus colored shadows (`--shadow-primary-glow`, `--shadow-accent-glow`) যা hover এ premium feel দেয়।
+- **Radius scale**: `--radius-sm/md/lg/xl/2xl` — বর্তমান flat `0.75rem` এর বদলে contextual radius।
+- **Typography scale**: fluid `clamp()` based `--text-display`, `--text-h1..h4`, optical sizing tighten করে Bengali letter-spacing ও line-height balance fine-tune (Hind Siliguri default রাখা হবে — memory অনুযায়ী)।
+- **Motion tokens**: `--ease-spring`, `--ease-smooth`, `--duration-fast/base/slow` — সব transition consistent।
+- **Dark mode pass**: navy-deep base, subtle blue tint, glass আরো premium।
 
-### নতুন supabase/functions/sslcz-verify/index.ts (lightweight)
-- Authenticated user নিজের pending order-এর জন্য call করতে পারবে।
-- `gateway_session_key` থাকলে validator API-তে query করে success হলে IPN-এর মত order update করবে।
-- PaymentResult page polling-এর শেষ চেষ্টায় (timeout হওয়ার আগে) এই function call করবে — IPN delay হলেও user দ্রুত verified হবে।
+## Phase 2 — Hero & Landing Page Redesign
 
-### src/pages/PaymentResult.tsx
-- 40s polling-এর জায়গায় progressive backoff: 2,2,2,3,3,4,4,5… (max ~60s) এবং ১৫s-এ একবার `sslcz-verify` call।
-- Success পর্যন্ত `notes` থাকলে subtle হিসেবে দেখানো (currently শুধু fail/cancel-এ)।
+বর্তমান hero একটা flat 2-column split। Modernization:
 
-### src/components/PaymentSelector.tsx ও SslczPayButton.tsx
-- Error mapping: gateway থেকে আসা "minimum transaction amount … as per admin configuration" আলাদা category হিসেবে handle (`gateway_min_amount`) — toast/banner-এ স্পষ্ট বলবে: "এই amount আপনার গেটওয়ে account-এ allowed না, অন্য পদ্ধতি ব্যবহার করুন"।
-- Default `sslMinAmount` ১০ → কেবল gateway response দেখে dynamic adjust করব না (security), কিন্তু gateway fail-এর পর local hint দেখাব।
-- `mapPaymentError` এ `gateway_min_amount` ও improved fallback যোগ করব।
+- **Animated mesh gradient background** (CSS conic + radial blobs, GPU-cheap), navy থেকে accent এ subtle drift।
+- **Floating glass orbs / grain texture overlay** — depth দেয় empty না দেখিয়ে।
+- **Headline reveal animation**: word-by-word fade-up (Framer Motion / CSS staggered), accent-coloured key word highlight।
+- **Trust strip**: hero এর নিচে compact stat row (5,000+ students, ⭐ rating, partner logos) — sticky social proof।
+- **Search-first secondary block**: prominent unified search (course / book / quiz) inline, যেহেতু এটাই primary action।
+- **Featured sections redesign**: section-headers with kicker + animated underline, cards পেতে আরো breathing room, hover এ tilt/lift micro-interaction (3D subtle), price prominently।
+- **Category quick-access chips**: hero এর নিচে scrollable chips → directly filtered listing এ যায়।
 
-### src/lib/paymentErrors.ts
-- নতুন category `gateway_min_amount` যোগ; "minimum transaction amount … admin configuration" pattern match।
+## Phase 3 — Navigation & Header
 
-## Technical Details
+- **Glass header refinement**: scroll এ shrink + border fade-in, blur intensify।
+- **Mega-menu** for Courses/Books: hover এ thumbnail preview সহ category dropdown (desktop)।
+- **Command palette** (⌘K): search courses, books, blog, quiz, dashboard pages — power-user feel।
+- **Mobile bottom nav**: active indicator pill animation, haptic-style scale on tap।
+- **Theme toggle**: animated sun↔moon morph with view-transition API।
+- **Auth state**: avatar-এ status dot, dropdown menu (dashboard / orders / logout) — current 3 button cluster এর বদলে।
+
+## Phase 4 — Cards, Lists & Detail Pages
+
+বর্তমান cards সবগুলো একই pattern — uniform কিন্তু flat।
+
+- **Card variants**: `featured` (gradient border + glow), `default`, `compact` — context-aware।
+- **Image treatment**: subtle ken-burns on hover, gradient scrim, badge placement consistent।
+- **Skeleton loaders**: shimmer skeletons সব list page এ — perceived performance বড় boost।
+- **Product detail page (Course/Book)**:
+  - Sticky purchase rail (right side, desktop) — price, CTA, instructor card।
+  - Tabbed content: Overview / Curriculum / Reviews / FAQ — animated tab indicator।
+  - Rich review section: rating breakdown bar chart, verified badge prominent।
+  - Sample preview prominent (PDF / video trailer)।
+- **Empty states**: illustrated + actionable CTA, current "এখনো কোন কোর্স নেই" এর বদলে।
+
+## Phase 5 — Micro-interactions & Motion
+
+- **ScrollReveal upgrade**: stagger children, slide+fade variants, IntersectionObserver based, reduced-motion respected।
+- **Button press feedback**: 95% scale + spring back (memory অনুযায়ী), ripple ছাড়া clean।
+- **Page transitions**: Framer Motion route transition (fade + 8px y-shift)।
+- **Toast redesign**: glass + icon + colored stripe, top-center on mobile।
+- **Form polish**: floating labels, inline validation icons, success ✓ animation।
+- **Confetti / sound** already আছে purchase এ — extend করে quiz pass, course complete এও।
+
+## Phase 6 — Polish, Performance, A11y
+
+- **Image optimization**: all uploads → `.webp` with `loading="lazy"`, `decoding="async"`, blurhash placeholder।
+- **Font loading**: `font-display: swap`, preconnect Google Fonts, subset Bengali range।
+- **A11y audit**: focus rings consistent (using `--ring`), skip-link, ARIA on icon buttons, contrast ratio ≥4.5 (admin contrast checker দিয়ে verify)।
+- **Lighthouse pass target**: Performance ≥90, A11y ≥95।
+- **Print stylesheet** (invoice/order receipt)।
+
+---
+
+## Recommended Rollout Order
 
 ```text
-sslcz-init flow (new):
-  auth → validate body
-  → look up product (price authoritative)
-  → look up active pending order (user, product, price, < 30min)
-       found + has gateway_session_key → reuse, return cached gateway_url
-       not found → insert pending order
-  → call SSL gwprocess
-       SUCCESS → save sessionkey/response, return gateway_url
-       FAILED  → write notes(failedreason), status=cancelled, return 400 + mapped error
-
-sslcz-verify (new, verify_jwt=true):
-  auth → load own pending order with gateway_session_key
-  → call SSL validator (val_id absent? skip)
-  → if VALID & amount/currency/tran_id match → mirror IPN success path
-  → return {verified, status}
-
-PaymentResult polling:
-  attempts 1..N with backoff
-  every ~15s: call sslcz-verify in parallel
-  any success → stop, show receipt
+Week 1: Phase 1 (tokens) + Phase 2 (hero + Index page)
+Week 2: Phase 3 (header/nav) + Phase 4 (cards + product detail)
+Week 3: Phase 5 (motion) + Phase 6 (polish)
 ```
 
-## যে ফাইল পরিবর্তন/নতুন তৈরি হবে
-- `supabase/functions/sslcz-init/index.ts` (edit)
-- `supabase/functions/sslcz-ipn/index.ts` (small notes improvements)
-- `supabase/functions/sslcz-verify/index.ts` (new) + `supabase/config.toml` entry (`verify_jwt = true`)
-- `src/pages/PaymentResult.tsx` (polling + verify call)
-- `src/components/PaymentSelector.tsx` (error category copy)
-- `src/components/SslczPayButton.tsx` (sync min/default)
-- `src/lib/paymentErrors.ts` (new mapping)
+প্রতি phase shipping এর পর preview করে next phase শুরু করব — যাতে আপনি direction confirm করতে পারেন।
 
-## যা পরিবর্তন করব না
-- DB schema (নতুন column লাগবে না — সব existing field দিয়ে চলবে)।
-- Min amount কোডে hardcode override (gateway-side limit আপনাকে SSL panel থেকে কমাতে হবে — এটা আমরা bypass করতে পারি না)।
+## Technical Notes
 
-কনফার্ম করলে implement শুরু করব।
+- **No business logic changes** — শুধু presentational layer, design tokens, components।
+- **Framer Motion** add করব (lightweight, tree-shakeable) phase 5 এর জন্য; বাকি animation pure CSS।
+- **No new backend/DB changes**।
+- Existing memory rules (Bengali only, navy+orange palette, glassmorphism, Hind Siliguri default, no uppercase Bengali) সব respect করা হবে।
+- shadcn components সব রাখা হবে — শুধু variants extend করা হবে (button এ `premium`, `glow`; card এ `featured`)।
+
+---
+
+## পরবর্তী পদক্ষেপ
+
+আপনি বললে **Phase 1 + Phase 2** দিয়ে শুরু করব — এতেই সবচেয়ে বড় visual jump আসবে (tokens + hero + homepage)। অথবা যেকোনো specific phase আগে চাইলে সেটাও সম্ভব।
