@@ -181,6 +181,26 @@
       padding-bottom: 0;
     }
   }
+  /* Hero blur-up / shimmer placeholder shown until the first slide loads */
+  .hero-skeleton {
+    background:
+      linear-gradient(
+        110deg,
+        hsl(var(--primary) / 0.10) 0%,
+        hsl(var(--primary) / 0.18) 35%,
+        hsl(var(--accent) / 0.22) 55%,
+        hsl(var(--primary) / 0.10) 100%
+      );
+    background-size: 200% 100%;
+    animation: hero-shimmer 1.6s ease-in-out infinite;
+  }
+  @keyframes hero-shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hero-skeleton { animation: none; }
+  }
 }
 
 @layer components {
