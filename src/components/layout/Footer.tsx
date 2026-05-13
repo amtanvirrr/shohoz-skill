@@ -38,7 +38,10 @@ const Footer = () => {
   };
 
   return (
-    <footer className="border-t border-border/50 bg-card/80 backdrop-blur-sm">
+    <footer
+      className="border-t border-border/50 bg-card/80 backdrop-blur-sm md:pb-0"
+      style={{ paddingBottom: "calc(5rem + env(safe-area-inset-bottom))" }}
+    >
       {/* Newsletter Section */}
       <div className="border-b border-border/50 bg-primary/5">
         <div className="container mx-auto px-4 py-12">
