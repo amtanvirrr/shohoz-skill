@@ -1,4 +1,4 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { usePixel } from "@/components/MetaPixelProvider";
 import OrderSuccessDialog from "@/components/OrderSuccessDialog";
 import PaymentSelector from "@/components/PaymentSelector";
+import SelectedItemSummary from "@/components/checkout/SelectedItemSummary";
 
 interface DbCourse {
   id: string;
