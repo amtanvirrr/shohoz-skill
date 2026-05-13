@@ -410,7 +410,7 @@ const CourseDetail = () => {
 
           <div className="lg:col-span-1">
             <ScrollReveal direction="right" delay={150}>
-            <div className="sticky top-20 rounded-xl glass-card p-6 glow-hover">
+            <div id="order-form" className="sticky top-20 scroll-mt-24 rounded-xl glass-card p-6 glow-hover">
               <div className="flex items-baseline gap-2">
                 {course.price === 0 ? (
                   <span className="text-3xl font-bold text-success">ফ্রি</span>
