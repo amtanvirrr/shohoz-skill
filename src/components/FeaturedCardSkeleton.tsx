@@ -20,7 +20,7 @@ const FeaturedCardSkeleton = ({ aspect = "video", className }: Props) => {
       )}
       aria-hidden="true"
     >
-      <div className="overflow-hidden rounded-xl glass-card">
+      <div className="skeleton-shimmer overflow-hidden rounded-xl glass-card">
         <div className={cn(aspectClass, "w-full animate-pulse bg-muted/60")} />
         <div className="flex flex-col gap-3 p-4 sm:p-5">
           <div className="flex gap-2">
