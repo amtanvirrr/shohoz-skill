@@ -37,6 +37,7 @@ const FloatingMenuFab = () => {
   const [open, setOpen] = useState(false);
   const [side, setSide] = useState<"left" | "right">("right");
   const [topPx, setTopPx] = useState(0);
+  const [leftPx, setLeftPx] = useState<number | null>(null);
   const [dragging, setDragging] = useState(false);
   const [animateSnap, setAnimateSnap] = useState(true);
 
@@ -103,8 +104,8 @@ const FloatingMenuFab = () => {
   };
 
   const onPointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
-    if (open) return;
     (e.target as Element).setPointerCapture?.(e.pointerId);
+    const rect = fabRef.current?.getBoundingClientRect();
     dragState.current = {
       startX: e.clientX,
       startY: e.clientY,
@@ -112,6 +113,8 @@ const FloatingMenuFab = () => {
       moved: false,
       pointerId: e.pointerId,
     };
+    // freeze current X position so dragging is smooth across left/right
+    if (rect) setLeftPx(rect.left);
     setAnimateSnap(false);
     setDragging(true);
   };
@@ -122,6 +125,13 @@ const FloatingMenuFab = () => {
     const dy = e.clientY - dragState.current.startY;
     if (Math.abs(dx) > 6 || Math.abs(dy) > 6) dragState.current.moved = true;
     setTopPx(clampTop(dragState.current.startTop + dy));
+    setLeftPx((prev) => {
+      if (prev == null) return prev;
+      const next = prev + (e.clientX - dragState.current.startX);
+      dragState.current.startX = e.clientX;
+      const max = window.innerWidth - FAB_SIZE - 4;
+      return Math.max(4, Math.min(next, max));
+    });
   };
 
   const onPointerUp = (e: React.PointerEvent<HTMLButtonElement>) => {
@@ -130,14 +140,17 @@ const FloatingMenuFab = () => {
     const moved = dragState.current.moved;
     if (moved) {
       const half = window.innerWidth / 2;
-      const newSide: "left" | "right" = e.clientX < half ? "left" : "right";
+      const center = (leftPx ?? e.clientX) + FAB_SIZE / 2;
+      const newSide: "left" | "right" = center < half ? "left" : "right";
       setAnimateSnap(true);
       setSide(newSide);
+      setLeftPx(null);
       localStorage.setItem(SIDE_KEY, newSide);
       localStorage.setItem(TOP_KEY, String(topPx));
     } else {
-      // treat as click
-      setOpen(true);
+      setLeftPx(null);
+      // treat as click — toggle open/close
+      setOpen((o) => !o);
     }
   };
 
@@ -160,8 +173,8 @@ const FloatingMenuFab = () => {
           width: FAB_SIZE,
           height: FAB_SIZE,
           top: topPx,
-          left: side === "left" ? EDGE_INSET : undefined,
-          right: side === "right" ? EDGE_INSET : undefined,
+          left: leftPx != null ? leftPx : side === "left" ? EDGE_INSET : undefined,
+          right: leftPx != null ? undefined : side === "right" ? EDGE_INSET : undefined,
           touchAction: "none",
         }}
       >
