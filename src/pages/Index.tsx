@@ -13,6 +13,7 @@ import FeaturedImage from "@/components/FeaturedImage";
 import HeroBanner from "@/components/HeroBanner";
 import MobileCarousel from "@/components/MobileCarousel";
 import FeaturedCardSkeleton from "@/components/FeaturedCardSkeleton";
+import EmptyState from "@/components/EmptyState";
 
 interface DbBook {
   id: string;
@@ -404,7 +405,18 @@ const Index = () => {
               ))}
             </MobileCarousel>
           ) : (
-            <p className="mt-8 text-center text-muted-foreground">এখনো কোন কোর্স নেই। শীঘ্রই আসছে!</p>
+            <div className="mt-8">
+              <EmptyState
+                icon={GraduationCap}
+                title="এখনো কোনো ফিচার্ড কোর্স নেই"
+                description="নতুন কোর্স খুব শীঘ্রই যুক্ত হচ্ছে। ততক্ষণে আমাদের সম্পূর্ণ কোর্স ক্যাটালগ ঘুরে দেখুন।"
+                action={
+                  <Button asChild variant="outline" size="sm">
+                    <Link to="/courses">সব কোর্স দেখুন <ArrowRight className="ml-1 h-4 w-4" /></Link>
+                  </Button>
+                }
+              />
+            </div>
           )}
           <Link to="/courses" className="mt-4 flex items-center justify-center gap-1 text-sm font-medium text-primary hover:underline sm:hidden">
             সব কোর্স দেখুন <ArrowRight className="h-4 w-4" />
@@ -486,7 +498,18 @@ const Index = () => {
               ))}
             </MobileCarousel>
           ) : (
-            <p className="mt-8 text-center text-muted-foreground">এখনো কোন বই নেই। শীঘ্রই আসছে!</p>
+            <div className="mt-8">
+              <EmptyState
+                icon={BookOpen}
+                title="এখনো কোনো ফিচার্ড বই নেই"
+                description="শীঘ্রই নতুন বই যুক্ত হচ্ছে। ততক্ষণে আমাদের সম্পূর্ণ বইয়ের তালিকা দেখুন।"
+                action={
+                  <Button asChild variant="outline" size="sm">
+                    <Link to="/books">সব বই দেখুন <ArrowRight className="ml-1 h-4 w-4" /></Link>
+                  </Button>
+                }
+              />
+            </div>
           )}
         </div>
       </section>
