@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.sslcz-init]
 verify_jwt = true
+
+[functions.sslcz-verify]
+verify_jwt = true

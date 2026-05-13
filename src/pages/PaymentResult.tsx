@@ -52,10 +52,16 @@ const PaymentResult = () => {
   const [navigating, setNavigating] = useState(false);
   const navigate = useNavigate();
   const cancelRef = useRef<{ cancelled: boolean }>({ cancelled: false });
+  // Mirrors `secondsLeft` so callbacks can read the current value without
+  // being recreated on every state change.
+  const secondsLeftRef = useRef(0);
 
-  const POLL_INTERVAL = 2; // seconds
-  const MAX_ATTEMPTS = 20; // ~40s total
-  const TOTAL_SECONDS = POLL_INTERVAL * MAX_ATTEMPTS;
+  // Progressive backoff (seconds per attempt). Sum ≈ 60s.
+  const POLL_SCHEDULE = [2, 2, 2, 2, 3, 3, 3, 4, 4, 5, 5, 6, 7, 8, 10];
+  const MAX_ATTEMPTS = POLL_SCHEDULE.length;
+  const TOTAL_SECONDS = POLL_SCHEDULE.reduce((a, b) => a + b, 0);
+  // After this many seconds, kick a one-shot validator-fallback verify call.
+  const VERIFY_FALLBACK_AT_S = 15;
 
   const startPolling = useCallback(() => {
     if (status !== "success" || !orderId) {
@@ -69,7 +75,9 @@ const PaymentResult = () => {
     setTimedOut(false);
     setAttempt(0);
     setSecondsLeft(TOTAL_SECONDS);
+    secondsLeftRef.current = TOTAL_SECONDS;
     let attempts = 0;
+    let verifyCalled = false;
 
     // 1Hz countdown ticker
     const tickerId = window.setInterval(() => {
@@ -77,7 +85,11 @@ const PaymentResult = () => {
         window.clearInterval(tickerId);
         return;
       }
-      setSecondsLeft((s) => (s > 0 ? s - 1 : 0));
+      setSecondsLeft((s) => {
+        const next = s > 0 ? s - 1 : 0;
+        secondsLeftRef.current = next;
+        return next;
+      });
     }, 1000);
     (token as { cancelled: boolean; tickerId?: number }).tickerId = tickerId;
 
@@ -100,9 +112,40 @@ const PaymentResult = () => {
       }
       attempts++;
       setAttempt(attempts);
+
+      // Once we've spent ~15s waiting for IPN, trigger a server-side
+      // validator-API fallback. Best-effort; ignore errors and keep polling.
+      const elapsed = TOTAL_SECONDS - secondsLeftRef.current;
+      if (!verifyCalled && elapsed >= VERIFY_FALLBACK_AT_S) {
+        verifyCalled = true;
+        supabase.functions
+          .invoke("sslcz-verify", { body: { order_id: orderId } })
+          .catch(() => {});
+      }
+
       if (attempts < MAX_ATTEMPTS) {
-        setTimeout(poll, POLL_INTERVAL * 1000);
+        const wait = POLL_SCHEDULE[attempts] ?? 5;
+        setTimeout(poll, wait * 1000);
       } else {
+        // Last-chance verify before showing timeout
+        if (!verifyCalled) {
+          verifyCalled = true;
+          try { await supabase.functions.invoke("sslcz-verify", { body: { order_id: orderId } }); } catch { /* ignore */ }
+          const { data: again } = await supabase
+            .from("orders")
+            .select(
+              "order_id, product_title, product_type, price, customer_name, customer_phone, customer_email, payment_method, payment_verified, status, gateway_tran_id, created_at"
+            )
+            .eq("order_id", orderId)
+            .maybeSingle();
+          if (again?.payment_verified) {
+            setOrder(again as OrderSummary);
+            setVerified(true);
+            setLoading(false);
+            window.clearInterval(tickerId);
+            return;
+          }
+        }
         setTimedOut(true);
         setLoading(false);
         window.clearInterval(tickerId);
