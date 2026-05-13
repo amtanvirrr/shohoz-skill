@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { BookOpen, GraduationCap, Users, Sparkles, ShieldCheck } from "lucide-react";
+import { BookOpen, GraduationCap, Users, Sparkles, ShieldCheck, Star, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -65,6 +65,26 @@ const HeroBanner = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const location = useLocation();
   const navigate = useNavigate();
+  const [rating, setRating] = useState<{ avg: number; count: number }>({ avg: 0, count: 0 });
+
+  useEffect(() => {
+    supabase
+      .from("reviews")
+      .select("rating", { count: "exact" })
+      .eq("is_active", true)
+      .then(({ data, count }) => {
+        if (!data || data.length === 0) return;
+        const total = data.reduce((s: number, r: any) => s + (r.rating || 0), 0);
+        setRating({ avg: total / data.length, count: count ?? data.length });
+      });
+  }, []);
+
+  const toBnNum = (n: number | string) => String(n).replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[Number(d)]);
+  const formatCount = (n: number) => {
+    if (n >= 1000) return `${toBnNum((n / 1000).toFixed(n >= 10000 ? 0 : 1))}হাজার+`;
+    if (n >= 100) return `${toBnNum(Math.floor(n / 10) * 10)}+`;
+    return toBnNum(n);
+  };
 
   const handleCtaClick = (link: string) => (e: React.MouseEvent<HTMLAnchorElement>) => {
     const anchor = sectionAnchorFor(link);
