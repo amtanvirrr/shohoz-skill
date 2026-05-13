@@ -95,6 +95,8 @@ const QuizPage = () => {
   const [submitted, setSubmitted] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const [timeExpired, setTimeExpired] = useState(false);
+  const [confirmSubmitOpen, setConfirmSubmitOpen] = useState(false);
+  const [quizSubmitting, setQuizSubmitting] = useState(false);
   const [attempts, setAttempts] = useState<Record<string, QuizAttempt[]>>({});
   const [leaderboard, setLeaderboard] = useState<Record<string, LeaderboardEntry[]>>({});
   const [sectionCounts, setSectionCounts] = useState<Record<string, number>>({});
@@ -270,6 +272,7 @@ const QuizPage = () => {
 
   useEffect(() => {
     if (!submitted || !selectedQuiz || questions.length === 0 || !user) return;
+    setQuizSubmitting(true);
     const submit = async () => {
       const { data, error } = await supabase.rpc("submit_quiz_attempt", {
         _quiz_id: selectedQuiz.id,
@@ -277,6 +280,12 @@ const QuizPage = () => {
       });
       if (error || !data) {
         console.error("Failed to submit quiz attempt:", error);
+        toast({
+          title: "সাবমিট ব্যর্থ হয়েছে",
+          description: "আবার চেষ্টা করুন বা কিছুক্ষণ পরে আসুন।",
+          variant: "destructive",
+        });
+        setQuizSubmitting(false);
         return;
       }
       const result = data as any;
@@ -298,6 +307,11 @@ const QuizPage = () => {
       if (lbData) {
         setLeaderboard((prev) => ({ ...prev, [selectedQuiz.id]: lbData as LeaderboardEntry[] }));
       }
+      setQuizSubmitting(false);
+      toast({
+        title: "✅ সফলভাবে জমা হয়েছে",
+        description: `স্কোর: ${Number(result.score) || 0} • সঠিক: ${Number(result.correct) || 0} / ${Number(result.total) || 0}`,
+      });
     };
     submit();
   }, [submitted]);
