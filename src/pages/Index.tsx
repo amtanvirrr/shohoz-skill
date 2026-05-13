@@ -264,23 +264,23 @@ const Index = () => {
     return "bg-primary text-primary-foreground sm:bg-primary/10 sm:text-primary sm:shadow-none";
   };
 
-  const handleTrack = async () => {
+  /**
+   * Homepage track handler — sends the user to the dedicated /track-order
+   * page with the typed value pre-filled into the matching field
+   * (Order ID vs Phone). Full order details require BOTH fields verified
+   * on the next page.
+   */
+  const handleTrack = () => {
     const q = trackQuery.trim();
     if (!q) {
       toast({ title: "তথ্য দিন", description: "অর্ডার আইডি অথবা ফোন নম্বর দিন।", variant: "destructive" });
       return;
     }
-
-    const { data: result, error } = await supabase.functions.invoke("track-order", {
-      body: { query: q },
-    });
-
-    if (error || !result?.data || result.data.length === 0) {
-      setTrackResult(null);
-      toast({ title: "অর্ডার পাওয়া যায়নি", description: "সঠিক অর্ডার আইডি বা ফোন নম্বর দিয়ে আবার চেষ্টা করুন।", variant: "destructive" });
-    } else {
-      setTrackResult(result.data);
-    }
+    const looksLikeOrderId = /[a-zA-Z]/.test(q) || /^ord-/i.test(q);
+    const params = new URLSearchParams();
+    if (looksLikeOrderId) params.set("order_id", q);
+    else params.set("phone", q);
+    navigate(`/track-order?${params.toString()}`);
   };
 
   const statusLabels: Record<string, string> = {
