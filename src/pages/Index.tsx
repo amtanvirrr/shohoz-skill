@@ -235,13 +235,13 @@ const Index = () => {
             </div>
           </ScrollReveal>
           {coursesLoading ? (
-            <MobileCarousel count={3} desktopGridClass="sm:grid-cols-2 lg:grid-cols-3">
+            <MobileCarousel count={3} label="ফিচার্ড আইটেম" desktopGridClass="sm:grid-cols-2 lg:grid-cols-3">
               {Array.from({ length: 3 }).map((_, i) => (
                 <FeaturedCardSkeleton key={i} aspect="video" />
               ))}
             </MobileCarousel>
           ) : dbCourses.length > 0 ? (
-            <MobileCarousel count={dbCourses.length} desktopGridClass="sm:grid-cols-2 lg:grid-cols-3">
+            <MobileCarousel count={dbCourses.length} label="ফিচার্ড কোর্স" desktopGridClass="sm:grid-cols-2 lg:grid-cols-3">
               {dbCourses.map((course, idx) => (
                 <ScrollReveal key={course.id} delay={idx * 100} className="snap-start shrink-0 w-[82%] sm:w-auto sm:shrink">
                   <Link to={`/course/${(course as any).slug || course.id}#order-form`} className="group relative block h-full overflow-hidden rounded-xl glass-card shimmer">
@@ -314,13 +314,13 @@ const Index = () => {
             </div>
           </ScrollReveal>
           {booksLoading ? (
-            <MobileCarousel count={3} desktopGridClass="sm:grid-cols-2 lg:grid-cols-3">
+            <MobileCarousel count={3} label="ফিচার্ড আইটেম" desktopGridClass="sm:grid-cols-2 lg:grid-cols-3">
               {Array.from({ length: 3 }).map((_, i) => (
                 <FeaturedCardSkeleton key={i} aspect="portrait" />
               ))}
             </MobileCarousel>
           ) : dbBooks.length > 0 ? (
-            <MobileCarousel count={dbBooks.length} desktopGridClass="sm:grid-cols-2 lg:grid-cols-3">
+            <MobileCarousel count={dbBooks.length} label="ফিচার্ড বই" desktopGridClass="sm:grid-cols-2 lg:grid-cols-3">
               {dbBooks.map((book, idx) => (
                 <ScrollReveal key={book.id} delay={idx * 100} className="snap-start shrink-0 w-[82%] sm:w-auto sm:shrink">
                   <Link to={`/book/${(book as any).slug || book.id}#order-form`} className="group relative block h-full overflow-hidden rounded-xl glass-card shimmer">
