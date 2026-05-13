@@ -52,8 +52,14 @@ const MobileCarousel = ({ count, desktopGridClass = "sm:grid-cols-2 lg:grid-cols
     const el = ref.current;
     if (!el) return;
     const kid = el.children[i] as HTMLElement | undefined;
-    // Use scrollIntoView so RTL/LTR direction is respected by the browser
-    if (kid) kid.scrollIntoView({ behavior: "smooth", inline: "start", block: "nearest" });
+    if (!kid) return;
+    // Optimistically update the active dot so the UI feels instantaneous
+    setActive(i);
+    // Align the card to the start of the viewport, respecting the 16px container padding
+    const offset = isRtl
+      ? kid.offsetLeft + kid.offsetWidth - el.clientWidth + 16
+      : kid.offsetLeft - 16;
+    el.scrollTo({ left: offset, behavior: "smooth" });
   };
 
   const handleKey = (e: React.KeyboardEvent<HTMLDivElement>) => {
