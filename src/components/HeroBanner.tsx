@@ -3,6 +3,7 @@ import { BookOpen, GraduationCap, Users, Sparkles, ShieldCheck, Star, Truck } fr
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { trackCtaClick } from "@/lib/analytics";
 
 interface HeroSettings {
   hero_title: string;
