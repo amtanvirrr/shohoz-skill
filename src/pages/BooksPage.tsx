@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { CheckCircle, Clock, Package, Truck, BookOpen } from "lucide-react";
 import { ScrollReveal } from "@/hooks/useScrollReveal";
+import ProductCardSkeleton from "@/components/ProductCardSkeleton";
+import EmptyState from "@/components/EmptyState";
 
 interface DbBook {
   id: string;
@@ -28,9 +30,13 @@ const BooksPage = () => {
   const { user } = useAuth();
   const [books, setBooks] = useState<DbBook[]>([]);
   const [orderMap, setOrderMap] = useState<Record<string, OrderInfo>>({});
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.from("books").select("*").eq("is_published", true).order("created_at", { ascending: false }).then(({ data }) => setBooks(data || []));
+    supabase.from("books").select("*").eq("is_published", true).order("created_at", { ascending: false }).then(({ data }) => {
+      setBooks(data || []);
+      setLoading(false);
+    });
   }, []);
 
   useEffect(() => {
@@ -94,16 +100,31 @@ const BooksPage = () => {
     <div className="py-16 lg:py-20">
       <div className="container mx-auto px-4">
         <ScrollReveal>
-          <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-accent/15 px-3 py-1 text-xs font-medium text-accent">
+          <div className="section-kicker mb-3" style={{ background: "hsl(var(--accent) / 0.15)", color: "hsl(var(--accent))" }}>
             <BookOpen className="h-3.5 w-3.5" />
             বই
           </div>
-          <h1 className="text-4xl font-bold text-foreground">সকল বই</h1>
-          <p className="mt-2 text-muted-foreground">আমাদের সকল বই ব্রাউজ করুন</p>
+          <h1 className="text-4xl font-bold text-foreground sm:text-5xl">সকল বই</h1>
+          <p className="mt-2 text-muted-foreground">
+            আমাদের সকল বই ব্রাউজ করুন{" "}
+            {!loading && books.length > 0 && (
+              <span className="ml-1 font-medium text-foreground">({books.length} টি)</span>
+            )}
+          </p>
         </ScrollReveal>
 
-        {books.length === 0 ? (
-          <p className="mt-10 text-center text-muted-foreground">এখনো কোন বই নেই।</p>
+        {loading ? (
+          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <ProductCardSkeleton aspect="portrait" count={6} />
+          </div>
+        ) : books.length === 0 ? (
+          <div className="mt-10">
+            <EmptyState
+              icon={BookOpen}
+              title="এখনো কোন বই নেই"
+              description="শীঘ্রই নতুন বই যোগ করা হবে। ফিরে এসে আবার দেখুন।"
+            />
+          </div>
         ) : (
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {books.map((book, idx) => (
@@ -111,9 +132,13 @@ const BooksPage = () => {
                 <Link to={`/book/${(book as any).slug || book.id}`} className="group relative block overflow-hidden rounded-xl glass-card shimmer">
                   {renderBadge(book)}
                   {book.image_url && (
-                    <div className="aspect-[3/4] overflow-hidden">
-                      <img src={book.image_url} alt={book.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                    <div className="img-overlay relative aspect-[3/4] overflow-hidden">
+                      <img
+                        src={book.image_url}
+                        alt={book.title}
+                        loading="lazy"
+                        className="ken-burns h-full w-full object-cover"
+                      />
                     </div>
                   )}
                   <div className="p-5">
@@ -140,7 +165,7 @@ const BooksPage = () => {
                           </>
                         ) : (
                           <>
-                            <span className="text-lg font-bold text-foreground">৳{book.price}</span>
+                            <span className="price-tag text-xl">৳{book.price}</span>
                             {book.original_price && <span className="text-sm text-muted-foreground line-through">৳{book.original_price}</span>}
                           </>
                         )}
