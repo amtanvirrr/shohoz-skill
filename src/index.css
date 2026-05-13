@@ -566,3 +566,103 @@
     font-weight: 600;
   }
 }
+
+/* ---------- Phase 5: Micro-interactions ---------- */
+@layer components {
+  /* Route transitions */
+  .route-fade-in {
+    animation: route-in 320ms var(--ease-spring, cubic-bezier(.34,1.56,.64,1)) both;
+  }
+  .route-fade-out {
+    animation: route-out 140ms ease-in both;
+  }
+  @keyframes route-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes route-out {
+    from { opacity: 1; transform: translateY(0); }
+    to   { opacity: 0; transform: translateY(-4px); }
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.25);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary) / 0.45);
+    background-clip: padding-box;
+    border: 2px solid transparent;
+  }
+
+  /* Selection color */
+  ::selection {
+    background: hsl(var(--primary) / 0.25);
+    color: hsl(var(--foreground));
+  }
+
+  /* Premium link / shimmer-on-hover for premium buttons */
+  .shine-on-hover {
+    position: relative;
+    overflow: hidden;
+  }
+  .shine-on-hover::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -120%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(
+      120deg,
+      transparent 0%,
+      hsl(0 0% 100% / 0.22) 50%,
+      transparent 100%
+    );
+    transition: left 0.7s cubic-bezier(.22,.61,.36,1);
+    pointer-events: none;
+  }
+  .shine-on-hover:hover::before {
+    left: 130%;
+  }
+
+  /* Glass toast */
+  [data-sonner-toaster] [data-sonner-toast] {
+    background: hsl(var(--glass-bg)) !important;
+    backdrop-filter: blur(16px) saturate(1.4);
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
+    border: 1px solid hsl(var(--glass-border)) !important;
+    box-shadow: var(--shadow-xl, 0 20px 50px hsl(0 0% 0% / 0.18)) !important;
+    border-radius: 14px !important;
+  }
+
+  /* Form input – polished focus ring */
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.18);
+  }
+
+  /* Smooth focus visible for any clickable */
+  a:focus-visible,
+  button:focus-visible {
+    outline: none;
+  }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    .route-fade-in,
+    .route-fade-out,
+    .ken-burns,
+    .skeleton-shimmer::after,
+    .shine-on-hover::before {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+}
