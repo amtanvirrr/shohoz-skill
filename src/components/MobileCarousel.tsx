@@ -15,10 +15,19 @@ interface Props {
  * Mobile-first horizontal snap carousel that becomes a grid on sm+.
  * Adds a swipe hint and pagination dots on mobile only.
  */
+const HINT_STORAGE_KEY = "mobile-carousel-hint-seen";
+
 const MobileCarousel = ({ count, desktopGridClass = "sm:grid-cols-2 lg:grid-cols-3", label = "কারোসেল", children }: Props) => {
   const ref = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
-  const [hint, setHint] = useState(true);
+  const [hint, setHint] = useState(() => {
+    if (typeof window === "undefined") return true;
+    try {
+      return localStorage.getItem(HINT_STORAGE_KEY) !== "1";
+    } catch {
+      return true;
+    }
+  });
   const [isRtl, setIsRtl] = useState(false);
 
   useEffect(() => {
@@ -31,7 +40,10 @@ const MobileCarousel = ({ count, desktopGridClass = "sm:grid-cols-2 lg:grid-cols
     const el = ref.current;
     if (!el) return;
     const handle = () => {
-      if (hint) setHint(false);
+      if (hint) {
+        setHint(false);
+        try { localStorage.setItem(HINT_STORAGE_KEY, "1"); } catch {}
+      }
       const kids = Array.from(el.children) as HTMLElement[];
       const center = el.scrollLeft + el.clientWidth / 2;
       let nearest = 0;
@@ -44,7 +56,10 @@ const MobileCarousel = ({ count, desktopGridClass = "sm:grid-cols-2 lg:grid-cols
       setActive(nearest);
     };
     el.addEventListener("scroll", handle, { passive: true });
-    const t = window.setTimeout(() => setHint(false), 4500);
+    const t = window.setTimeout(() => {
+      setHint(false);
+      try { localStorage.setItem(HINT_STORAGE_KEY, "1"); } catch {}
+    }, 4500);
     return () => { el.removeEventListener("scroll", handle); clearTimeout(t); };
   }, [hint]);
 
