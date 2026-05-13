@@ -84,6 +84,7 @@ const QuizPage = () => {
   const [quizSections, setQuizSections] = useState<QuizSection[]>([]);
   const [submitted, setSubmitted] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
+  const [timeExpired, setTimeExpired] = useState(false);
   const [attempts, setAttempts] = useState<Record<string, QuizAttempt[]>>({});
   const [leaderboard, setLeaderboard] = useState<Record<string, LeaderboardEntry[]>>({});
   const [sectionCounts, setSectionCounts] = useState<Record<string, number>>({});
@@ -213,6 +214,12 @@ const QuizPage = () => {
   useEffect(() => {
     if (!selectedQuiz || submitted) return;
     if (timeLeft <= 0 && selectedQuiz) {
+      setTimeExpired(true);
+      toast({
+        title: "⏰ সময় শেষ!",
+        description: "উত্তর লক করা হয়েছে এবং কুইজ স্বয়ংক্রিয়ভাবে সাবমিট হচ্ছে।",
+        variant: "destructive",
+      });
       handleSubmit();
       return;
     }
@@ -232,6 +239,7 @@ const QuizPage = () => {
     setSelectedQuiz(quiz);
     setAnswers({});
     setSubmitted(false);
+    setTimeExpired(false);
     setCurrentIndex(0);
     setTimeLeft(quiz.duration_minutes * 60);
     const [qRes, secRes] = await Promise.all([
