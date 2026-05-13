@@ -1,44 +1,55 @@
-# Mobile Bottom Nav — Floating Glassmorphism
+# Mobile Nav Redesign — Dashboard Center + Draggable Menu FAB
 
-Redesign `src/components/layout/MobileBottomNav.tsx` into a detached, floating glassmorphic pill with an elevated center "Menu" button. Purely visual — routes, sheet content, auth, and theme logic stay identical.
+## Goals
+1. Bottom nav-এর মাঝখানের Menu FAB সরিয়ে সেখানে **Dashboard** রাখা।
+2. "মেনু" button-টা bottom nav থেকে সরিয়ে আলাদা একটা **floating draggable FAB**-এ রূপান্তর করা — যেটা শুধু left বা right edge-এ snap হয়ে আটকে থাকবে।
+3. FAB যে পাশে আটকে থাকবে, সেই পাশ থেকেই Sheet menu slide হয়ে আসবে।
 
-## Layout
+---
 
-- Container: `fixed bottom-0 left-0 right-0 z-50 md:hidden`, padding `px-4 pb-3` plus `env(safe-area-inset-bottom)`, no border, transparent background. Wraps the bar so it floats above screen edges.
-- Bar: `mx-auto max-w-md` pill with `rounded-2xl`, `glass-card` background, `border border-border/40`, soft shadow (`shadow-[0_8px_30px_-8px_hsl(var(--primary)/0.25)]`), `backdrop-blur-xl`.
-- Grid: 5 columns, but middle slot (Menu) renders an elevated FAB that overflows upward (`-mt-6`).
+## Changes
 
-## Tabs (4 side items: Home, Courses, Books, Quizzes)
+### 1. `src/components/layout/MobileBottomNav.tsx`
+- **Center slot:** Menu FAB-এর জায়গায় Dashboard FAB।
+  - Icon: `LayoutDashboard`, label: "ড্যাশবোর্ড"
+  - Same elevated style: `-mt-7 h-14 w-14 rounded-full bg-gradient-to-br from-primary to-accent`, ring, shadow
+  - Logged-in হলে `/dashboard`-এ navigate, না হলে `/login?redirect=/dashboard`
+  - Active state যখন `pathname === "/dashboard"`
+- Sheet/Trigger/Menu button সম্পূর্ণ remove। 4 tabs (হোম, কোর্স | বই, কুইজ) আগের মতোই থাকবে।
 
-- Vertical stack: icon + label, `py-2.5`, `text-[11px]`.
-- Inactive: `text-muted-foreground`.
-- Active: `text-primary`, icon sits in subtle `bg-primary/10` rounded square, plus a 4px primary dot indicator below the label (`h-1 w-1 rounded-full bg-primary`).
-- Smooth `transition-all duration-200`, `active:scale-95`.
+### 2. New file `src/components/layout/FloatingMenuFab.tsx`
+- Mobile-only (`md:hidden`), `position: fixed`, z-index nav-এর উপরে।
+- **State:**
+  - `side: "left" | "right"` — localStorage key `floatingMenuSide` (default `"right"`)
+  - `topPx: number` — vertical position, localStorage key `floatingMenuTop` (default ~60% viewport height)
+  - `dragging`, `moved` (click vs drag detection)
+- **Drag behavior:** pointer events (`onPointerDown/Move/Up`, `setPointerCapture`).
+  - Y axis freely follows pointer, clamped between `[80px, viewport-160px]`।
+  - X axis নয় — release হওয়ার সময় pointer viewport-এর কোন অর্ধে আছে দেখে `left`/`right` snap; smooth transition দিয়ে edge-এ বসবে (e.g. `12px` inset)।
+  - `touch-action: none` যাতে scroll না হয়।
+- **Click vs drag:** total displacement < 6px হলে click হিসেবে treat → Sheet open।
+- **Sheet:**
+  - `<Sheet>` with `<SheetContent side={side}>` — side dynamic, তাই FAB যে পাশে snapped, সেই পাশ থেকে slide।
+  - Existing menu contents (moreLinks, auth links, theme toggle, logout) — current `MobileBottomNav` থেকে move করে আনতে হবে।
+  - `SheetContent` width: `w-[85vw] sm:max-w-sm`, `h-full overflow-y-auto`।
+- **FAB visual:** `h-12 w-12 rounded-full bg-gradient-to-br from-primary to-accent text-primary-foreground shadow-lg shadow-primary/30 ring-2 ring-background/60 backdrop-blur`. Subtle drag-handle dots বা just Menu icon। `active:scale-95`। `prefers-reduced-motion` respect।
+- Bottom safe-area aware (don't overlap nav): default top placement above nav; clamp upper bound considers nav height.
 
-## Center "Menu" FAB
+### 3. `src/App.tsx`
+- `GlobalMobileNav`-এ `<MobileBottomNav />`-এর পাশাপাশি `<FloatingMenuFab />` render (same admin/lp guard)।
 
-- Circular button, `h-14 w-14 rounded-full`, gradient `bg-gradient-to-br from-primary to-accent`, white icon, `shadow-lg shadow-primary/30`, lifted via `-mt-6`.
-- Ring around it: `ring-4 ring-background` so it visually detaches from the bar.
-- Opens existing Sheet (no changes to sheet contents).
-- When open: subtle pulse / scale (`scale-105`).
-- Label "মেনু" stays beneath in same `text-[11px]` style.
+### 4. `src/index.css`
+- `.footer-safe` padding আগের মতই (6.5rem) থাকবে — Dashboard FAB একই উচ্চতা ব্যবহার করছে।
 
-## Spacing / safe area
+---
 
-- Keep `env(safe-area-inset-bottom)` padding so it sits above iOS home indicator.
-- Verify body bottom-padding still clears the new floating height (~84px including FAB lift). Adjust the existing global mobile bottom padding token in `src/index.css` if needed (only if measurement shows overlap).
+## Out of Scope
+- Sheet menu-র contents/items, routing, auth flow, theme system — unchanged।
+- Header (desktop) nav — unchanged।
+- কোনো নতুন dependency নেই (drag native pointer events দিয়ে handled)।
 
-## Accessibility & motion
-
-- Preserve `aria-label`s, `SheetTrigger`/`SheetClose` usage.
-- Respect `prefers-reduced-motion`: disable scale/pulse transitions.
-
-## Files
-
-- `src/components/layout/MobileBottomNav.tsx` — markup + classnames rewrite only.
-- `src/index.css` — only if bottom-padding spacer needs a small bump for the elevated FAB.
-
-## Out of scope
-
-- Sheet menu contents, routing logic, auth, theme toggle behavior — unchanged.
-- No new dependencies.
+## Edge Cases
+- SSR/initial render-এ `window` undefined guard।
+- Orientation/resize-এ position re-clamp।
+- Sheet open থাকা অবস্থায় drag disabled।
+- Reduced-motion: snap transition skip।

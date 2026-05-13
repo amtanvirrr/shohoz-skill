@@ -11,6 +11,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import ScrollToTop from "@/components/ScrollToTop";
 import RouteTransition from "@/components/RouteTransition";
 import MobileBottomNav from "@/components/layout/MobileBottomNav";
+import FloatingMenuFab from "@/components/layout/FloatingMenuFab";
 import { useLocation } from "react-router-dom";
 import Index from "./pages/Index";
 import About from "./pages/About";
@@ -59,7 +60,12 @@ const queryClient = new QueryClient();
 const GlobalMobileNav = () => {
   const { pathname } = useLocation();
   if (pathname.startsWith("/admin") || pathname.startsWith("/lp/")) return null;
-  return <MobileBottomNav />;
+  return (
+    <>
+      <MobileBottomNav />
+      <FloatingMenuFab />
+    </>
+  );
 };
 
 const App = () => (
