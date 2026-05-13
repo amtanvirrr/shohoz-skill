@@ -637,11 +637,19 @@ const QuizPage = () => {
                   </Button>
                 ) : (
                   <Button
-                    onClick={handleSubmit}
+                    onClick={() => setConfirmSubmitOpen(true)}
                     className="flex-1 sm:flex-none"
-                    disabled={answeredCount === 0}
+                    disabled={answeredCount === 0 || quizSubmitting}
                   >
-                    জমা দিন <CheckCircle className="ml-1 h-4 w-4" />
+                    {quizSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> জমা হচ্ছে…
+                      </>
+                    ) : (
+                      <>
+                        জমা দিন <CheckCircle className="ml-1 h-4 w-4" />
+                      </>
+                    )}
                   </Button>
                 )}
               </div>
