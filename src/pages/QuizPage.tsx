@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CheckCircle, XCircle, Clock, ArrowLeft, AlertTriangle, History, Trophy, Medal, Lock, Smartphone, Eye } from "lucide-react";
+import { CheckCircle, XCircle, Clock, ArrowLeft, AlertTriangle, History, Trophy, Medal, Lock, Smartphone, Eye, ChevronLeft, ChevronRight, Info, Lightbulb } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { format } from "date-fns";
@@ -90,6 +90,8 @@ const QuizPage = () => {
   const [showLeaderboard, setShowLeaderboard] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [directQuizStarted, setDirectQuizStarted] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [showPalette, setShowPalette] = useState(false);
 
   // Purchase state
   const [quizOrderStatus, setQuizOrderStatus] = useState<Record<string, string>>({});
@@ -230,6 +232,7 @@ const QuizPage = () => {
     setSelectedQuiz(quiz);
     setAnswers({});
     setSubmitted(false);
+    setCurrentIndex(0);
     setTimeLeft(quiz.duration_minutes * 60);
     const [qRes, secRes] = await Promise.all([
       supabase.rpc("get_quiz_questions", { _quiz_id: quiz.id }),
