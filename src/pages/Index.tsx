@@ -182,6 +182,46 @@ const Index = () => {
     );
   };
 
+  // Compute CTA copy based on course state
+  const getCourseCta = (course: DbCourse) => {
+    const status = courseOrderMap[course.id];
+    if (status && ["confirmed", "delivered"].includes(status)) {
+      return { text: "শিখতে যান", tone: "success" as const };
+    }
+    if (status === "pending") {
+      return { text: "যাচাইয়ের অপেক্ষায়", tone: "warning" as const };
+    }
+    if (course.price === 0) {
+      return { text: "ফ্রি এনরোল করুন", tone: "primary" as const };
+    }
+    return { text: "এখনই কিনুন", tone: "primary" as const };
+  };
+
+  // Compute CTA copy based on book type & purchase state
+  const getBookCta = (book: DbBook) => {
+    const info = bookOrderMap[book.id];
+    const isDigital = book.book_type === "ebook";
+    if (info) {
+      if (isDigital) {
+        if (info.confirmed > 0 || info.delivered > 0) return { text: "পড়তে যান", tone: "success" as const };
+        if (info.pending > 0) return { text: "যাচাইয়ের অপেক্ষায়", tone: "warning" as const };
+      } else {
+        if (info.delivered > 0) return { text: "আবার অর্ডার করুন", tone: "primary" as const };
+        if (info.shipped > 0) return { text: "ট্র্যাক করুন", tone: "success" as const };
+        if (info.confirmed > 0) return { text: "প্রস্তুত হচ্ছে", tone: "success" as const };
+        if (info.pending > 0) return { text: "যাচাইয়ের অপেক্ষায়", tone: "warning" as const };
+      }
+    }
+    if (book.price === 0) return { text: isDigital ? "ফ্রি পড়ুন" : "ফ্রি অর্ডার", tone: "primary" as const };
+    return { text: isDigital ? "এখনই কিনুন" : "অর্ডার করুন", tone: "primary" as const };
+  };
+
+  const ctaToneClass = (tone: "primary" | "success" | "warning") => {
+    if (tone === "success") return "bg-success text-success-foreground sm:bg-success/15 sm:text-success sm:shadow-none";
+    if (tone === "warning") return "bg-warning text-warning-foreground sm:bg-warning/15 sm:text-warning sm:shadow-none";
+    return "bg-primary text-primary-foreground sm:bg-primary/10 sm:text-primary sm:shadow-none";
+  };
+
   const handleTrack = async () => {
     const q = trackQuery.trim();
     if (!q) {
@@ -276,9 +316,14 @@ const Index = () => {
                             </>
                           )}
                         </div>
-                        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm transition-transform group-hover:scale-105 sm:bg-primary/10 sm:text-primary sm:shadow-none">
-                          এখনই দেখুন <ArrowRight className="h-3.5 w-3.5" />
-                        </span>
+                        {(() => {
+                          const cta = getCourseCta(course);
+                          return (
+                            <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold shadow-sm transition-transform group-hover:scale-105 ${ctaToneClass(cta.tone)}`}>
+                              {cta.text} <ArrowRight className="h-3.5 w-3.5" />
+                            </span>
+                          );
+                        })()}
                       </div>
                     </div>
                   </Link>
@@ -358,9 +403,14 @@ const Index = () => {
                             </>
                           )}
                         </div>
-                        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm transition-transform group-hover:scale-105 sm:bg-primary/10 sm:text-primary sm:shadow-none">
-                          এখনই কিনুন <ArrowRight className="h-3.5 w-3.5" />
-                        </span>
+                        {(() => {
+                          const cta = getBookCta(book);
+                          return (
+                            <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold shadow-sm transition-transform group-hover:scale-105 ${ctaToneClass(cta.tone)}`}>
+                              {cta.text} <ArrowRight className="h-3.5 w-3.5" />
+                            </span>
+                          );
+                        })()}
                       </div>
                     </div>
                   </Link>
