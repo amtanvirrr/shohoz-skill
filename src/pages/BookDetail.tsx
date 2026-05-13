@@ -321,7 +321,7 @@ const BookDetail = () => {
 
             <ScrollReveal delay={300}>
             {isEbook && orderStatus && ["confirmed", "delivered"].includes(orderStatus) ? (
-              <div className="mt-8 rounded-xl border border-success/30 bg-success/5 p-6">
+              <div id="order-form" className="mt-8 scroll-mt-24 rounded-xl border border-success/30 bg-success/5 p-6">
                 <h3 className="flex items-center gap-2 font-display text-lg font-semibold text-foreground">
                   <CheckCircle2 className="h-5 w-5 text-success" /> আপনি এই বইটি কিনেছেন
                 </h3>
@@ -331,7 +331,7 @@ const BookDetail = () => {
                 </Button>
               </div>
             ) : isEbook && orderStatus === "pending" ? (
-              <div className="mt-8 rounded-xl border border-warning/30 bg-warning/5 p-6">
+              <div id="order-form" className="mt-8 scroll-mt-24 rounded-xl border border-warning/30 bg-warning/5 p-6">
                 <h3 className="flex items-center gap-2 font-display text-lg font-semibold text-foreground">
                   <Clock className="h-5 w-5 text-warning" /> পেমেন্ট যাচাই অপেক্ষমাণ
                 </h3>
@@ -345,7 +345,7 @@ const BookDetail = () => {
                 </div>
               </div>
             ) : book.price === 0 ? (
-              <div className="mt-8 rounded-xl glass-card p-6">
+              <div id="order-form" className="mt-8 scroll-mt-24 rounded-xl glass-card p-6">
                 <h3 className="flex items-center gap-2 font-display text-lg font-semibold text-foreground">
                   <ShoppingBag className="h-5 w-5 text-primary" /> ফ্রি বই
                 </h3>
@@ -391,7 +391,7 @@ const BookDetail = () => {
                 </Button>
               </div>
             ) : (
-              <div className="mt-8 rounded-xl glass-card p-6 glow-hover">
+              <div id="order-form" className="mt-8 scroll-mt-24 rounded-xl glass-card p-6 glow-hover">
                 <h3 className="flex items-center gap-2 font-display text-lg font-semibold text-foreground">
                   <ShoppingBag className="h-5 w-5 text-primary" /> {isPhysical ? "এখনই অর্ডার করুন" : "এখনই কিনুন"}
                 </h3>
