@@ -666,3 +666,41 @@
     }
   }
 }
+
+/* ---------- Phase 6: A11y + Print ---------- */
+@layer base {
+  /* Stronger, consistent keyboard focus */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  /* Avoid clipping focus on rounded inputs */
+  .glass-card:focus-visible,
+  .glass-input:focus-visible {
+    outline-offset: 3px;
+  }
+}
+
+@media print {
+  header,
+  footer,
+  nav,
+  [data-sonner-toaster],
+  .no-print { display: none !important; }
+  main { padding: 0 !important; }
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 12pt;
+  }
+  a { color: black !important; text-decoration: underline; }
+  .glass-card,
+  .card-featured {
+    background: white !important;
+    border: 1px solid #ddd !important;
+    box-shadow: none !important;
+    page-break-inside: avoid;
+  }
+  img { max-width: 100% !important; }
+}
