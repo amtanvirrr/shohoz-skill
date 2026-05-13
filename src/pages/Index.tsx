@@ -13,6 +13,7 @@ import FeaturedImage from "@/components/FeaturedImage";
 import HeroBanner from "@/components/HeroBanner";
 import MobileCarousel from "@/components/MobileCarousel";
 import FeaturedCardSkeleton from "@/components/FeaturedCardSkeleton";
+import EmptyState from "@/components/EmptyState";
 
 interface DbBook {
   id: string;
