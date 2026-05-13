@@ -307,9 +307,10 @@ const Index = () => {
 
   const handleTrack = () => {
     const result = validateTrackQuery(trackQuery);
-    if (!result.ok) {
-      setTrackError(result.message);
-      toast({ title: "যাচাই ব্যর্থ", description: result.message, variant: "destructive" });
+    if (result.ok === false) {
+      const msg = result.message;
+      setTrackError(msg);
+      toast({ title: "যাচাই ব্যর্থ", description: msg, variant: "destructive" });
       return;
     }
     setTrackError(null);
