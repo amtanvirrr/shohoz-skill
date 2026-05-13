@@ -528,6 +528,7 @@ const BookDetail = () => {
                 </div>
               </div>
             )}
+            </div>
             </ScrollReveal>
           </div>
         </div>
