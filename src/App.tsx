@@ -48,6 +48,7 @@ import AdminCoupons from "./pages/admin/AdminCoupons";
 import BlogPage from "./pages/BlogPage";
 import BlogDetailPage from "./pages/BlogDetailPage";
 import LandingPage from "./pages/LandingPage";
+import TrackOrderPage from "./pages/TrackOrderPage";
 import NotFound from "./pages/NotFound";
 import PaymentResult from "./pages/PaymentResult";
 
