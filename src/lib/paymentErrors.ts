@@ -17,6 +17,7 @@ export type PaymentErrorCategory =
   | "auth"
   | "validation"
   | "min_amount"
+  | "gateway_min_amount"
   | "duplicate"
   | "gateway_config"
   | "gateway_rejected"
@@ -90,9 +91,24 @@ export function mapPaymentError(
     };
   }
 
-  // ---- Minimum amount (SSLCommerz specific) ----
+  // ---- Gateway-side (merchant account) minimum — set in SSL admin panel ----
   if (
-    t.includes("minimum transaction amount") ||
+    t.includes("minimum transaction amount") &&
+    (t.includes("admin configuration") || t.includes("not allowed"))
+  ) {
+    return {
+      title: "গেটওয়ে অ্যাকাউন্টের ন্যূনতম সীমা",
+      message:
+        "এই amount আপনার অনলাইন গেটওয়ে অ্যাকাউন্টে অনুমোদিত সর্বনিম্ন সীমার চেয়ে কম।",
+      hint: "অন্য পেমেন্ট পদ্ধতি (bKash/Nagad/COD) ব্যবহার করুন, অথবা একটু বড় অর্ডার দিন।",
+      retryable: false,
+      category: "gateway_min_amount",
+      raw: text,
+    };
+  }
+
+  // ---- Minimum amount (client-side configured) ----
+  if (
     t.includes("min_amount") ||
     t.includes("minimum amount") ||
     t.includes("ন্যূনতম")
