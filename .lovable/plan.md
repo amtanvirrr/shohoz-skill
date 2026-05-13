@@ -1,55 +1,35 @@
-# Mobile Nav Redesign — Dashboard Center + Draggable Menu FAB
+# Floating Menu Fixes + Mobile Header Polish + Sheet UI Enhancement
 
-## Goals
-1. Bottom nav-এর মাঝখানের Menu FAB সরিয়ে সেখানে **Dashboard** রাখা।
-2. "মেনু" button-টা bottom nav থেকে সরিয়ে আলাদা একটা **floating draggable FAB**-এ রূপান্তর করা — যেটা শুধু left বা right edge-এ snap হয়ে আটকে থাকবে।
-3. FAB যে পাশে আটকে থাকবে, সেই পাশ থেকেই Sheet menu slide হয়ে আসবে।
+## 1. FAB clickable while open + toggle close — `src/components/layout/FloatingMenuFab.tsx`
 
----
+**Cause:** Radix `Dialog` (Sheet)-এর modal mode বাইরের সব element-এর pointer-events disable করে দেয়, ফলে sheet open থাকলে FAB icon click কাজ করে না।
 
-## Changes
+**Fix:**
+- `<Sheet modal={false} ...>` — outside interactions allow হবে।
+- যেহেতু modal=false মানে overlay নিজে close করবে না, একটা custom dim layer add করব (`fixed inset-0 z-40 bg-black/50 backdrop-blur-sm`) যা open হলে দেখাবে এবং click করলে close হবে। FAB রাখব `z-[70]`, sheet content `z-50`, custom overlay `z-40` — fully clickable।
+- FAB-এর existing pointer-up toggle (`setOpen(o => !o)`) আগের মতোই — open অবস্থায় tap করলে close হবে।
+- Sheet open থাকা অবস্থায়ও drag allow থাকবে (যেহেতু modal=false)।
 
-### 1. `src/components/layout/MobileBottomNav.tsx`
-- **Center slot:** Menu FAB-এর জায়গায় Dashboard FAB।
-  - Icon: `LayoutDashboard`, label: "ড্যাশবোর্ড"
-  - Same elevated style: `-mt-7 h-14 w-14 rounded-full bg-gradient-to-br from-primary to-accent`, ring, shadow
-  - Logged-in হলে `/dashboard`-এ navigate, না হলে `/login?redirect=/dashboard`
-  - Active state যখন `pathname === "/dashboard"`
-- Sheet/Trigger/Menu button সম্পূর্ণ remove। 4 tabs (হোম, কোর্স | বই, কুইজ) আগের মতোই থাকবে।
+## 2. Mobile header — `src/components/layout/Header.tsx`
 
-### 2. New file `src/components/layout/FloatingMenuFab.tsx`
-- Mobile-only (`md:hidden`), `position: fixed`, z-index nav-এর উপরে।
-- **State:**
-  - `side: "left" | "right"` — localStorage key `floatingMenuSide` (default `"right"`)
-  - `topPx: number` — vertical position, localStorage key `floatingMenuTop` (default ~60% viewport height)
-  - `dragging`, `moved` (click vs drag detection)
-- **Drag behavior:** pointer events (`onPointerDown/Move/Up`, `setPointerCapture`).
-  - Y axis freely follows pointer, clamped between `[80px, viewport-160px]`।
-  - X axis নয় — release হওয়ার সময় pointer viewport-এর কোন অর্ধে আছে দেখে `left`/`right` snap; smooth transition দিয়ে edge-এ বসবে (e.g. `12px` inset)।
-  - `touch-action: none` যাতে scroll না হয়।
-- **Click vs drag:** total displacement < 6px হলে click হিসেবে treat → Sheet open।
-- **Sheet:**
-  - `<Sheet>` with `<SheetContent side={side}>` — side dynamic, তাই FAB যে পাশে snapped, সেই পাশ থেকে slide।
-  - Existing menu contents (moreLinks, auth links, theme toggle, logout) — current `MobileBottomNav` থেকে move করে আনতে হবে।
-  - `SheetContent` width: `w-[85vw] sm:max-w-sm`, `h-full overflow-y-auto`।
-- **FAB visual:** `h-12 w-12 rounded-full bg-gradient-to-br from-primary to-accent text-primary-foreground shadow-lg shadow-primary/30 ring-2 ring-background/60 backdrop-blur`. Subtle drag-handle dots বা just Menu icon। `active:scale-95`। `prefers-reduced-motion` respect।
-- Bottom safe-area aware (don't overlap nav): default top placement above nav; clamp upper bound considers nav height.
+- **Logo-র পাশে site name mobile-এও দেখাবে:** `<span className="hidden sm:inline">` থেকে `hidden sm:inline` সরিয়ে সবসময় visible (smaller font on mobile e.g. `text-base sm:text-xl`, truncate)।
+- **Logged-out mobile login button:** বর্তমানে শুধু `UserIcon` দেখায়। সাথে "লগইন" text যোগ করব (`<UserIcon /> লগইন`)। `sm:hidden` Button এ icon + text।
 
-### 3. `src/App.tsx`
-- `GlobalMobileNav`-এ `<MobileBottomNav />`-এর পাশাপাশি `<FloatingMenuFab />` render (same admin/lp guard)।
+## 3. Slide-in menu UI enhancement — `src/components/layout/FloatingMenuFab.tsx` SheetContent
 
-### 4. `src/index.css`
-- `.footer-safe` padding আগের মতই (6.5rem) থাকবে — Dashboard FAB একই উচ্চতা ব্যবহার করছে।
-
----
+Redesign with:
+- **Header block:** Logged-in হলে avatar (initials/photo) + name + email এর mini profile card (gradient background `from-primary/10 to-accent/10`, rounded-2xl, border)। Logged-out হলে welcome message + prominent "লগইন / রেজিস্টার" CTA pair।
+- **Quick navigation grid (2-col):** হোম, কোর্স, বই, কুইজ — colored icon tiles (each its own subtle tint), active highlight সহ।
+- **Section "আরও":** ব্লগ, আমাদের সম্পর্কে, যোগাযোগ — list rows with icon tile, label, chevron।
+- **Section "অ্যাকাউন্ট":** ড্যাশবোর্ড, অ্যাডমিন প্যানেল (admin), লগআউট — same row style।
+- **Footer row:** Theme toggle as a segmented switch (Sun/Moon icons with active pill), site version/branding line।
+- **Visual polish:**
+  - SheetContent: `glass-card` style, rounded inner edge (left side: `rounded-r-3xl`, right side: `rounded-l-3xl`), subtle gradient border, `p-0` then internal padded sections, scrollable body।
+  - Section headers: tiny uppercase Bengali label in muted color।
+  - Smooth `animate-in slide-in-from-{side}` already provided by Radix; add per-item stagger via CSS delays (optional)।
+  - Reduced-motion respected।
 
 ## Out of Scope
-- Sheet menu-র contents/items, routing, auth flow, theme system — unchanged।
-- Header (desktop) nav — unchanged।
-- কোনো নতুন dependency নেই (drag native pointer events দিয়ে handled)।
-
-## Edge Cases
-- SSR/initial render-এ `window` undefined guard।
-- Orientation/resize-এ position re-clamp।
-- Sheet open থাকা অবস্থায় drag disabled।
-- Reduced-motion: snap transition skip।
+- Bottom nav, routes, auth flow — অপরিবর্তিত।
+- Desktop header layout — অপরিবর্তিত।
+- কোনো নতুন dependency নেই।

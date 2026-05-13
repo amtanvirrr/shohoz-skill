@@ -119,7 +119,9 @@ const Header = () => {
               alt={settings.site_name}
               className={`rounded-lg transition-all duration-300 ${scrolled ? "h-8 w-8" : "h-9 w-9"}`}
             />
-            <span className="hidden sm:inline">{settings.site_name}</span>
+            <span className="text-base sm:text-xl truncate max-w-[140px] sm:max-w-none">
+              {settings.site_name}
+            </span>
           </Link>
 
           <nav className="hidden items-center gap-0.5 lg:flex">
@@ -229,9 +231,10 @@ const Header = () => {
               </div>
             )}
             {!user && (
-              <Button variant="premium" size="sm" asChild className="sm:hidden">
+              <Button variant="premium" size="sm" asChild className="sm:hidden gap-1.5 px-3">
                 <Link to="/login">
                   <UserIcon className="h-4 w-4" />
+                  <span>লগইন</span>
                 </Link>
               </Button>
             )}
