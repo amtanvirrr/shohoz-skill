@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Download, Search, Trash2, UserX, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
+import EmptyState from "@/components/EmptyState";
 import {
   Select,
   SelectContent,
@@ -106,6 +108,7 @@ const AdminUsers = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a"); a.href = url; a.download = "users.csv"; a.click();
     URL.revokeObjectURL(url);
+    toast({ title: `${filtered.length}টি ইউজার CSV-তে এক্সপোর্ট হয়েছে ✅` });
   };
 
   return (
@@ -154,11 +157,24 @@ const AdminUsers = () => {
       )}
 
       {loading ? (
-        <p className="mt-8 text-center text-muted-foreground">Loading...</p>
+        <div className="mt-6 space-y-2">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-3 rounded-lg glass-card p-3">
+              <Skeleton className="h-4 w-4 rounded" />
+              <Skeleton className="h-4 w-1/4" />
+              <Skeleton className="h-4 w-1/6" />
+              <Skeleton className="h-4 w-1/4" />
+              <Skeleton className="ml-auto h-4 w-20" />
+            </div>
+          ))}
+        </div>
       ) : filtered.length === 0 ? (
-        <div className="mt-12 flex flex-col items-center gap-2 text-center">
-          <UserX className="h-10 w-10 text-muted-foreground/50" />
-          <p className="text-muted-foreground">{searchQuery ? "কোনো ইউজার পাওয়া যায়নি" : "No users yet."}</p>
+        <div className="mt-8">
+          <EmptyState
+            icon={UserX}
+            title={searchQuery ? "কোনো ইউজার পাওয়া যায়নি" : "এখনো কোনো ইউজার নেই"}
+            description={searchQuery ? "সার্চ পরিবর্তন করে দেখুন।" : undefined}
+          />
         </div>
       ) : (
         <div className="mt-4 overflow-x-auto rounded-lg glass-card">
