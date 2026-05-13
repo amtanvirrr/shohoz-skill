@@ -286,12 +286,7 @@ const Index = () => {
                 <ScrollReveal key={course.id} delay={idx * 100} className="snap-start shrink-0 w-[82%] sm:w-auto sm:shrink">
                   <Link to={`/course/${(course as any).slug || course.id}?ref=featured#order-form`} className="group relative block h-full overflow-hidden rounded-xl glass-card shimmer">
                     {renderCourseBadge(course.id)}
-                    {course.image_url && (
-                      <div className="aspect-video overflow-hidden">
-                        <img src={course.image_url} alt={course.title} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                      </div>
-                    )}
+                    <FeaturedImage src={course.image_url} alt={course.title} aspect="video" />
                     <div className="flex flex-col p-4 sm:p-5">
                       <div className="flex flex-wrap gap-2">
                         <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">{course.category}</span>
