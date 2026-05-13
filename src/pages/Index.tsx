@@ -71,6 +71,7 @@ const Index = () => {
   const { settings } = useSiteSettings();
   const navigate = useNavigate();
   const [trackQuery, setTrackQuery] = useState("");
+  const [trackError, setTrackError] = useState<string | null>(null);
   const [dbBooks, setDbBooks] = useState<DbBook[]>(() => featuredCache.books ?? []);
   const [dbCourses, setDbCourses] = useState<DbCourse[]>(() => featuredCache.courses ?? []);
   // Only show skeleton on the very first fetch — keep cached cards visible
@@ -270,16 +271,51 @@ const Index = () => {
    * (Order ID vs Phone). Full order details require BOTH fields verified
    * on the next page.
    */
+  /**
+   * Detects whether the query is a Bangladeshi mobile number.
+   * Accepts: 01XXXXXXXXX, +8801XXXXXXXXX, 8801XXXXXXXXX (with optional spaces/dashes).
+   * Returns the normalized 11-digit form, or null if it isn't phone-shaped.
+   */
+  const normalizeBdPhone = (raw: string): string | null => {
+    const digits = raw.replace(/[\s\-()]/g, "");
+    let m = digits.match(/^(?:\+?880)?(1\d{9})$/);
+    if (!m) return null;
+    return `0${m[1]}`;
+  };
+
+  const validateTrackQuery = (raw: string): { ok: true; field: "order_id" | "phone"; value: string } | { ok: false; message: string } => {
+    const q = raw.trim();
+    if (!q) return { ok: false, message: "অর্ডার আইডি অথবা ফোন নম্বর দিন।" };
+    if (q.length < 4) return { ok: false, message: "ইনপুটটি অনেক ছোট — অন্তত ৪টি অক্ষর দিন।" };
+    if (q.length > 64) return { ok: false, message: "ইনপুটটি অনেক বড় — সঠিক অর্ডার আইডি বা ফোন নম্বর দিন।" };
+
+    const onlyDigits = /^[\d\s+\-()]+$/.test(q);
+    if (onlyDigits) {
+      const phone = normalizeBdPhone(q);
+      if (!phone) {
+        return { ok: false, message: "সঠিক বাংলাদেশী মোবাইল নম্বর দিন (যেমন: 01XXXXXXXXX)।" };
+      }
+      return { ok: true, field: "phone", value: phone };
+    }
+
+    // Treat as Order ID — allow letters, digits, dashes/underscores only
+    if (!/^[A-Za-z0-9_-]+$/.test(q)) {
+      return { ok: false, message: "অর্ডার আইডিতে শুধু অক্ষর, সংখ্যা ও '-' '_' ব্যবহার করুন।" };
+    }
+    return { ok: true, field: "order_id", value: q };
+  };
+
   const handleTrack = () => {
-    const q = trackQuery.trim();
-    if (!q) {
-      toast({ title: "তথ্য দিন", description: "অর্ডার আইডি অথবা ফোন নম্বর দিন।", variant: "destructive" });
+    const result = validateTrackQuery(trackQuery);
+    if (result.ok === false) {
+      const msg = result.message;
+      setTrackError(msg);
+      toast({ title: "যাচাই ব্যর্থ", description: msg, variant: "destructive" });
       return;
     }
-    const looksLikeOrderId = /[a-zA-Z]/.test(q) || /^ord-/i.test(q);
+    setTrackError(null);
     const params = new URLSearchParams();
-    if (looksLikeOrderId) params.set("order_id", q);
-    else params.set("phone", q);
+    params.set(result.field, result.value);
     navigate(`/track-order?${params.toString()}`);
   };
 
@@ -525,9 +561,25 @@ const Index = () => {
                 <h2 className="text-2xl font-bold text-foreground">{settings.homepage_track_title || "আপনার অর্ডার ট্র্যাক করুন"}</h2>
                 <p className="mt-2 text-sm text-muted-foreground">{settings.homepage_track_subtitle || "আপনার অর্ডারের বর্তমান অবস্থা জানুন"}</p>
                 <div className="mt-6 flex gap-3">
-                  <Input className="glass-input" placeholder="অর্ডার আইডি অথবা ফোন নম্বর" value={trackQuery} onChange={(e) => setTrackQuery(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleTrack()} />
+                  <Input
+                    className={`glass-input ${trackError ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                    placeholder="অর্ডার আইডি অথবা ফোন নম্বর"
+                    value={trackQuery}
+                    onChange={(e) => {
+                      setTrackQuery(e.target.value);
+                      if (trackError) setTrackError(null);
+                    }}
+                    onKeyDown={(e) => e.key === "Enter" && handleTrack()}
+                    aria-invalid={!!trackError}
+                    aria-describedby={trackError ? "track-error" : undefined}
+                  />
                   <Button className="shrink-0 glow-hover" onClick={handleTrack}>ট্র্যাক করুন</Button>
                 </div>
+                {trackError && (
+                  <p id="track-error" role="alert" className="mt-2 text-left text-xs font-medium text-destructive">
+                    {trackError}
+                  </p>
+                )}
                 <p className="mt-2 text-xs text-muted-foreground">
                   পরবর্তী পেজে অর্ডার আইডি ও ফোন নম্বর — দুটোই যাচাই হলে সম্পূর্ণ বিস্তারিত দেখানো হবে।
                 </p>
