@@ -335,7 +335,7 @@ const FloatingMenuFab = () => {
                       }`}
                     >
                       <span className={`flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br ${q.tint}`}>
-                        <Icon className="h-4.5 w-4.5" strokeWidth={2.2} />
+                        <Icon className="h-5 w-5" strokeWidth={2.2} />
                       </span>
                       <span className="text-sm font-semibold text-foreground">{q.label}</span>
                       {active && (
