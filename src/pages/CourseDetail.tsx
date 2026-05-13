@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, BookOpen, Clock, PlayCircle, Users, Video, FileText, HelpCircle, ChevronDown, Star, Send, GraduationCap } from "lucide-react";
+import { ArrowLeft, BookOpen, Clock, PlayCircle, Users, Video, FileText, HelpCircle, ChevronDown, Star, Send, GraduationCap, CheckCircle2, AlertCircle } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { ScrollReveal } from "@/hooks/useScrollReveal";
 import { useToast } from "@/hooks/use-toast";
@@ -156,10 +156,20 @@ const CourseDetail = () => {
       toast({ title: "প্রথমে লগইন করুন", description: "কোর্স কিনতে লগইন প্রয়োজন।", variant: "destructive" });
       return;
     }
+    const fullName = (user.user_metadata?.full_name || "").trim();
+    const phone = (user.user_metadata?.phone || "").trim();
+    if (!fullName || !/^01[3-9]\d{8}$/.test(phone)) {
+      toast({
+        title: "প্রোফাইল অসম্পূর্ণ",
+        description: "অর্ডার করার আগে আপনার নাম ও সঠিক বাংলাদেশী মোবাইল নম্বর প্রোফাইলে যোগ করুন।",
+        variant: "destructive",
+      });
+      return;
+    }
     setSubmitting(true);
     const { data, error } = await supabase.from("orders").insert({
-      customer_name: user.user_metadata?.full_name || "User",
-      customer_phone: user.user_metadata?.phone || "",
+      customer_name: fullName,
+      customer_phone: phone,
       customer_email: user.email,
       product_type: "course" as any,
       product_id: course.id,
@@ -418,16 +428,26 @@ const CourseDetail = () => {
               )}
 
               {orderStatus && ["confirmed", "delivered"].includes(orderStatus) ? (
-                <Button size="lg" className="mt-6 w-full" asChild>
-                  <Link to={`/enrolled/${course.id}`}>কোর্সে যান →</Link>
-                </Button>
+                <div className="mt-6">
+                  <div className="rounded-lg border border-success/30 bg-success/5 p-3 text-center">
+                    <CheckCircle2 className="mx-auto h-5 w-5 text-success" />
+                    <p className="mt-1 text-sm font-semibold text-foreground">এনরোলমেন্ট নিশ্চিত হয়েছে</p>
+                    <p className="text-xs text-muted-foreground">আজীবন অ্যাক্সেস উপভোগ করুন।</p>
+                  </div>
+                  <Button size="lg" className="mt-3 w-full" asChild>
+                    <Link to={`/enrolled/${course.id}`}>কোর্সে যান →</Link>
+                  </Button>
+                </div>
               ) : orderStatus === "pending" ? (
                 <div className="mt-6">
-                  <div className="rounded-lg bg-warning/10 p-4 text-center">
+                  <div className="rounded-lg border border-warning/30 bg-warning/5 p-4 text-center">
                     <Clock className="mx-auto h-6 w-6 text-warning" />
-                    <p className="mt-2 text-sm font-medium text-foreground">পেমেন্ট যাচাই অপেক্ষমাণ</p>
-                    <p className="mt-1 text-xs text-muted-foreground">অ্যাডমিন পেমেন্ট যাচাই করার পর আপনি কোর্সটি অ্যাক্সেস করতে পারবেন।</p>
+                    <p className="mt-2 text-sm font-semibold text-foreground">পেমেন্ট যাচাই অপেক্ষমাণ</p>
+                    <p className="mt-1 text-xs text-muted-foreground">অ্যাডমিন পেমেন্ট যাচাই করার পর (সাধারণত ১-৩ ঘণ্টা) কোর্সটি অ্যাক্সেস করতে পারবেন।</p>
                   </div>
+                  <Button variant="outline" size="sm" asChild className="mt-3 w-full">
+                    <Link to="/dashboard">আমার অর্ডার দেখুন</Link>
+                  </Button>
                 </div>
               ) : course.price === 0 ? (
                 <Button
@@ -475,6 +495,12 @@ const CourseDetail = () => {
                 </Button>
               ) : (
                 <div className="mt-6">
+                  {!user && (
+                    <div className="mb-3 flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/5 p-3 text-xs text-foreground">
+                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+                      <span>অর্ডার করতে প্রথমে <Link to="/login" className="font-semibold text-primary underline">লগইন করুন</Link>। প্রোফাইলে আপনার নাম ও মোবাইল নম্বর যোগ থাকা প্রয়োজন।</span>
+                    </div>
+                  )}
                   <PaymentSelector
                     productType="course"
                     productId={course.id}
