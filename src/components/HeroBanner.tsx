@@ -65,6 +65,8 @@ const HeroBanner = () => {
   const [settings, setSettings] = useState<HeroSettings>(defaults);
   const [slides, setSlides] = useState<HeroSlide[]>([]);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [slidesReady, setSlidesReady] = useState(false);
+  const [loadedIds, setLoadedIds] = useState<Set<string>>(new Set());
   const location = useLocation();
   const navigate = useNavigate();
   const [rating, setRating] = useState<{ avg: number; count: number }>({ avg: 0, count: 0 });
@@ -139,6 +141,7 @@ const HeroBanner = () => {
       .then(({ data }) => {
         const list = data || [];
         setSlides(list);
+        setSlidesReady(true);
         // Preload the first image with high priority so the LCP element paints fast.
         const first = list.find((s) => s.media_type !== "video");
         if (first) preloadImage(first.media_url);
@@ -247,7 +250,14 @@ const HeroBanner = () => {
         {/* Right half - media slider */}
         <div className="relative w-full overflow-hidden md:w-1/2" style={{ minHeight: "180px" }}>
           <div className="aspect-[16/10] md:aspect-auto md:absolute md:inset-0">
-            {slides.length > 0 ? (
+            {!slidesReady ? (
+              <div
+                className="absolute inset-0 overflow-hidden bg-primary-foreground/5"
+                aria-hidden="true"
+              >
+                <div className="hero-skeleton h-full w-full" />
+              </div>
+            ) : slides.length > 0 ? (
               <>
                 {slides.map((slide, idx) => (
                   <div
@@ -255,6 +265,9 @@ const HeroBanner = () => {
                     className="absolute inset-0 transition-opacity duration-700"
                     style={{ opacity: idx === currentSlide ? 1 : 0 }}
                   >
+                    {!loadedIds.has(slide.id) && (
+                      <div className="absolute inset-0 hero-skeleton" aria-hidden="true" />
+                    )}
                     {slide.media_type === "video" ? (
                       <video
                         src={slide.media_url}
@@ -263,7 +276,17 @@ const HeroBanner = () => {
                         muted
                         playsInline
                         preload={idx === 0 ? "auto" : "metadata"}
-                        className="h-full w-full object-cover"
+                        onLoadedData={() =>
+                          setLoadedIds((prev) => {
+                            if (prev.has(slide.id)) return prev;
+                            const next = new Set(prev);
+                            next.add(slide.id);
+                            return next;
+                          })
+                        }
+                        className={`h-full w-full object-cover transition-opacity duration-500 ${
+                          loadedIds.has(slide.id) ? "opacity-100" : "opacity-0"
+                        }`}
                       />
                     ) : (
                       <img
@@ -272,7 +295,17 @@ const HeroBanner = () => {
                         decoding="async"
                         loading={idx === 0 ? "eager" : "lazy"}
                         {...(idx === 0 ? { fetchPriority: "high" as const } : { fetchPriority: "low" as const })}
-                        className="h-full w-full object-cover"
+                        onLoad={() =>
+                          setLoadedIds((prev) => {
+                            if (prev.has(slide.id)) return prev;
+                            const next = new Set(prev);
+                            next.add(slide.id);
+                            return next;
+                          })
+                        }
+                        className={`h-full w-full object-cover transition-opacity duration-500 ${
+                          loadedIds.has(slide.id) ? "opacity-100" : "opacity-0"
+                        }`}
                       />
                     )}
                     {/* Gradient scrim for legibility on mobile stacked layout */}
