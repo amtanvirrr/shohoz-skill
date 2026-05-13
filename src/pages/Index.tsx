@@ -10,6 +10,7 @@ import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { ScrollReveal } from "@/hooks/useScrollReveal";
 
 import HeroBanner from "@/components/HeroBanner";
+import MobileCarousel from "@/components/MobileCarousel";
 
 interface DbBook {
   id: string;
@@ -231,7 +232,7 @@ const Index = () => {
             </div>
           </ScrollReveal>
           {dbCourses.length > 0 ? (
-            <div className="mt-6 flex snap-x snap-mandatory gap-4 overflow-x-auto -mx-4 px-4 pb-2 scroll-smooth sm:mt-8 sm:grid sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:mx-0 sm:px-0 sm:pb-0 lg:grid-cols-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <MobileCarousel count={dbCourses.length} desktopGridClass="sm:grid-cols-2 lg:grid-cols-3">
               {dbCourses.map((course, idx) => (
                 <ScrollReveal key={course.id} delay={idx * 100} className="snap-start shrink-0 w-[82%] sm:w-auto sm:shrink">
                   <Link to={`/course/${(course as any).slug || course.id}`} className="group relative block h-full overflow-hidden rounded-xl glass-card shimmer">
@@ -274,7 +275,7 @@ const Index = () => {
                   </Link>
                 </ScrollReveal>
               ))}
-            </div>
+            </MobileCarousel>
           ) : (
             <p className="mt-8 text-center text-muted-foreground">এখনো কোন কোর্স নেই। শীঘ্রই আসছে!</p>
           )}
@@ -304,7 +305,7 @@ const Index = () => {
             </div>
           </ScrollReveal>
           {dbBooks.length > 0 ? (
-            <div className="mt-6 flex snap-x snap-mandatory gap-4 overflow-x-auto -mx-4 px-4 pb-2 scroll-smooth sm:mt-8 sm:grid sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:mx-0 sm:px-0 sm:pb-0 lg:grid-cols-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <MobileCarousel count={dbBooks.length} desktopGridClass="sm:grid-cols-2 lg:grid-cols-3">
               {dbBooks.map((book, idx) => (
                 <ScrollReveal key={book.id} delay={idx * 100} className="snap-start shrink-0 w-[82%] sm:w-auto sm:shrink">
                   <Link to={`/book/${(book as any).slug || book.id}`} className="group relative block h-full overflow-hidden rounded-xl glass-card shimmer">
@@ -350,7 +351,7 @@ const Index = () => {
                   </Link>
                 </ScrollReveal>
               ))}
-            </div>
+            </MobileCarousel>
           ) : (
             <p className="mt-8 text-center text-muted-foreground">এখনো কোন বই নেই। শীঘ্রই আসছে!</p>
           )}
