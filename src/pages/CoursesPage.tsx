@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { BookOpen, Clock, CheckCircle, GraduationCap } from "lucide-react";
 import { ScrollReveal } from "@/hooks/useScrollReveal";
+import ProductCardSkeleton from "@/components/ProductCardSkeleton";
+import EmptyState from "@/components/EmptyState";
 
 interface DbCourse {
   id: string;
@@ -22,6 +24,7 @@ const CoursesPage = () => {
   const { user } = useAuth();
   const [courses, setCourses] = useState<DbCourse[]>([]);
   const [orderMap, setOrderMap] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     supabase.from("courses").select("*, lessons(id)").eq("is_published", true).order("created_at", { ascending: false }).then(({ data }) => {
@@ -31,6 +34,7 @@ const CoursesPage = () => {
         duration: c.duration, lesson_count: c.lessons?.length || 0,
       }));
       setCourses(mapped);
+      setLoading(false);
     });
   }, []);
 
@@ -56,16 +60,31 @@ const CoursesPage = () => {
     <div className="py-16 lg:py-20">
       <div className="container mx-auto px-4">
         <ScrollReveal>
-          <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+          <div className="section-kicker mb-3">
             <GraduationCap className="h-3.5 w-3.5" />
             কোর্স
           </div>
-          <h1 className="text-4xl font-bold text-foreground">সকল কোর্স</h1>
-          <p className="mt-2 text-muted-foreground">আমাদের সকল কোর্স ব্রাউজ করুন</p>
+          <h1 className="text-4xl font-bold text-foreground sm:text-5xl">সকল কোর্স</h1>
+          <p className="mt-2 text-muted-foreground">
+            আমাদের সকল কোর্স ব্রাউজ করুন{" "}
+            {!loading && courses.length > 0 && (
+              <span className="ml-1 font-medium text-foreground">({courses.length} টি)</span>
+            )}
+          </p>
         </ScrollReveal>
 
-        {courses.length === 0 ? (
-          <p className="mt-10 text-center text-muted-foreground">এখনো কোন কোর্স নেই।</p>
+        {loading ? (
+          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <ProductCardSkeleton aspect="video" count={6} />
+          </div>
+        ) : courses.length === 0 ? (
+          <div className="mt-10">
+            <EmptyState
+              icon={GraduationCap}
+              title="এখনো কোন কোর্স নেই"
+              description="শীঘ্রই নতুন কোর্স যোগ করা হবে। ফিরে এসে আবার দেখুন।"
+            />
+          </div>
         ) : (
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {courses.map((course, idx) => {
@@ -87,9 +106,13 @@ const CoursesPage = () => {
                       </div>
                     )}
                     {course.image_url && (
-                      <div className="aspect-video overflow-hidden">
-                        <img src={course.image_url} alt={course.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                      <div className="img-overlay relative aspect-video overflow-hidden">
+                        <img
+                          src={course.image_url}
+                          alt={course.title}
+                          loading="lazy"
+                          className="ken-burns h-full w-full object-cover"
+                        />
                       </div>
                     )}
                     <div className="p-5">
@@ -114,7 +137,7 @@ const CoursesPage = () => {
                             </>
                           ) : (
                             <>
-                              <span className="text-lg font-bold text-foreground">৳{course.price.toLocaleString()}</span>
+                              <span className="price-tag text-xl">৳{course.price.toLocaleString()}</span>
                               {course.original_price && <span className="text-sm text-muted-foreground line-through">৳{course.original_price.toLocaleString()}</span>}
                             </>
                           )}
