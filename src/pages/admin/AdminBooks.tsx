@@ -6,10 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Upload, X, FileText, Image as ImageIcon } from "lucide-react";
+import { Plus, Pencil, Trash2, Upload, X, FileText, Image as ImageIcon, Search, Download, BookOpen } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import RichTextEditor from "@/components/RichTextEditor";
+import { Skeleton } from "@/components/ui/skeleton";
+import EmptyState from "@/components/EmptyState";
+import { useMemo } from "react";
 
 interface Book {
   id: string;
@@ -49,6 +52,9 @@ const AdminBooks = () => {
   const { toast } = useToast();
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterType, setFilterType] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Book | null>(null);
   const [form, setForm] = useState(initialForm);
@@ -66,6 +72,39 @@ const AdminBooks = () => {
   };
 
   useEffect(() => { fetchBooks(); }, []);
+
+  const filtered = useMemo(() => {
+    return books.filter((b) => {
+      if (filterType !== "all" && b.book_type !== filterType) return false;
+      if (filterStatus === "published" && !b.is_published) return false;
+      if (filterStatus === "draft" && b.is_published) return false;
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        return (
+          b.title?.toLowerCase().includes(q) ||
+          b.author?.toLowerCase().includes(q) ||
+          b.category?.toLowerCase().includes(q)
+        );
+      }
+      return true;
+    });
+  }, [books, searchQuery, filterType, filterStatus]);
+
+  const exportCSV = () => {
+    const headers = ["Title", "Author", "Type", "Price", "Original Price", "Category", "Status", "Stock"];
+    const rows = filtered.map((b) => [
+      b.title, b.author, b.book_type, String(b.price),
+      b.original_price ? String(b.original_price) : "",
+      b.category, b.is_published ? "Published" : "Draft",
+      b.stock_quantity != null ? String(b.stock_quantity) : "",
+    ]);
+    const csv = [headers, ...rows].map((r) => r.map((c) => `"${(c ?? "").toString().replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = "books.csv"; a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: `${filtered.length}টি বই CSV-তে এক্সপোর্ট হয়েছে ✅` });
+  };
 
   const resetForm = () => {
     setForm(initialForm);
@@ -180,7 +219,14 @@ const AdminBooks = () => {
   return (
     <div>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-xl font-bold text-foreground sm:text-2xl">Books</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-xl font-bold text-foreground sm:text-2xl">Books</h1>
+          <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">{books.length}</span>
+        </div>
+        <div className="flex gap-2">
+        <Button variant="outline" size="sm" onClick={exportCSV} disabled={loading || filtered.length === 0}>
+          <Download className="mr-2 h-4 w-4" /> Export CSV
+        </Button>
         <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
           <DialogTrigger asChild>
             <Button><Plus className="mr-2 h-4 w-4" /> Add Book</Button>
@@ -297,12 +343,53 @@ const AdminBooks = () => {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
+      </div>
+
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="টাইটেল, লেখক বা ক্যাটাগরি দিয়ে সার্চ..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9" />
+        </div>
+        <Select value={filterType} onValueChange={setFilterType}>
+          <SelectTrigger className="w-full sm:w-40"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">সব টাইপ</SelectItem>
+            <SelectItem value="physical">📦 Physical</SelectItem>
+            <SelectItem value="ebook">📱 E-Book</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={filterStatus} onValueChange={setFilterStatus}>
+          <SelectTrigger className="w-full sm:w-40"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">সব স্ট্যাটাস</SelectItem>
+            <SelectItem value="published">Published</SelectItem>
+            <SelectItem value="draft">Draft</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {loading ? (
-        <p className="mt-8 text-center text-muted-foreground">Loading...</p>
-      ) : books.length === 0 ? (
-        <p className="mt-8 text-center text-muted-foreground">No books yet. Add your first book!</p>
+        <div className="mt-6 space-y-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-3 rounded-xl glass-card p-3">
+              <Skeleton className="h-16 w-12 shrink-0 rounded" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-3/5" />
+                <Skeleton className="h-3 w-2/5" />
+              </div>
+              <Skeleton className="h-8 w-16" />
+            </div>
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="mt-8">
+          <EmptyState
+            icon={BookOpen}
+            title={books.length === 0 ? "এখনো কোনো বই নেই" : "কোনো বই পাওয়া যায়নি"}
+            description={books.length === 0 ? "প্রথম বইটি যোগ করুন।" : "সার্চ বা ফিল্টার পরিবর্তন করে দেখুন।"}
+          />
+        </div>
       ) : (
         <>
           {/* Desktop table */}
@@ -312,7 +399,7 @@ const AdminBooks = () => {
                 <tr><th className="pb-3 pr-4">Title</th><th className="pb-3 pr-4">Type</th><th className="pb-3 pr-4">Author</th><th className="pb-3 pr-4">Price</th><th className="pb-3 pr-4">Status</th><th className="pb-3">Actions</th></tr>
               </thead>
               <tbody>
-                {books.map((book) => (
+                {filtered.map((book) => (
                   <tr key={book.id} className="border-b border-border">
                     <td className="py-3 pr-4 font-medium text-foreground">
                       <div className="flex items-center gap-2">
@@ -338,7 +425,7 @@ const AdminBooks = () => {
 
           {/* Mobile cards */}
           <div className="mt-4 space-y-3 md:hidden">
-            {books.map((book) => (
+            {filtered.map((book) => (
               <div key={book.id} className="flex items-center gap-3 rounded-xl glass-card p-3">
                 {book.image_url && <img src={book.image_url} alt="" className="h-16 w-12 shrink-0 rounded object-cover" />}
                 <div className="flex-1 min-w-0">
