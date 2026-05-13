@@ -755,3 +755,30 @@
     page-break-inside: avoid;
   }
 }
+
+/* Deep-link highlight: when arriving via #order-form, briefly pulse the panel
+   so the user instantly sees where the page scrolled to. */
+@keyframes order-form-highlight {
+  0% {
+    box-shadow: 0 0 0 0 hsl(var(--accent) / 0.55), 0 0 0 0 hsl(var(--accent) / 0);
+    transform: scale(1);
+  }
+  20% {
+    box-shadow: 0 0 0 6px hsl(var(--accent) / 0.35), 0 14px 40px -12px hsl(var(--accent) / 0.45);
+    transform: scale(1.012);
+  }
+  100% {
+    box-shadow: 0 0 0 0 hsl(var(--accent) / 0), 0 0 0 0 hsl(var(--accent) / 0);
+    transform: scale(1);
+  }
+}
+
+#order-form:target {
+  animation: order-form-highlight 1.8s ease-out 0.2s 1 both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #order-form:target {
+    animation: none;
+  }
+}
