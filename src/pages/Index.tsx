@@ -11,6 +11,7 @@ import { ScrollReveal } from "@/hooks/useScrollReveal";
 
 import HeroBanner from "@/components/HeroBanner";
 import MobileCarousel from "@/components/MobileCarousel";
+import FeaturedCardSkeleton from "@/components/FeaturedCardSkeleton";
 
 interface DbBook {
   id: string;
@@ -58,6 +59,8 @@ const Index = () => {
   const [trackResult, setTrackResult] = useState<any>(null);
   const [dbBooks, setDbBooks] = useState<DbBook[]>([]);
   const [dbCourses, setDbCourses] = useState<DbCourse[]>([]);
+  const [coursesLoading, setCoursesLoading] = useState(true);
+  const [booksLoading, setBooksLoading] = useState(true);
   const [dbReviews, setDbReviews] = useState<(DbReview & { course_title?: string })[]>([]);
   const [bookOrderMap, setBookOrderMap] = useState<Record<string, OrderInfo>>({});
   const [courseOrderMap, setCourseOrderMap] = useState<Record<string, string>>({});
@@ -73,13 +76,13 @@ const Index = () => {
         .select("id, title, instructor, price, original_price, image_url, category, duration, slug")
         .eq("is_published", true)
         .in("id", featuredCourseIds)
-        .then(({ data }) => setDbCourses(data || []));
+        .then(({ data }) => { setDbCourses(data || []); setCoursesLoading(false); });
     } else {
       supabase.from("courses")
         .select("id, title, instructor, price, original_price, image_url, category, duration, slug")
         .eq("is_published", true)
         .limit(3)
-        .then(({ data }) => setDbCourses(data || []));
+        .then(({ data }) => { setDbCourses(data || []); setCoursesLoading(false); });
     }
 
     // Books
@@ -88,13 +91,13 @@ const Index = () => {
         .select("id, title, author, price, original_price, image_url, category, book_type, slug")
         .eq("is_published", true)
         .in("id", featuredBookIds)
-        .then(({ data }) => setDbBooks(data || []));
+        .then(({ data }) => { setDbBooks(data || []); setBooksLoading(false); });
     } else {
       supabase.from("books")
         .select("id, title, author, price, original_price, image_url, category, book_type, slug")
         .eq("is_published", true)
         .limit(3)
-        .then(({ data }) => setDbBooks(data || []));
+        .then(({ data }) => { setDbBooks(data || []); setBooksLoading(false); });
     }
 
     // Reviews (always latest)
@@ -231,7 +234,13 @@ const Index = () => {
               </Link>
             </div>
           </ScrollReveal>
-          {dbCourses.length > 0 ? (
+          {coursesLoading ? (
+            <MobileCarousel count={3} desktopGridClass="sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <FeaturedCardSkeleton key={i} aspect="video" />
+              ))}
+            </MobileCarousel>
+          ) : dbCourses.length > 0 ? (
             <MobileCarousel count={dbCourses.length} desktopGridClass="sm:grid-cols-2 lg:grid-cols-3">
               {dbCourses.map((course, idx) => (
                 <ScrollReveal key={course.id} delay={idx * 100} className="snap-start shrink-0 w-[82%] sm:w-auto sm:shrink">
@@ -239,7 +248,7 @@ const Index = () => {
                     {renderCourseBadge(course.id)}
                     {course.image_url && (
                       <div className="aspect-video overflow-hidden">
-                        <img src={course.image_url} alt={course.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                        <img src={course.image_url} alt={course.title} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                       </div>
                     )}
@@ -304,7 +313,13 @@ const Index = () => {
               </Link>
             </div>
           </ScrollReveal>
-          {dbBooks.length > 0 ? (
+          {booksLoading ? (
+            <MobileCarousel count={3} desktopGridClass="sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <FeaturedCardSkeleton key={i} aspect="portrait" />
+              ))}
+            </MobileCarousel>
+          ) : dbBooks.length > 0 ? (
             <MobileCarousel count={dbBooks.length} desktopGridClass="sm:grid-cols-2 lg:grid-cols-3">
               {dbBooks.map((book, idx) => (
                 <ScrollReveal key={book.id} delay={idx * 100} className="snap-start shrink-0 w-[82%] sm:w-auto sm:shrink">
@@ -312,7 +327,7 @@ const Index = () => {
                     {renderBookBadge(book)}
                     {book.image_url && (
                       <div className="aspect-[3/4] overflow-hidden">
-                        <img src={book.image_url} alt={book.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                        <img src={book.image_url} alt={book.title} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                       </div>
                     )}
