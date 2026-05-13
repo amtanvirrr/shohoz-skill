@@ -294,6 +294,8 @@ const HeroBanner = () => {
                     {slide.media_type === "video" ? (
                       <video
                         src={slide.media_url}
+                        width={1600}
+                        height={1000}
                         autoPlay
                         loop
                         muted
