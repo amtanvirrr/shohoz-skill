@@ -231,10 +231,10 @@ const Index = () => {
             </div>
           </ScrollReveal>
           {dbCourses.length > 0 ? (
-            <div className="mt-6 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 sm:gap-6 sm:mt-8">
+            <div className="mt-6 flex snap-x snap-mandatory gap-4 overflow-x-auto -mx-4 px-4 pb-2 scroll-smooth sm:mt-8 sm:grid sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:mx-0 sm:px-0 sm:pb-0 lg:grid-cols-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {dbCourses.map((course, idx) => (
-                <ScrollReveal key={course.id} delay={idx * 100}>
-                  <Link to={`/course/${(course as any).slug || course.id}`} className="group relative block overflow-hidden rounded-xl glass-card shimmer">
+                <ScrollReveal key={course.id} delay={idx * 100} className="snap-start shrink-0 w-[82%] sm:w-auto sm:shrink">
+                  <Link to={`/course/${(course as any).slug || course.id}`} className="group relative block h-full overflow-hidden rounded-xl glass-card shimmer">
                     {renderCourseBadge(course.id)}
                     {course.image_url && (
                       <div className="aspect-video overflow-hidden">
@@ -242,7 +242,7 @@ const Index = () => {
                         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                       </div>
                     )}
-                    <div className="p-5">
+                    <div className="flex flex-col p-4 sm:p-5">
                       <div className="flex flex-wrap gap-2">
                         <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">{course.category}</span>
                         <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-xs font-medium text-primary dark:bg-primary/30 dark:text-primary">🎓 অনলাইন কোর্স</span>
@@ -252,22 +252,22 @@ const Index = () => {
                       <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
                         <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {course.duration}</span>
                       </div>
-                      <div className="mt-4 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
+                      <div className="mt-4 flex items-center justify-between gap-2">
+                        <div className="flex items-baseline gap-2">
                           {course.price === 0 ? (
                             <>
-                              <span className="text-lg font-bold text-success">ফ্রি</span>
+                              <span className="text-xl font-extrabold text-success sm:text-lg">ফ্রি</span>
                               {course.original_price && course.original_price > 0 && <span className="text-sm text-muted-foreground line-through">৳{course.original_price.toLocaleString()}</span>}
                             </>
                           ) : (
                             <>
-                              <span className="text-lg font-bold text-foreground">৳{course.price.toLocaleString()}</span>
+                              <span className="text-xl font-extrabold text-primary sm:text-lg sm:text-foreground">৳{course.price.toLocaleString()}</span>
                               {course.original_price && <span className="text-sm text-muted-foreground line-through">৳{course.original_price.toLocaleString()}</span>}
                             </>
                           )}
                         </div>
-                        <span className="text-xs font-medium text-primary opacity-0 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 translate-x-2">
-                          বিস্তারিত →
+                        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm transition-transform group-hover:scale-105 sm:bg-primary/10 sm:text-primary sm:shadow-none">
+                          এখনই দেখুন <ArrowRight className="h-3.5 w-3.5" />
                         </span>
                       </div>
                     </div>
@@ -304,10 +304,10 @@ const Index = () => {
             </div>
           </ScrollReveal>
           {dbBooks.length > 0 ? (
-            <div className="mt-6 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 sm:gap-6 sm:mt-8">
+            <div className="mt-6 flex snap-x snap-mandatory gap-4 overflow-x-auto -mx-4 px-4 pb-2 scroll-smooth sm:mt-8 sm:grid sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:mx-0 sm:px-0 sm:pb-0 lg:grid-cols-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {dbBooks.map((book, idx) => (
-                <ScrollReveal key={book.id} delay={idx * 100}>
-                  <Link to={`/book/${(book as any).slug || book.id}`} className="group relative block overflow-hidden rounded-xl glass-card shimmer">
+                <ScrollReveal key={book.id} delay={idx * 100} className="snap-start shrink-0 w-[82%] sm:w-auto sm:shrink">
+                  <Link to={`/book/${(book as any).slug || book.id}`} className="group relative block h-full overflow-hidden rounded-xl glass-card shimmer">
                     {renderBookBadge(book)}
                     {book.image_url && (
                       <div className="aspect-[3/4] overflow-hidden">
@@ -315,7 +315,7 @@ const Index = () => {
                         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                       </div>
                     )}
-                    <div className="p-5">
+                    <div className="flex flex-col p-4 sm:p-5">
                       <div className="flex flex-wrap gap-2">
                         <span className="inline-block rounded-full bg-accent/15 px-3 py-1 text-xs font-medium text-accent">{book.category}</span>
                         <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
@@ -328,22 +328,22 @@ const Index = () => {
                       </div>
                       <h3 className="mt-3 font-display text-lg font-semibold text-card-foreground transition-colors group-hover:text-primary">{book.title}</h3>
                       <p className="mt-1 text-sm text-muted-foreground">{book.author}</p>
-                      <div className="mt-3 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
+                      <div className="mt-3 flex items-center justify-between gap-2">
+                        <div className="flex items-baseline gap-2">
                           {book.price === 0 ? (
                             <>
-                              <span className="text-lg font-bold text-success">ফ্রি</span>
+                              <span className="text-xl font-extrabold text-success sm:text-lg">ফ্রি</span>
                               {book.original_price && book.original_price > 0 && <span className="text-sm text-muted-foreground line-through">৳{book.original_price}</span>}
                             </>
                           ) : (
                             <>
-                              <span className="text-lg font-bold text-foreground">৳{book.price}</span>
+                              <span className="text-xl font-extrabold text-primary sm:text-lg sm:text-foreground">৳{book.price}</span>
                               {book.original_price && <span className="text-sm text-muted-foreground line-through">৳{book.original_price}</span>}
                             </>
                           )}
                         </div>
-                        <span className="text-xs font-medium text-primary opacity-0 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 translate-x-2">
-                          বিস্তারিত →
+                        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm transition-transform group-hover:scale-105 sm:bg-primary/10 sm:text-primary sm:shadow-none">
+                          এখনই কিনুন <ArrowRight className="h-3.5 w-3.5" />
                         </span>
                       </div>
                     </div>
