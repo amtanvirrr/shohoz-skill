@@ -63,6 +63,27 @@ const HeroBanner = () => {
   const [settings, setSettings] = useState<HeroSettings>(defaults);
   const [slides, setSlides] = useState<HeroSlide[]>([]);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleCtaClick = (link: string) => (e: React.MouseEvent<HTMLAnchorElement>) => {
+    const anchor = sectionAnchorFor(link);
+    if (!anchor) return; // let <Link> handle normal navigation
+    e.preventDefault();
+    const scrollToAnchor = () => {
+      const el = document.getElementById(anchor);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+    if (location.pathname !== "/") {
+      navigate(`/#${anchor}`);
+      // wait for home page mount, then scroll
+      setTimeout(scrollToAnchor, 350);
+    } else {
+      scrollToAnchor();
+      // reflect anchor in URL without full reload
+      window.history.replaceState(null, "", `/#${anchor}`);
+    }
+  };
 
   useEffect(() => {
     (supabase as any)
@@ -153,13 +174,13 @@ const HeroBanner = () => {
             style={{ animation: "word-reveal 0.7s var(--ease-spring) 0.65s forwards" }}
           >
             <Button variant="premium-accent" size="lg" asChild className="h-12 w-full text-base shadow-lg shadow-accent/20 sm:h-11 sm:w-auto sm:text-base">
-              <Link to={settings.hero_btn1_link}>
+              <Link to={settings.hero_btn1_link} onClick={handleCtaClick(settings.hero_btn1_link)}>
                 <GraduationCap className="mr-1.5 h-5 w-5 sm:h-4 sm:w-4" />
                 {settings.hero_btn1_text}
               </Link>
             </Button>
             <Button variant="glass" size="lg" asChild className="h-12 w-full text-base sm:h-11 sm:w-auto sm:text-base">
-              <Link to={settings.hero_btn2_link}>
+              <Link to={settings.hero_btn2_link} onClick={handleCtaClick(settings.hero_btn2_link)}>
                 <BookOpen className="mr-1.5 h-5 w-5 sm:h-4 sm:w-4" />
                 {settings.hero_btn2_text}
               </Link>
