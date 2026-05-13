@@ -172,6 +172,15 @@
   .font-body {
     font-family: var(--font-body);
   }
+  /* Reserve space below footer for the fixed mobile bottom nav + iOS safe area */
+  .footer-safe {
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+  }
+  @media (min-width: 768px) {
+    .footer-safe {
+      padding-bottom: 0;
+    }
+  }
 }
 
 @layer components {
