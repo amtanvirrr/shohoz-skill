@@ -268,6 +268,56 @@ const QuizPage = () => {
     setSubmitted(true);
   }, [submitted]);
 
+  // Keyboard shortcuts: ←/→ navigate, 1-4 or a-d select, P palette, Enter submit-on-last, Esc close palette
+  useEffect(() => {
+    if (!selectedQuiz || submitted || questions.length === 0) return;
+    const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target) {
+        const tag = target.tagName;
+        if (tag === "INPUT" || tag === "TEXTAREA" || target.isContentEditable) return;
+      }
+      if (confirmSubmitOpen) return;
+      const isLast = currentIndex >= questions.length - 1;
+      const currentQ = questions[Math.min(currentIndex, questions.length - 1)];
+
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        if (!isLast) setCurrentIndex((i) => Math.min(questions.length - 1, i + 1));
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        setCurrentIndex((i) => Math.max(0, i - 1));
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        if (isLast) {
+          if (Object.keys(answers).filter((k) => answers[k]).length > 0) setConfirmSubmitOpen(true);
+        } else {
+          setCurrentIndex((i) => Math.min(questions.length - 1, i + 1));
+        }
+      } else if (e.key === "p" || e.key === "P") {
+        e.preventDefault();
+        setShowPalette((v) => !v);
+      } else if (e.key === "Escape") {
+        if (showPalette) {
+          e.preventDefault();
+          setShowPalette(false);
+        }
+      } else if (currentQ) {
+        const map: Record<string, string> = {
+          "1": "a", "2": "b", "3": "c", "4": "d",
+          a: "a", A: "a", b: "b", B: "b", c: "c", C: "c", d: "d", D: "d",
+        };
+        const opt = map[e.key];
+        if (opt) {
+          e.preventDefault();
+          setAnswers((prev) => ({ ...prev, [currentQ.id]: opt }));
+        }
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [selectedQuiz, submitted, questions, currentIndex, answers, showPalette, confirmSubmitOpen]);
+
   const [serverResult, setServerResult] = useState<{ score: number; correct: number; wrong: number; skipped: number; total: number } | null>(null);
 
   useEffect(() => {
