@@ -8,12 +8,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { AlertTriangle, Download, CheckCircle, XCircle, Truck, ExternalLink, Trash2, Search, X, CalendarIcon, CheckSquare, Eye, StickyNote } from "lucide-react";
+import { AlertTriangle, Download, CheckCircle, XCircle, Truck, ExternalLink, Trash2, Search, X, CalendarIcon, CheckSquare, Eye, StickyNote, ShoppingCart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Skeleton } from "@/components/ui/skeleton";
+import EmptyState from "@/components/EmptyState";
 
 interface Order {
   id: string;
@@ -259,6 +261,7 @@ const AdminOrders = () => {
     const a = document.createElement("a");
     a.href = url; a.download = "orders.csv"; a.click();
     URL.revokeObjectURL(url);
+    toast({ title: `${orders.length}টি অর্ডার CSV-তে এক্সপোর্ট হয়েছে ✅` });
   };
 
   return (
@@ -341,9 +344,25 @@ const AdminOrders = () => {
       </div>
 
       {loading ? (
-        <p className="mt-8 text-center text-muted-foreground">Loading...</p>
+        <div className="mt-6 space-y-2">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-3 rounded-lg glass-card p-3">
+              <Skeleton className="h-4 w-4 rounded" />
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-4 w-40" />
+              <Skeleton className="ml-auto h-6 w-20 rounded-full" />
+            </div>
+          ))}
+        </div>
       ) : filteredOrders.length === 0 ? (
-        <p className="mt-8 text-center text-muted-foreground">{orders.length === 0 ? "No orders yet." : "কোনো অর্ডার পাওয়া যায়নি।"}</p>
+        <div className="mt-8">
+          <EmptyState
+            icon={ShoppingCart}
+            title={orders.length === 0 ? "এখনো কোনো অর্ডার নেই" : "কোনো অর্ডার পাওয়া যায়নি"}
+            description={orders.length === 0 ? "নতুন অর্ডার এলে এখানে দেখা যাবে।" : "সার্চ বা ফিল্টার পরিবর্তন করে দেখুন।"}
+          />
+        </div>
       ) : (
         <>
           {/* Bulk Actions Bar */}
