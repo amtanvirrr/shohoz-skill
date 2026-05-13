@@ -235,7 +235,7 @@ const Index = () => {
             <MobileCarousel count={dbCourses.length} desktopGridClass="sm:grid-cols-2 lg:grid-cols-3">
               {dbCourses.map((course, idx) => (
                 <ScrollReveal key={course.id} delay={idx * 100} className="snap-start shrink-0 w-[82%] sm:w-auto sm:shrink">
-                  <Link to={`/course/${(course as any).slug || course.id}`} className="group relative block h-full overflow-hidden rounded-xl glass-card shimmer">
+                  <Link to={`/course/${(course as any).slug || course.id}#order-form`} className="group relative block h-full overflow-hidden rounded-xl glass-card shimmer">
                     {renderCourseBadge(course.id)}
                     {course.image_url && (
                       <div className="aspect-video overflow-hidden">
@@ -308,7 +308,7 @@ const Index = () => {
             <MobileCarousel count={dbBooks.length} desktopGridClass="sm:grid-cols-2 lg:grid-cols-3">
               {dbBooks.map((book, idx) => (
                 <ScrollReveal key={book.id} delay={idx * 100} className="snap-start shrink-0 w-[82%] sm:w-auto sm:shrink">
-                  <Link to={`/book/${(book as any).slug || book.id}`} className="group relative block h-full overflow-hidden rounded-xl glass-card shimmer">
+                  <Link to={`/book/${(book as any).slug || book.id}#order-form`} className="group relative block h-full overflow-hidden rounded-xl glass-card shimmer">
                     {renderBookBadge(book)}
                     {book.image_url && (
                       <div className="aspect-[3/4] overflow-hidden">
