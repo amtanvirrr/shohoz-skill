@@ -323,8 +323,9 @@ const BookDetail = () => {
             )}
 
             <ScrollReveal delay={300}>
+            <div id="order-form" className="mt-8 scroll-mt-20 md:scroll-mt-28">
             {isEbook && orderStatus && ["confirmed", "delivered"].includes(orderStatus) ? (
-              <div id="order-form" className="mt-8 scroll-mt-20 md:scroll-mt-28 rounded-xl border border-success/30 bg-success/5 p-6">
+              <div className="rounded-xl border border-success/30 bg-success/5 p-6">
                 <h3 className="flex items-center gap-2 font-display text-lg font-semibold text-foreground">
                   <CheckCircle2 className="h-5 w-5 text-success" /> আপনি এই বইটি কিনেছেন
                 </h3>
@@ -334,7 +335,7 @@ const BookDetail = () => {
                 </Button>
               </div>
             ) : isEbook && orderStatus === "pending" ? (
-              <div id="order-form" className="mt-8 scroll-mt-20 md:scroll-mt-28 rounded-xl border border-warning/30 bg-warning/5 p-6">
+              <div className="rounded-xl border border-warning/30 bg-warning/5 p-6">
                 <h3 className="flex items-center gap-2 font-display text-lg font-semibold text-foreground">
                   <Clock className="h-5 w-5 text-warning" /> পেমেন্ট যাচাই অপেক্ষমাণ
                 </h3>
@@ -348,7 +349,7 @@ const BookDetail = () => {
                 </div>
               </div>
             ) : book.price === 0 ? (
-              <div id="order-form" className="mt-8 scroll-mt-20 md:scroll-mt-28 rounded-xl glass-card p-6">
+              <div className="rounded-xl glass-card p-6">
                 <SelectedItemSummary
                   title={book.title}
                   id={book.id}
@@ -402,7 +403,7 @@ const BookDetail = () => {
                 </Button>
               </div>
             ) : (
-              <div id="order-form" className="mt-8 scroll-mt-20 md:scroll-mt-28 rounded-xl glass-card p-6 glow-hover">
+              <div className="rounded-xl glass-card p-6 glow-hover">
                 <SelectedItemSummary
                   title={book.title}
                   id={book.id}
@@ -527,6 +528,7 @@ const BookDetail = () => {
                 </div>
               </div>
             )}
+            </div>
             </ScrollReveal>
           </div>
         </div>
