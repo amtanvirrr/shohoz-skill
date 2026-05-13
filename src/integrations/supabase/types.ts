@@ -1225,9 +1225,23 @@ export type Database = {
         Args: { post_id: string; session_id: string }
         Returns: undefined
       }
+      increment_coupon_usage: {
+        Args: { _coupon_id: string }
+        Returns: undefined
+      }
       submit_quiz_attempt: {
         Args: { _answers: Json; _quiz_id: string }
         Returns: Json
+      }
+      validate_coupon: {
+        Args: { _code: string; _subtotal: number }
+        Returns: {
+          code: string
+          discount_type: string
+          discount_value: number
+          error: string
+          id: string
+        }[]
       }
     }
     Enums: {

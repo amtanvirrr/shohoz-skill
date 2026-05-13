@@ -289,19 +289,21 @@ const LandingPage = () => {
     if (!couponCode.trim()) return;
     setCouponLoading(true);
     setCouponError("");
-    const { data, error } = await supabase
-      .from("coupons")
-      .select("*")
-      .eq("code", couponCode.toUpperCase().trim())
-      .eq("is_active", true)
-      .maybeSingle();
+    const { data, error } = await supabase.rpc("validate_coupon", {
+      _code: couponCode.toUpperCase().trim(),
+      _subtotal: subtotal,
+    });
     setCouponLoading(false);
-    if (error || !data) { setCouponError("কুপন কোডটি সঠিক নয়"); return; }
-    const c = data as any;
-    if (c.expires_at && new Date(c.expires_at) < new Date()) { setCouponError("এই কুপনের মেয়াদ শেষ হয়ে গেছে"); return; }
-    if (c.max_uses !== null && c.used_count >= c.max_uses) { setCouponError("এই কুপন আর ব্যবহার করা যাবে না"); return; }
-    if (c.min_order_amount > 0 && subtotal < c.min_order_amount) { setCouponError(`সর্বনিম্ন ৳${c.min_order_amount} অর্ডারে প্রযোজ্য`); return; }
-    setAppliedCoupon({ id: c.id, code: c.code, discount_type: c.discount_type, discount_value: c.discount_value });
+    const row = Array.isArray(data) ? data[0] : null;
+    if (error || !row) { setCouponError("কুপন কোডটি সঠিক নয়"); return; }
+    if (row.error) {
+      if (row.error === "expired") setCouponError("এই কুপনের মেয়াদ শেষ হয়ে গেছে");
+      else if (row.error === "exhausted") setCouponError("এই কুপন আর ব্যবহার করা যাবে না");
+      else if (row.error.startsWith("min:")) setCouponError(`সর্বনিম্ন ৳${row.error.slice(4)} অর্ডারে প্রযোজ্য`);
+      else setCouponError("কুপন কোডটি সঠিক নয়");
+      return;
+    }
+    setAppliedCoupon({ id: row.id, code: row.code, discount_type: row.discount_type, discount_value: row.discount_value });
     setCouponCode("");
   };
 
@@ -348,9 +350,7 @@ const LandingPage = () => {
     if (error) { toast({ title: "অর্ডার ব্যর্থ", description: error.message, variant: "destructive" }); }
     else {
       if (appliedCoupon) {
-        supabase.from("coupons").select("used_count").eq("id", appliedCoupon.id).single().then(({ data: cd }) => {
-          if (cd) supabase.from("coupons").update({ used_count: ((cd as any).used_count || 0) + 1 } as any).eq("id", appliedCoupon.id).then(() => {});
-        });
+        supabase.rpc("increment_coupon_usage", { _coupon_id: appliedCoupon.id }).then(() => {});
       }
       supabase.functions.invoke("notify-order", { body: { orderId: data.order_id } }).catch(() => {});
       setSuccessDialog({ open: true, orderId: data.order_id, paymentMethod });
