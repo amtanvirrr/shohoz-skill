@@ -13,6 +13,40 @@ import { useToast } from "@/hooks/use-toast";
 import { usePixel } from "@/components/MetaPixelProvider";
 import OrderSuccessDialog from "@/components/OrderSuccessDialog";
 import PaymentSelector from "@/components/PaymentSelector";
+import { z } from "zod";
+import { cn } from "@/lib/utils";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
+
+const bdPhoneRegex = /^01[3-9]\d{8}$/;
+
+const baseCustomerSchema = {
+  name: z
+    .string()
+    .trim()
+    .min(2, "নাম কমপক্ষে ২ অক্ষর হতে হবে")
+    .max(100, "নাম ১০০ অক্ষরের বেশি হতে পারবে না"),
+  phone: z
+    .string()
+    .trim()
+    .regex(bdPhoneRegex, "সঠিক বাংলাদেশী মোবাইল নম্বর দিন (01XXXXXXXXX)"),
+  email: z
+    .string()
+    .trim()
+    .max(255, "ইমেইল ২৫৫ অক্ষরের বেশি হতে পারবে না")
+    .email("সঠিক ইমেইল ঠিকানা দিন")
+    .or(z.literal("")),
+};
+
+const physicalSchema = z.object({
+  ...baseCustomerSchema,
+  address: z
+    .string()
+    .trim()
+    .min(10, "সম্পূর্ণ ঠিকানা লিখুন (কমপক্ষে ১০ অক্ষর)")
+    .max(500, "ঠিকানা ৫০০ অক্ষরের বেশি হতে পারবে না"),
+});
+
+const ebookSchema = z.object(baseCustomerSchema);
 
 interface DbBook {
   id: string;
@@ -46,6 +80,7 @@ const BookDetail = () => {
   const [book, setBook] = useState<DbBook | null>(null);
   const [loading, setLoading] = useState(true);
   const [order, setOrder] = useState({ name: "", phone: "", email: "", address: "" });
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [shippingZones, setShippingZones] = useState<ShippingZone[]>([]);
   const [selectedZone, setSelectedZone] = useState<string>("");
@@ -123,20 +158,45 @@ const BookDetail = () => {
   const totalPrice = book.price + shippingCost;
 
   const validateCustomer = () => {
-    if (!order.name || !order.phone) {
-      toast({ title: "সকল প্রয়োজনীয় তথ্য পূরণ করুন", variant: "destructive" });
-      return false;
-    }
-    if (isPhysical && !order.address) {
-      toast({ title: "ডেলিভারি ঠিকানা লিখুন", variant: "destructive" });
-      return false;
+    const schema = isPhysical ? physicalSchema : ebookSchema;
+    const result = schema.safeParse(order);
+    const fieldErrors: Record<string, string> = {};
+    if (!result.success) {
+      result.error.issues.forEach((issue) => {
+        const key = String(issue.path[0] ?? "");
+        if (key && !fieldErrors[key]) fieldErrors[key] = issue.message;
+      });
     }
     if (isPhysical && shippingZones.length > 0 && !selectedZone) {
-      toast({ title: "শিপিং জোন সিলেক্ট করুন", variant: "destructive" });
+      fieldErrors.zone = "শিপিং জোন সিলেক্ট করুন";
+    }
+    setErrors(fieldErrors);
+    if (Object.keys(fieldErrors).length > 0) {
+      toast({
+        title: "ফর্মে কিছু ভুল রয়েছে",
+        description: "নিচে চিহ্নিত ফিল্ডগুলো ঠিক করুন।",
+        variant: "destructive",
+      });
       return false;
     }
     return true;
   };
+
+  const setField = (k: keyof typeof order, v: string) => {
+    setOrder((o) => ({ ...o, [k]: v }));
+    if (errors[k]) setErrors((e) => { const n = { ...e }; delete n[k]; return n; });
+  };
+
+  const fieldClass = (k: string) =>
+    cn("mt-1", errors[k] && "border-destructive focus-visible:ring-destructive/30");
+
+  const FieldError = ({ name }: { name: string }) =>
+    errors[name] ? (
+      <p className="mt-1 flex items-center gap-1 text-xs text-destructive">
+        <AlertCircle className="h-3 w-3" />
+        {errors[name]}
+      </p>
+    ) : null;
 
   const insertOrder = async (paymentMethod: string, transactionId: string | null) => {
     const notesText = isPhysical && activeZone ? `Shipping: ${activeZone.zone_label} (৳${shippingCost})` : null;
@@ -261,25 +321,27 @@ const BookDetail = () => {
 
             <ScrollReveal delay={300}>
             {isEbook && orderStatus && ["confirmed", "delivered"].includes(orderStatus) ? (
-              <div className="mt-8 rounded-xl glass-card p-6">
+              <div className="mt-8 rounded-xl border border-success/30 bg-success/5 p-6">
                 <h3 className="flex items-center gap-2 font-display text-lg font-semibold text-foreground">
-                  <BookOpen className="h-5 w-5 text-primary" /> আপনি এই বইটি কিনেছেন
+                  <CheckCircle2 className="h-5 w-5 text-success" /> আপনি এই বইটি কিনেছেন
                 </h3>
-                <p className="mt-1 text-sm text-muted-foreground">আপনার কেনা ইবুকটি পড়তে নিচের বাটনে ক্লিক করুন।</p>
+                <p className="mt-1 text-sm text-muted-foreground">পেমেন্ট ভেরিফাইড — আপনার কেনা ইবুকটি এখনই পড়ুন।</p>
                 <Button size="lg" className="mt-4 w-full" asChild>
                   <Link to={`/read/${book.id}`}>পড়ুন →</Link>
                 </Button>
               </div>
             ) : isEbook && orderStatus === "pending" ? (
-              <div className="mt-8 rounded-xl glass-card p-6">
+              <div className="mt-8 rounded-xl border border-warning/30 bg-warning/5 p-6">
                 <h3 className="flex items-center gap-2 font-display text-lg font-semibold text-foreground">
                   <Clock className="h-5 w-5 text-warning" /> পেমেন্ট যাচাই অপেক্ষমাণ
                 </h3>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  আপনার অর্ডারটি সফলভাবে জমা হয়েছে। অ্যাডমিন পেমেন্ট যাচাই করার পর আপনি বইটি পড়তে পারবেন।
+                  আপনার অর্ডারটি সফলভাবে জমা হয়েছে। অ্যাডমিন পেমেন্ট যাচাই করার পর আপনি বইটি পড়তে পারবেন (সাধারণত ১-৩ ঘণ্টা)।
                 </p>
-                <div className="mt-3 rounded-lg bg-warning/10 p-3 text-center text-sm font-medium text-warning">
-                  ⏳ অপেক্ষমাণ
+                <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                  <Button variant="outline" size="sm" asChild className="flex-1">
+                    <Link to="/dashboard">আমার অর্ডার দেখুন</Link>
+                  </Button>
                 </div>
               </div>
             ) : book.price === 0 ? (
@@ -338,11 +400,27 @@ const BookDetail = () => {
                 </p>
 
                 <div className="mt-5 space-y-4">
-                  <div><Label htmlFor="fullname">পূর্ণ নাম *</Label><Input id="fullname" value={order.name} onChange={(e) => setOrder({ ...order, name: e.target.value })} className="mt-1" /></div>
-                  <div><Label htmlFor="phone">ফোন নম্বর *</Label><Input id="phone" value={order.phone} onChange={(e) => setOrder({ ...order, phone: e.target.value })} className="mt-1" /></div>
-                  <div><Label htmlFor="email">ইমেইল (ঐচ্ছিক)</Label><Input id="email" type="email" value={order.email} onChange={(e) => setOrder({ ...order, email: e.target.value })} className="mt-1" /></div>
+                  <div>
+                    <Label htmlFor="fullname">পূর্ণ নাম *</Label>
+                    <Input id="fullname" maxLength={100} value={order.name} onChange={(e) => setField("name", e.target.value)} className={fieldClass("name")} aria-invalid={!!errors.name} />
+                    <FieldError name="name" />
+                  </div>
+                  <div>
+                    <Label htmlFor="phone">ফোন নম্বর *</Label>
+                    <Input id="phone" inputMode="numeric" maxLength={11} placeholder="01XXXXXXXXX" value={order.phone} onChange={(e) => setField("phone", e.target.value.replace(/\D/g, ""))} className={fieldClass("phone")} aria-invalid={!!errors.phone} />
+                    <FieldError name="phone" />
+                  </div>
+                  <div>
+                    <Label htmlFor="email">ইমেইল (ঐচ্ছিক)</Label>
+                    <Input id="email" type="email" maxLength={255} value={order.email} onChange={(e) => setField("email", e.target.value)} className={fieldClass("email")} aria-invalid={!!errors.email} />
+                    <FieldError name="email" />
+                  </div>
                   {isPhysical && (
-                    <div><Label htmlFor="address">সম্পূর্ণ ঠিকানা *</Label><Textarea id="address" rows={3} value={order.address} onChange={(e) => setOrder({ ...order, address: e.target.value })} className="mt-1" /></div>
+                    <div>
+                      <Label htmlFor="address">সম্পূর্ণ ঠিকানা *</Label>
+                      <Textarea id="address" rows={3} maxLength={500} value={order.address} onChange={(e) => setField("address", e.target.value)} className={fieldClass("address")} aria-invalid={!!errors.address} />
+                      <FieldError name="address" />
+                    </div>
                   )}
 
                   {/* Shipping Zone Selector for physical books */}
