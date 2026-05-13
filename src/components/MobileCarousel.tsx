@@ -19,6 +19,13 @@ const MobileCarousel = ({ count, desktopGridClass = "sm:grid-cols-2 lg:grid-cols
   const ref = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
   const [hint, setHint] = useState(true);
+  const [isRtl, setIsRtl] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    setIsRtl(getComputedStyle(el).direction === "rtl");
+  }, []);
 
   useEffect(() => {
     const el = ref.current;
@@ -45,17 +52,21 @@ const MobileCarousel = ({ count, desktopGridClass = "sm:grid-cols-2 lg:grid-cols
     const el = ref.current;
     if (!el) return;
     const kid = el.children[i] as HTMLElement | undefined;
-    if (kid) el.scrollTo({ left: kid.offsetLeft - 16, behavior: "smooth" });
+    // Use scrollIntoView so RTL/LTR direction is respected by the browser
+    if (kid) kid.scrollIntoView({ behavior: "smooth", inline: "start", block: "nearest" });
   };
 
   const handleKey = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (count <= 1) return;
+    // In RTL, ArrowRight means logically "previous"
+    const next = isRtl ? -1 : 1;
+    const prev = -next;
     if (e.key === "ArrowRight") {
       e.preventDefault();
-      goto(Math.min(count - 1, active + 1));
+      goto(Math.max(0, Math.min(count - 1, active + next)));
     } else if (e.key === "ArrowLeft") {
       e.preventDefault();
-      goto(Math.max(0, active - 1));
+      goto(Math.max(0, Math.min(count - 1, active + prev)));
     } else if (e.key === "Home") {
       e.preventDefault();
       goto(0);
@@ -82,14 +93,26 @@ const MobileCarousel = ({ count, desktopGridClass = "sm:grid-cols-2 lg:grid-cols
       </div>
 
       {count > 1 && hint && (
-        <div className="pointer-events-none absolute right-3 top-[38%] flex items-center gap-1 rounded-full bg-foreground/75 px-2.5 py-1.5 text-[11px] font-medium text-background shadow-md backdrop-blur animate-fade-in sm:hidden">
+        <div
+          className={cn(
+            "pointer-events-none absolute top-[38%] flex items-center gap-1 rounded-full bg-foreground/75 px-2.5 py-1.5 text-[11px] font-medium text-background shadow-md backdrop-blur animate-fade-in sm:hidden",
+            isRtl ? "left-3" : "right-3",
+          )}
+        >
           <span>সোয়াইপ করুন</span>
-          <ChevronRight className="h-3.5 w-3.5 animate-pulse" />
+          <ChevronRight className={cn("h-3.5 w-3.5 animate-pulse", isRtl && "rotate-180")} />
         </div>
       )}
 
       {count > 1 && (
-        <div className="mt-3 flex justify-center gap-1.5 sm:hidden" role="tablist" aria-label={`${label} পেজিনেশন`}>
+        <div
+          className={cn(
+            "mt-3 flex justify-center gap-1.5 sm:hidden",
+            isRtl && "flex-row-reverse",
+          )}
+          role="tablist"
+          aria-label={`${label} পেজিনেশন`}
+        >
           {Array.from({ length: count }).map((_, i) => (
             <button
               key={i}
