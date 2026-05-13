@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { BookOpen, PlayCircle, ExternalLink, ShoppingBag, Clock, CheckCircle, Truck, XCircle, Package, Eye, UserCircle, Save, Loader2, Bookmark, Trash2, Camera, HelpCircle } from "lucide-react";
+import { BookOpen, PlayCircle, ExternalLink, ShoppingBag, Clock, CheckCircle, Truck, XCircle, Package, Eye, UserCircle, Save, Loader2, Bookmark, Trash2, Camera, HelpCircle, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -633,7 +633,7 @@ const UserDashboard = () => {
 
       {/* Order Detail Modal */}
       <Dialog open={!!detailOrder} onOpenChange={(open) => { if (!open) setDetailOrder(null); }}>
-        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogContent data-invoice-print className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               অর্ডার ডিটেইলস
@@ -645,6 +645,21 @@ const UserDashboard = () => {
             const StatusIcon = sc.icon;
             return (
               <div className="space-y-4">
+                {/* Print-only invoice header (hidden on screen) */}
+                <div className="hidden print:block invoice-section" style={{ marginBottom: 16 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "2px solid #111", paddingBottom: 8 }}>
+                    <div>
+                      <h1 style={{ fontSize: "20pt", fontWeight: 700, margin: 0 }}>সহজ স্কিল</h1>
+                      <p style={{ fontSize: "10pt", margin: "2px 0 0", color: "#444" }}>shohozskill.com.bd</p>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <p style={{ fontSize: "14pt", fontWeight: 700, margin: 0 }}>রসিদ / INVOICE</p>
+                      <p style={{ fontSize: "10pt", margin: "2px 0 0", fontFamily: "monospace" }}>#{detailOrder.order_id}</p>
+                      <p style={{ fontSize: "9pt", margin: "2px 0 0", color: "#666" }}>{new Date(detailOrder.created_at).toLocaleDateString("bn-BD")}</p>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant={sc.variant} className="gap-1">
                     <StatusIcon className="h-3.5 w-3.5" /> {sc.label}
@@ -716,6 +731,32 @@ const UserDashboard = () => {
                 <Separator />
                 <div className="text-xs text-muted-foreground">
                   অর্ডারের তারিখ: {new Date(detailOrder.created_at).toLocaleDateString("bn-BD")} {new Date(detailOrder.created_at).toLocaleTimeString("bn-BD")}
+                </div>
+
+                {/* Print-only footer (hidden on screen) */}
+                <div className="hidden print:block invoice-section" style={{ marginTop: 24, paddingTop: 12, borderTop: "1px solid #ccc", fontSize: "9pt", color: "#555", textAlign: "center" }}>
+                  ধন্যবাদ আপনার অর্ডারের জন্য! যেকোনো প্রশ্নে যোগাযোগ করুন: support@shohozskill.com.bd
+                </div>
+
+                {/* Action buttons (hidden in print) */}
+                <div data-no-print className="flex flex-col-reverse sm:flex-row gap-2 pt-2">
+                  <Button variant="outline" className="flex-1" onClick={() => setDetailOrder(null)}>
+                    বন্ধ করুন
+                  </Button>
+                  <Button
+                    className="flex-1 gap-2"
+                    onClick={() => {
+                      document.body.classList.add("printing-invoice");
+                      const cleanup = () => {
+                        document.body.classList.remove("printing-invoice");
+                        window.removeEventListener("afterprint", cleanup);
+                      };
+                      window.addEventListener("afterprint", cleanup);
+                      setTimeout(() => window.print(), 50);
+                    }}
+                  >
+                    <Printer className="h-4 w-4" /> রসিদ প্রিন্ট করুন
+                  </Button>
                 </div>
               </div>
             );
