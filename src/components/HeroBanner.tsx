@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { BookOpen, GraduationCap, Users, Sparkles, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
@@ -33,6 +33,15 @@ const HERO_KEYS: (keyof HeroSettings)[] = [
   "hero_stat3_value", "hero_stat3_label",
 ];
 
+/** Map admin-configured links to in-page anchors when we're on the homepage. */
+const sectionAnchorFor = (link: string): string | null => {
+  if (!link) return null;
+  if (link.startsWith("#")) return link.slice(1);
+  if (link === "/courses" || link === "/#featured-courses") return "featured-courses";
+  if (link === "/books" || link === "/#featured-books") return "featured-books";
+  return null;
+};
+
 const defaults: HeroSettings = {
   hero_title: "শেখার নতুন দিগন্ত — কোর্স ও বই এক জায়গায়",
   hero_subtitle: "প্রফেশনাল কোর্স, হ্যান্ডপিকড বই এবং কোয়ালিটি কন্টেন্ট দিয়ে আপনার স্কিল ডেভেলপ করুন।",
@@ -54,6 +63,27 @@ const HeroBanner = () => {
   const [settings, setSettings] = useState<HeroSettings>(defaults);
   const [slides, setSlides] = useState<HeroSlide[]>([]);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleCtaClick = (link: string) => (e: React.MouseEvent<HTMLAnchorElement>) => {
+    const anchor = sectionAnchorFor(link);
+    if (!anchor) return; // let <Link> handle normal navigation
+    e.preventDefault();
+    const scrollToAnchor = () => {
+      const el = document.getElementById(anchor);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+    if (location.pathname !== "/") {
+      navigate(`/#${anchor}`);
+      // wait for home page mount, then scroll
+      setTimeout(scrollToAnchor, 350);
+    } else {
+      scrollToAnchor();
+      // reflect anchor in URL without full reload
+      window.history.replaceState(null, "", `/#${anchor}`);
+    }
+  };
 
   useEffect(() => {
     (supabase as any)
@@ -144,13 +174,13 @@ const HeroBanner = () => {
             style={{ animation: "word-reveal 0.7s var(--ease-spring) 0.65s forwards" }}
           >
             <Button variant="premium-accent" size="lg" asChild className="h-12 w-full text-base shadow-lg shadow-accent/20 sm:h-11 sm:w-auto sm:text-base">
-              <Link to={settings.hero_btn1_link}>
+              <Link to={settings.hero_btn1_link} onClick={handleCtaClick(settings.hero_btn1_link)}>
                 <GraduationCap className="mr-1.5 h-5 w-5 sm:h-4 sm:w-4" />
                 {settings.hero_btn1_text}
               </Link>
             </Button>
             <Button variant="glass" size="lg" asChild className="h-12 w-full text-base sm:h-11 sm:w-auto sm:text-base">
-              <Link to={settings.hero_btn2_link}>
+              <Link to={settings.hero_btn2_link} onClick={handleCtaClick(settings.hero_btn2_link)}>
                 <BookOpen className="mr-1.5 h-5 w-5 sm:h-4 sm:w-4" />
                 {settings.hero_btn2_text}
               </Link>
