@@ -456,7 +456,7 @@ const Index = () => {
       </section>
 
       {/* Reviews */}
-      {dbReviews.length > 0 && (
+      {(reviewsLoading || dbReviews.length > 0) && (
       <section className="relative py-10 sm:py-16 lg:py-20">
         <div className="absolute inset-0 bg-gradient-to-b from-background via-accent/[0.02] to-background pointer-events-none" />
           <div className="container relative mx-auto px-4">
@@ -471,7 +471,27 @@ const Index = () => {
               </div>
             </ScrollReveal>
             <div className="mt-6 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 sm:mt-10 sm:gap-6">
-              {dbReviews.map((review, idx) => (
+              {reviewsLoading ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="glass-card rounded-xl p-5 h-full" aria-hidden="true">
+                    <div className="flex gap-1">
+                      {Array.from({ length: 5 }).map((_, s) => (
+                        <div key={s} className="h-4 w-4 rounded-sm skeleton-shimmer bg-muted/50" />
+                      ))}
+                    </div>
+                    <div className="mt-4 space-y-2">
+                      <div className="h-3 w-full rounded skeleton-shimmer bg-muted/50" />
+                      <div className="h-3 w-[92%] rounded skeleton-shimmer bg-muted/50" />
+                      <div className="h-3 w-[78%] rounded skeleton-shimmer bg-muted/50" />
+                    </div>
+                    <div className="mt-4 border-t border-border/50 pt-3 space-y-2">
+                      <div className="h-3.5 w-32 rounded skeleton-shimmer bg-muted/50" />
+                      <div className="h-3 w-24 rounded skeleton-shimmer bg-muted/40" />
+                    </div>
+                    <span className="sr-only">রিভিউ লোড হচ্ছে…</span>
+                  </div>
+                ))
+              ) : dbReviews.map((review, idx) => (
                 <ScrollReveal key={review.id} delay={idx * 80}>
                   <div className="glass-card rounded-xl p-5 h-full">
                     <div className="flex gap-0.5">
