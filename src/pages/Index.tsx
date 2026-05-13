@@ -528,21 +528,9 @@ const Index = () => {
                   <Input className="glass-input" placeholder="অর্ডার আইডি অথবা ফোন নম্বর" value={trackQuery} onChange={(e) => setTrackQuery(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleTrack()} />
                   <Button className="shrink-0 glow-hover" onClick={handleTrack}>ট্র্যাক করুন</Button>
                 </div>
-                <p className="mt-2 text-xs text-muted-foreground">অর্ডার আইডি বা ফোন নম্বর দিয়ে অর্ডার খুঁজুন</p>
-                {trackResult && (
-                  <div className="mt-4 space-y-3">
-                    {trackResult.map((order: any, idx: number) => (
-                      <ScrollReveal key={idx} delay={idx * 100}>
-                        <div className="rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm p-4 text-left transition-all hover:border-primary/20">
-                          <p className="text-sm"><span className="font-medium">অর্ডার:</span> {order.order_id}</p>
-                          <p className="text-sm"><span className="font-medium">প্রোডাক্ট:</span> {order.product_title}</p>
-                          <p className="text-sm"><span className="font-medium">স্ট্যাটাস:</span> {statusLabels[order.status] || order.status}</p>
-                          <p className="text-xs text-muted-foreground mt-1">অর্ডারের তারিখ: {new Date(order.created_at).toLocaleDateString("bn-BD")}</p>
-                        </div>
-                      </ScrollReveal>
-                    ))}
-                  </div>
-                )}
+                <p className="mt-2 text-xs text-muted-foreground">
+                  পরবর্তী পেজে অর্ডার আইডি ও ফোন নম্বর — দুটোই যাচাই হলে সম্পূর্ণ বিস্তারিত দেখানো হবে।
+                </p>
               </div>
             </div>
           </ScrollReveal>
