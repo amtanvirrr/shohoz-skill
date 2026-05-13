@@ -43,3 +43,30 @@ export function prefetchImage(url?: string | null): void {
 export function prefetchImages(urls: Array<string | null | undefined>): void {
   urls.forEach(prefetchImage);
 }
+
+/**
+ * High-priority image preload for above-the-fold assets (e.g. the first hero slide).
+ * Uses <link rel="preload" as="image" fetchpriority="high"> so the browser starts
+ * downloading the asset alongside critical resources.
+ */
+const preloaded = new Set<string>();
+export function preloadImage(url?: string | null): void {
+  if (!url) return;
+  if (typeof document === "undefined") return;
+  if (preloaded.has(url)) return;
+  preloaded.add(url);
+  try {
+    const link = document.createElement("link");
+    link.rel = "preload";
+    link.as = "image";
+    link.href = url;
+    link.setAttribute("fetchpriority", "high");
+    document.head.appendChild(link);
+  } catch {
+    try {
+      const img = new Image();
+      img.decoding = "async";
+      img.src = url;
+    } catch { /* ignore */ }
+  }
+}
