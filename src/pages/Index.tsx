@@ -69,8 +69,8 @@ const Index = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { settings } = useSiteSettings();
+  const navigate = useNavigate();
   const [trackQuery, setTrackQuery] = useState("");
-  const [trackResult, setTrackResult] = useState<any>(null);
   const [dbBooks, setDbBooks] = useState<DbBook[]>(() => featuredCache.books ?? []);
   const [dbCourses, setDbCourses] = useState<DbCourse[]>(() => featuredCache.courses ?? []);
   // Only show skeleton on the very first fetch — keep cached cards visible
