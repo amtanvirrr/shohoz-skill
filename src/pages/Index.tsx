@@ -316,9 +316,14 @@ const Index = () => {
                             </>
                           )}
                         </div>
-                        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm transition-transform group-hover:scale-105 sm:bg-primary/10 sm:text-primary sm:shadow-none">
-                          এখনই দেখুন <ArrowRight className="h-3.5 w-3.5" />
-                        </span>
+                        {(() => {
+                          const cta = getCourseCta(course);
+                          return (
+                            <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold shadow-sm transition-transform group-hover:scale-105 ${ctaToneClass(cta.tone)}`}>
+                              {cta.text} <ArrowRight className="h-3.5 w-3.5" />
+                            </span>
+                          );
+                        })()}
                       </div>
                     </div>
                   </Link>
@@ -398,9 +403,14 @@ const Index = () => {
                             </>
                           )}
                         </div>
-                        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm transition-transform group-hover:scale-105 sm:bg-primary/10 sm:text-primary sm:shadow-none">
-                          এখনই কিনুন <ArrowRight className="h-3.5 w-3.5" />
-                        </span>
+                        {(() => {
+                          const cta = getBookCta(book);
+                          return (
+                            <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold shadow-sm transition-transform group-hover:scale-105 ${ctaToneClass(cta.tone)}`}>
+                              {cta.text} <ArrowRight className="h-3.5 w-3.5" />
+                            </span>
+                          );
+                        })()}
                       </div>
                     </div>
                   </Link>
