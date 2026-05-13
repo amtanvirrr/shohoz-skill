@@ -523,6 +523,48 @@ const QuizPage = () => {
             </div>
           )}
 
+          {/* Submit confirmation dialog */}
+          <AlertDialog open={confirmSubmitOpen} onOpenChange={setConfirmSubmitOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>কুইজ জমা দিতে চান?</AlertDialogTitle>
+                <AlertDialogDescription asChild>
+                  <div className="space-y-2 text-sm">
+                    <p>একবার জমা দিলে আপনি আর উত্তর পরিবর্তন করতে পারবেন না।</p>
+                    <div className="rounded-lg border border-border bg-muted/40 p-3 text-foreground">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">উত্তর দেওয়া হয়েছে</span>
+                        <strong>{answeredCount} / {questions.length}</strong>
+                      </div>
+                      {questions.length - answeredCount > 0 && (
+                        <div className="mt-1 flex justify-between text-warning">
+                          <span>অনুত্তরিত প্রশ্ন</span>
+                          <strong>{questions.length - answeredCount} টি</strong>
+                        </div>
+                      )}
+                      {selectedQuiz?.negative_marking && (
+                        <p className="mt-2 text-xs text-muted-foreground">
+                          ⚠️ নেগেটিভ মার্কিং সক্রিয় — ভুল উত্তরে মার্ক কাটা হবে।
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>বাতিল</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => {
+                    setConfirmSubmitOpen(false);
+                    handleSubmit();
+                  }}
+                >
+                  হ্যাঁ, জমা দিন
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
           {/* Result summary */}
           {submitted && results && (
             <div className="mt-6 rounded-xl glass-card p-6">
