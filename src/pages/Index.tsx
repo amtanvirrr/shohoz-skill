@@ -351,7 +351,7 @@ const Index = () => {
                   </Link>
                 </ScrollReveal>
               ))}
-            </div>
+            </MobileCarousel>
           ) : (
             <p className="mt-8 text-center text-muted-foreground">এখনো কোন বই নেই। শীঘ্রই আসছে!</p>
           )}
