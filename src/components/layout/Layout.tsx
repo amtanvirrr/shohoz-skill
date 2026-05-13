@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import Header from "./Header";
 import Footer from "./Footer";
-import MobileBottomNav from "./MobileBottomNav";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 const FONT_MAP: Record<string, { body: string; display: string }> = {
@@ -50,7 +49,6 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         {children}
       </main>
       <Footer />
-      <MobileBottomNav />
     </div>
   );
 };
