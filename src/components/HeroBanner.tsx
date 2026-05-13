@@ -86,7 +86,14 @@ const HeroBanner = () => {
     return toBnNum(n);
   };
 
-  const handleCtaClick = (link: string) => (e: React.MouseEvent<HTMLAnchorElement>) => {
+  const handleCtaClick = (link: string, label: string, slot: "primary" | "secondary") => (e: React.MouseEvent<HTMLAnchorElement>) => {
+    // Fire-and-forget tracking — never blocks navigation
+    trackCtaClick({
+      event_name: "hero_cta_click",
+      section: `hero_btn_${slot}`,
+      label,
+      target_url: link,
+    });
     const anchor = sectionAnchorFor(link);
     if (!anchor) return; // let <Link> handle normal navigation
     e.preventDefault();
@@ -194,13 +201,13 @@ const HeroBanner = () => {
             style={{ animation: "word-reveal 0.7s var(--ease-spring) 0.65s forwards" }}
           >
             <Button variant="premium-accent" size="lg" asChild className="h-12 w-full text-base shadow-lg shadow-accent/20 sm:h-11 sm:w-auto sm:text-base">
-              <Link to={settings.hero_btn1_link} onClick={handleCtaClick(settings.hero_btn1_link)}>
+              <Link to={settings.hero_btn1_link} onClick={handleCtaClick(settings.hero_btn1_link, settings.hero_btn1_text, "primary")}>
                 <GraduationCap className="mr-1.5 h-5 w-5 sm:h-4 sm:w-4" />
                 {settings.hero_btn1_text}
               </Link>
             </Button>
             <Button variant="glass" size="lg" asChild className="h-12 w-full text-base sm:h-11 sm:w-auto sm:text-base">
-              <Link to={settings.hero_btn2_link} onClick={handleCtaClick(settings.hero_btn2_link)}>
+              <Link to={settings.hero_btn2_link} onClick={handleCtaClick(settings.hero_btn2_link, settings.hero_btn2_text, "secondary")}>
                 <BookOpen className="mr-1.5 h-5 w-5 sm:h-4 sm:w-4" />
                 {settings.hero_btn2_text}
               </Link>
