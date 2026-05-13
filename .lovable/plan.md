@@ -1,33 +1,44 @@
-## Problem
+# Mobile Bottom Nav — Floating Glassmorphism
 
-On mobile, the bottom navigation bar:
-- Sits below the footer instead of floating above the page.
-- Disappears when scrolled to the top of the page.
+Redesign `src/components/layout/MobileBottomNav.tsx` into a detached, floating glassmorphic pill with an elevated center "Menu" button. Purely visual — routes, sheet content, auth, and theme logic stay identical.
 
-## Root cause
+## Layout
 
-`MobileBottomNav` uses `position: fixed`, which should anchor it to the viewport. But it's rendered inside `<Layout>`, which is rendered inside `<RouteTransition>` in `src/App.tsx`.
+- Container: `fixed bottom-0 left-0 right-0 z-50 md:hidden`, padding `px-4 pb-3` plus `env(safe-area-inset-bottom)`, no border, transparent background. Wraps the bar so it floats above screen edges.
+- Bar: `mx-auto max-w-md` pill with `rounded-2xl`, `glass-card` background, `border border-border/40`, soft shadow (`shadow-[0_8px_30px_-8px_hsl(var(--primary)/0.25)]`), `backdrop-blur-xl`.
+- Grid: 5 columns, but middle slot (Menu) renders an elevated FAB that overflows upward (`-mt-6`).
 
-`RouteTransition` applies the `.route-fade-in` class, whose keyframes animate `transform: translateY(...)` with `animation-fill-mode: both`. That keeps a `transform` value on the wrapper **after** the animation ends. Per CSS spec, any non-`none` `transform` on an ancestor creates a new containing block, so `position: fixed` resolves to that wrapper instead of the viewport. The nav then behaves like a normal block flowing after the footer.
+## Tabs (4 side items: Home, Courses, Books, Quizzes)
 
-## Fix
+- Vertical stack: icon + label, `py-2.5`, `text-[11px]`.
+- Inactive: `text-muted-foreground`.
+- Active: `text-primary`, icon sits in subtle `bg-primary/10` rounded square, plus a 4px primary dot indicator below the label (`h-1 w-1 rounded-full bg-primary`).
+- Smooth `transition-all duration-200`, `active:scale-95`.
 
-Render `MobileBottomNav` outside the `RouteTransition` wrapper so no transformed ancestor exists above it.
+## Center "Menu" FAB
 
-### Changes
+- Circular button, `h-14 w-14 rounded-full`, gradient `bg-gradient-to-br from-primary to-accent`, white icon, `shadow-lg shadow-primary/30`, lifted via `-mt-6`.
+- Ring around it: `ring-4 ring-background` so it visually detaches from the bar.
+- Opens existing Sheet (no changes to sheet contents).
+- When open: subtle pulse / scale (`scale-105`).
+- Label "মেনু" stays beneath in same `text-[11px]` style.
 
-1. **`src/components/layout/Layout.tsx`** — remove `<MobileBottomNav />` from inside the layout tree.
-2. **`src/App.tsx`** — render `<MobileBottomNav />` once, as a sibling of `<RouteTransition>`, inside `<BrowserRouter>` so it still has access to `useLocation`/`Link`. It should not render on admin routes; gate it with a small wrapper that hides itself when `location.pathname.startsWith("/admin")`.
+## Spacing / safe area
 
-### Hardening (small, in the same file)
+- Keep `env(safe-area-inset-bottom)` padding so it sits above iOS home indicator.
+- Verify body bottom-padding still clears the new floating height (~84px including FAB lift). Adjust the existing global mobile bottom padding token in `src/index.css` if needed (only if measurement shows overlap).
 
-3. **`src/components/layout/MobileBottomNav.tsx`** — keep the existing `fixed bottom-0 left-0 right-0 z-50` plus `env(safe-area-inset-bottom)`, and add `will-change: transform` is **not** needed; instead ensure no parent reintroduces a transform. No other change required.
+## Accessibility & motion
 
-The `pb-20 md:pb-0` spacer already on `<main>` in `Layout.tsx` continues to reserve space so footer content isn't hidden behind the nav.
+- Preserve `aria-label`s, `SheetTrigger`/`SheetClose` usage.
+- Respect `prefers-reduced-motion`: disable scale/pulse transitions.
 
-## Acceptance
+## Files
 
-- Bottom nav is visible at the top of the page on mobile.
-- Bottom nav stays pinned to the viewport while scrolling, including over the footer.
-- Bottom nav does not appear on `/admin/*` routes.
-- Desktop is unaffected (`md:hidden`).
+- `src/components/layout/MobileBottomNav.tsx` — markup + classnames rewrite only.
+- `src/index.css` — only if bottom-padding spacer needs a small bump for the elevated FAB.
+
+## Out of scope
+
+- Sheet menu contents, routing logic, auth, theme toggle behavior — unchanged.
+- No new dependencies.

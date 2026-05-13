@@ -50,53 +50,88 @@ const MobileBottomNav = () => {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 md:hidden glass-header border-t border-border/50"
-      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      className="fixed bottom-0 left-0 right-0 z-50 md:hidden px-4 pt-2 pb-3"
+      style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
       aria-label="মোবাইল নেভিগেশন"
     >
-      <ul className="grid grid-cols-5">
-        {tabs.map((tab) => {
+      <div className="relative mx-auto flex max-w-md items-stretch justify-between rounded-2xl glass-card border border-border/40 backdrop-blur-xl shadow-[0_8px_30px_-8px_hsl(var(--primary)/0.25)] px-2">
+        {tabs.slice(0, 2).map((tab) => {
           const Icon = tab.icon;
           const active = isActive(tab.to);
           return (
-            <li key={tab.to}>
+            <Link
+              key={tab.to}
+              to={tab.to}
+              className={`flex flex-1 flex-col items-center justify-center gap-1 py-2.5 text-[11px] font-medium transition-all duration-200 active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100 ${
+                active ? "text-primary" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <span
+                className={`flex h-8 w-10 items-center justify-center rounded-lg transition-colors ${
+                  active ? "bg-primary/10" : ""
+                }`}
+              >
+                <Icon className="h-5 w-5" strokeWidth={active ? 2.4 : 2} />
+              </span>
+              <span className="leading-none">{tab.label}</span>
+              <span
+                className={`h-1 w-1 rounded-full transition-colors ${
+                  active ? "bg-primary" : "bg-transparent"
+                }`}
+              />
+            </Link>
+          );
+        })}
+
+        <Sheet open={open} onOpenChange={setOpen}>
+          <div className="flex w-16 flex-col items-center justify-end pb-1.5">
+            <SheetTrigger asChild>
+              <button
+                className={`-mt-7 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent text-primary-foreground shadow-lg shadow-primary/30 ring-4 ring-background transition-transform duration-200 active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100 ${
+                  open ? "scale-105" : ""
+                }`}
+                aria-label="আরও মেনু"
+              >
+                <Menu className="h-6 w-6" />
+              </button>
+            </SheetTrigger>
+            <span
+              className={`mt-1 text-[11px] font-medium leading-none ${
+                moreActive && open ? "text-primary" : "text-muted-foreground"
+              }`}
+            >
+              মেনু
+            </span>
+          </div>
+
+          {tabs.slice(2).map((tab) => {
+            const Icon = tab.icon;
+            const active = isActive(tab.to);
+            return (
               <Link
+                key={tab.to}
                 to={tab.to}
-                className={`flex flex-col items-center justify-center gap-1 py-2 text-[11px] font-medium transition-colors ${
+                className={`flex flex-1 flex-col items-center justify-center gap-1 py-2.5 text-[11px] font-medium transition-all duration-200 active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100 ${
                   active ? "text-primary" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 <span
-                  className={`flex h-9 w-12 items-center justify-center rounded-xl transition-all ${
+                  className={`flex h-8 w-10 items-center justify-center rounded-lg transition-colors ${
                     active ? "bg-primary/10" : ""
                   }`}
                 >
                   <Icon className="h-5 w-5" strokeWidth={active ? 2.4 : 2} />
                 </span>
                 <span className="leading-none">{tab.label}</span>
-              </Link>
-            </li>
-          );
-        })}
-        <li>
-          <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger asChild>
-              <button
-                className={`flex w-full flex-col items-center justify-center gap-1 py-2 text-[11px] font-medium transition-colors ${
-                  moreActive && open ? "text-primary" : "text-muted-foreground hover:text-foreground"
-                }`}
-                aria-label="আরও মেনু"
-              >
                 <span
-                  className={`flex h-9 w-12 items-center justify-center rounded-xl transition-all ${
-                    open ? "bg-primary/10" : ""
+                  className={`h-1 w-1 rounded-full transition-colors ${
+                    active ? "bg-primary" : "bg-transparent"
                   }`}
-                >
-                  <Menu className="h-5 w-5" />
-                </span>
-                <span className="leading-none">মেনু</span>
-              </button>
-            </SheetTrigger>
+                />
+              </Link>
+            );
+          })}
+
             <SheetContent side="bottom" className="rounded-t-2xl max-h-[85vh] overflow-y-auto">
               <SheetHeader>
                 <SheetTitle className="text-right">মেনু</SheetTitle>
@@ -193,8 +228,7 @@ const MobileBottomNav = () => {
               </div>
             </SheetContent>
           </Sheet>
-        </li>
-      </ul>
+      </div>
     </nav>
   );
 };
