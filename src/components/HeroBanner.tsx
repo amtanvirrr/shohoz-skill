@@ -6,6 +6,29 @@ import { supabase } from "@/integrations/supabase/client";
 import { trackCtaClick } from "@/lib/analytics";
 import { preloadImage, prefetchImages } from "@/lib/prefetch";
 
+/**
+ * If the URL is a Supabase public-storage object, rewrite it to the
+ * image-render endpoint with a target width so we can serve responsive
+ * variants. For any non-storage URL we just return the original.
+ */
+const supaImg = (url: string, width: number): string => {
+  if (!url) return url;
+  const marker = "/storage/v1/object/public/";
+  if (!url.includes(marker)) return url;
+  const transformed = url.replace(marker, "/storage/v1/render/image/public/");
+  const sep = transformed.includes("?") ? "&" : "?";
+  return `${transformed}${sep}width=${width}&quality=75&resize=cover`;
+};
+
+const buildHeroSrcSet = (url: string): string | undefined => {
+  if (!url || !url.includes("/storage/v1/object/public/")) return undefined;
+  return [480, 768, 1200, 1600]
+    .map((w) => `${supaImg(url, w)} ${w}w`)
+    .join(", ");
+};
+
+const HERO_SIZES = "(min-width: 768px) 50vw, 100vw";
+
 interface HeroSettings {
   hero_title: string;
   hero_subtitle: string;
