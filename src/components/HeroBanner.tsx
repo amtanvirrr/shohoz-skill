@@ -207,19 +207,45 @@ const HeroBanner = () => {
             </Button>
           </div>
 
-          {/* Trust microcopy under CTAs (mobile prominent) */}
+          {/* Trust strip — rating + payment methods (mobile prominent) */}
           <div
-            className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-primary-foreground/85 opacity-0"
+            className="mt-4 flex flex-col gap-2 opacity-0"
             style={{ animation: "word-reveal 0.7s var(--ease-spring) 0.72s forwards" }}
           >
-            <span className="inline-flex items-center gap-1">
-              <ShieldCheck className="h-3.5 w-3.5 text-accent" />
-              নিরাপদ পেমেন্ট
-            </span>
-            <span className="opacity-50">•</span>
-            <span>সারা দেশে ক্যাশ অন ডেলিভারি</span>
-            <span className="opacity-50">•</span>
-            <span>তাৎক্ষণিক অ্যাক্সেস</span>
+            {/* Row 1 — rating + secure payment */}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/15 px-3 py-1.5 backdrop-blur-md">
+                <div className="flex items-center" aria-hidden="true">
+                  {[0, 1, 2, 3, 4].map((i) => (
+                    <Star key={i} className="h-3.5 w-3.5 fill-accent text-accent" />
+                  ))}
+                </div>
+                <span className="text-xs font-bold text-primary-foreground sm:text-sm">
+                  {rating.count > 0 ? toBnNum(rating.avg.toFixed(1)) : "৫.০"}
+                </span>
+                <span className="text-[11px] text-primary-foreground/80 sm:text-xs">
+                  {rating.count > 0 ? `• ${formatCount(rating.count)} রিভিউ` : "• শিক্ষার্থীদের প্রিয়"}
+                </span>
+              </div>
+              <div className="inline-flex items-center gap-1 rounded-full border border-success/40 bg-success/15 px-3 py-1.5 text-[11px] font-semibold text-primary-foreground backdrop-blur-md sm:text-xs">
+                <ShieldCheck className="h-3.5 w-3.5 text-success" />
+                নিরাপদ পেমেন্ট
+              </div>
+            </div>
+
+            {/* Row 2 — supported payments */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center rounded-md bg-[#E2136E] px-2 py-1 text-[11px] font-extrabold tracking-tight text-white shadow-sm sm:text-xs">
+                bKash
+              </span>
+              <span className="inline-flex items-center rounded-md bg-[#EB6E1F] px-2 py-1 text-[11px] font-extrabold tracking-tight text-white shadow-sm sm:text-xs">
+                Nagad
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-md border border-primary-foreground/25 bg-primary-foreground/10 px-2 py-1 text-[11px] font-semibold text-primary-foreground backdrop-blur-md sm:text-xs">
+                <Truck className="h-3.5 w-3.5" />
+                ক্যাশ অন ডেলিভারি
+              </span>
+            </div>
           </div>
 
           <div
