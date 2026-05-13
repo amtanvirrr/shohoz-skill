@@ -52,16 +52,30 @@ interface OrderInfo {
   delivered: number;
 }
 
+/**
+ * Module-level cache for featured items. Survives route navigations within
+ * the same session so returning to "/" shows previously-loaded cards
+ * immediately (skeleton-then-empty flash is avoided).
+ */
+const featuredCache: {
+  courses: DbCourse[] | null;
+  books: DbBook[] | null;
+  coursesKey: string;
+  booksKey: string;
+} = { courses: null, books: null, coursesKey: "", booksKey: "" };
+
 const Index = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { settings } = useSiteSettings();
   const [trackQuery, setTrackQuery] = useState("");
   const [trackResult, setTrackResult] = useState<any>(null);
-  const [dbBooks, setDbBooks] = useState<DbBook[]>([]);
-  const [dbCourses, setDbCourses] = useState<DbCourse[]>([]);
-  const [coursesLoading, setCoursesLoading] = useState(true);
-  const [booksLoading, setBooksLoading] = useState(true);
+  const [dbBooks, setDbBooks] = useState<DbBook[]>(() => featuredCache.books ?? []);
+  const [dbCourses, setDbCourses] = useState<DbCourse[]>(() => featuredCache.courses ?? []);
+  // Only show skeleton on the very first fetch — keep cached cards visible
+  // while the background refresh runs on subsequent visits.
+  const [coursesLoading, setCoursesLoading] = useState(() => featuredCache.courses === null);
+  const [booksLoading, setBooksLoading] = useState(() => featuredCache.books === null);
   const [dbReviews, setDbReviews] = useState<(DbReview & { course_title?: string })[]>([]);
   const [bookOrderMap, setBookOrderMap] = useState<Record<string, OrderInfo>>({});
   const [courseOrderMap, setCourseOrderMap] = useState<Record<string, string>>({});
@@ -70,6 +84,29 @@ const Index = () => {
   useEffect(() => {
     const featuredCourseIds = settings.featured_course_ids ? settings.featured_course_ids.split(",").filter(Boolean) : [];
     const featuredBookIds = settings.featured_book_ids ? settings.featured_book_ids.split(",").filter(Boolean) : [];
+    const coursesKey = featuredCourseIds.join(",") || "__all__";
+    const booksKey = featuredBookIds.join(",") || "__all__";
+    // If the featured selection changed since last visit, drop cached cards
+    // and show a skeleton during the new fetch (no stale flash).
+    if (featuredCache.coursesKey && featuredCache.coursesKey !== coursesKey) {
+      setCoursesLoading(true);
+    }
+    if (featuredCache.booksKey && featuredCache.booksKey !== booksKey) {
+      setBooksLoading(true);
+    }
+    featuredCache.coursesKey = coursesKey;
+    featuredCache.booksKey = booksKey;
+
+    const applyCourses = (data: DbCourse[]) => {
+      featuredCache.courses = data;
+      setDbCourses(data);
+      setCoursesLoading(false);
+    };
+    const applyBooks = (data: DbBook[]) => {
+      featuredCache.books = data;
+      setDbBooks(data);
+      setBooksLoading(false);
+    };
 
     // Courses
     if (featuredCourseIds.length > 0) {
@@ -77,13 +114,13 @@ const Index = () => {
         .select("id, title, instructor, price, original_price, image_url, category, duration, slug")
         .eq("is_published", true)
         .in("id", featuredCourseIds)
-        .then(({ data }) => { setDbCourses(data || []); setCoursesLoading(false); });
+        .then(({ data }) => applyCourses((data as DbCourse[]) || []));
     } else {
       supabase.from("courses")
         .select("id, title, instructor, price, original_price, image_url, category, duration, slug")
         .eq("is_published", true)
         .limit(3)
-        .then(({ data }) => { setDbCourses(data || []); setCoursesLoading(false); });
+        .then(({ data }) => applyCourses((data as DbCourse[]) || []));
     }
 
     // Books
@@ -92,13 +129,13 @@ const Index = () => {
         .select("id, title, author, price, original_price, image_url, category, book_type, slug")
         .eq("is_published", true)
         .in("id", featuredBookIds)
-        .then(({ data }) => { setDbBooks(data || []); setBooksLoading(false); });
+        .then(({ data }) => applyBooks((data as DbBook[]) || []));
     } else {
       supabase.from("books")
         .select("id, title, author, price, original_price, image_url, category, book_type, slug")
         .eq("is_published", true)
         .limit(3)
-        .then(({ data }) => { setDbBooks(data || []); setBooksLoading(false); });
+        .then(({ data }) => applyBooks((data as DbBook[]) || []));
     }
 
     // Reviews (always latest)
