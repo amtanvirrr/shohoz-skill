@@ -52,6 +52,9 @@ const PaymentResult = () => {
   const [navigating, setNavigating] = useState(false);
   const navigate = useNavigate();
   const cancelRef = useRef<{ cancelled: boolean }>({ cancelled: false });
+  // Mirrors `secondsLeft` so callbacks can read the current value without
+  // being recreated on every state change.
+  const secondsLeftRef = useRef(0);
 
   // Progressive backoff (seconds per attempt). Sum ≈ 60s.
   const POLL_SCHEDULE = [2, 2, 2, 2, 3, 3, 3, 4, 4, 5, 5, 6, 7, 8, 10];
@@ -72,6 +75,7 @@ const PaymentResult = () => {
     setTimedOut(false);
     setAttempt(0);
     setSecondsLeft(TOTAL_SECONDS);
+    secondsLeftRef.current = TOTAL_SECONDS;
     let attempts = 0;
     let verifyCalled = false;
 
@@ -81,7 +85,11 @@ const PaymentResult = () => {
         window.clearInterval(tickerId);
         return;
       }
-      setSecondsLeft((s) => (s > 0 ? s - 1 : 0));
+      setSecondsLeft((s) => {
+        const next = s > 0 ? s - 1 : 0;
+        secondsLeftRef.current = next;
+        return next;
+      });
     }, 1000);
     (token as { cancelled: boolean; tickerId?: number }).tickerId = tickerId;
 
