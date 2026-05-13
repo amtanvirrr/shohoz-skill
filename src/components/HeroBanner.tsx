@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { trackCtaClick } from "@/lib/analytics";
+import { preloadImage, prefetchImages } from "@/lib/prefetch";
 
 interface HeroSettings {
   hero_title: string;
@@ -135,7 +136,19 @@ const HeroBanner = () => {
       .select("id, media_url, media_type")
       .eq("is_active", true)
       .order("sort_order", { ascending: true })
-      .then(({ data }) => setSlides(data || []));
+      .then(({ data }) => {
+        const list = data || [];
+        setSlides(list);
+        // Preload the first image with high priority so the LCP element paints fast.
+        const first = list.find((s) => s.media_type !== "video");
+        if (first) preloadImage(first.media_url);
+        // Warm cache for the rest at low priority.
+        prefetchImages(
+          list
+            .filter((s) => s.media_type !== "video" && s.id !== first?.id)
+            .map((s) => s.media_url),
+        );
+      });
   }, []);
 
   // Auto-slide
@@ -249,12 +262,16 @@ const HeroBanner = () => {
                         loop
                         muted
                         playsInline
+                        preload={idx === 0 ? "auto" : "metadata"}
                         className="h-full w-full object-cover"
                       />
                     ) : (
                       <img
                         src={slide.media_url}
                         alt=""
+                        decoding="async"
+                        loading={idx === 0 ? "eager" : "lazy"}
+                        {...(idx === 0 ? { fetchPriority: "high" as const } : { fetchPriority: "low" as const })}
                         className="h-full w-full object-cover"
                       />
                     )}
