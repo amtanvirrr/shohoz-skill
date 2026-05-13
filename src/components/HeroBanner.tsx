@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { BookOpen, GraduationCap, Users, Sparkles } from "lucide-react";
+import { BookOpen, GraduationCap, Users, Sparkles, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -140,25 +140,40 @@ const HeroBanner = () => {
           </p>
 
           <div
-            className="mt-6 flex flex-wrap gap-3 opacity-0"
+            className="mt-6 flex flex-col gap-3 opacity-0 sm:flex-row sm:flex-wrap"
             style={{ animation: "word-reveal 0.7s var(--ease-spring) 0.65s forwards" }}
           >
-            <Button variant="premium-accent" size="lg" asChild className="text-sm sm:text-base">
+            <Button variant="premium-accent" size="lg" asChild className="h-12 w-full text-base shadow-lg shadow-accent/20 sm:h-11 sm:w-auto sm:text-base">
               <Link to={settings.hero_btn1_link}>
-                <GraduationCap className="mr-1 h-4 w-4" />
+                <GraduationCap className="mr-1.5 h-5 w-5 sm:h-4 sm:w-4" />
                 {settings.hero_btn1_text}
               </Link>
             </Button>
-            <Button variant="glass" size="lg" asChild className="text-sm sm:text-base">
+            <Button variant="glass" size="lg" asChild className="h-12 w-full text-base sm:h-11 sm:w-auto sm:text-base">
               <Link to={settings.hero_btn2_link}>
-                <BookOpen className="mr-1 h-4 w-4" />
+                <BookOpen className="mr-1.5 h-5 w-5 sm:h-4 sm:w-4" />
                 {settings.hero_btn2_text}
               </Link>
             </Button>
           </div>
 
+          {/* Trust microcopy under CTAs (mobile prominent) */}
           <div
-            className="mt-8 flex flex-wrap gap-3 opacity-0 sm:gap-4"
+            className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-primary-foreground/85 opacity-0"
+            style={{ animation: "word-reveal 0.7s var(--ease-spring) 0.72s forwards" }}
+          >
+            <span className="inline-flex items-center gap-1">
+              <ShieldCheck className="h-3.5 w-3.5 text-accent" />
+              নিরাপদ পেমেন্ট
+            </span>
+            <span className="opacity-50">•</span>
+            <span>সারা দেশে ক্যাশ অন ডেলিভারি</span>
+            <span className="opacity-50">•</span>
+            <span>তাৎক্ষণিক অ্যাক্সেস</span>
+          </div>
+
+          <div
+            className="mt-6 flex flex-wrap gap-2 opacity-0 sm:mt-8 sm:gap-4"
             style={{ animation: "word-reveal 0.7s var(--ease-spring) 0.8s forwards" }}
           >
             {stats.map((stat, i) => {
@@ -182,8 +197,8 @@ const HeroBanner = () => {
         </div>
 
         {/* Right half - media slider */}
-        <div className="relative w-full overflow-hidden md:w-1/2" style={{ minHeight: "200px" }}>
-          <div className="aspect-video md:aspect-auto md:absolute md:inset-0">
+        <div className="relative w-full overflow-hidden md:w-1/2" style={{ minHeight: "180px" }}>
+          <div className="aspect-[16/10] md:aspect-auto md:absolute md:inset-0">
             {slides.length > 0 ? (
               <>
                 {slides.map((slide, idx) => (
