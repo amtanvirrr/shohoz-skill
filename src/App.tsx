@@ -9,6 +9,7 @@ import Layout from "@/components/layout/Layout";
 import AdminLayout from "@/components/admin/AdminLayout";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ScrollToTop from "@/components/ScrollToTop";
+import RouteTransition from "@/components/RouteTransition";
 import Index from "./pages/Index";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
@@ -61,6 +62,7 @@ const App = () => (
         <AuthProvider>
           <MetaPixelProvider>
           <ScrollToTop />
+          <RouteTransition>
           <Routes>
             {/* Public routes with Layout */}
             <Route path="/" element={<Layout><Index /></Layout>} />
@@ -111,6 +113,7 @@ const App = () => (
 
             <Route path="*" element={<Layout><NotFound /></Layout>} />
           </Routes>
+          </RouteTransition>
           </MetaPixelProvider>
         </AuthProvider>
       </BrowserRouter>
