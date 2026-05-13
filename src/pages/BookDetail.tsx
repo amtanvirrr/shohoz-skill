@@ -1,5 +1,6 @@
 import { useParams, Link, useSearchParams } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import RichText from "@/components/RichText";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -302,7 +303,9 @@ const BookDetail = () => {
             </ScrollReveal>
 
             <ScrollReveal delay={200}>
-              <div className="mt-6 glass-card rounded-xl p-5 leading-relaxed text-muted-foreground prose prose-sm dark:prose-invert max-w-none prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground" dangerouslySetInnerHTML={{ __html: book.description }} />
+              <div className="mt-6 glass-card rounded-xl p-5">
+                <RichText content={book.description} />
+              </div>
             </ScrollReveal>
 
             {/* Demo Preview Button */}
