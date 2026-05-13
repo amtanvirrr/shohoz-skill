@@ -1,4 +1,4 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { usePixel } from "@/components/MetaPixelProvider";
 import OrderSuccessDialog from "@/components/OrderSuccessDialog";
 import PaymentSelector from "@/components/PaymentSelector";
+import SelectedItemSummary from "@/components/checkout/SelectedItemSummary";
 
 interface DbCourse {
   id: string;
@@ -60,6 +61,8 @@ interface DbReview {
 
 const CourseDetail = () => {
   const { slug } = useParams();
+  const [searchParams] = useSearchParams();
+  const fromFeatured = searchParams.get("ref") === "featured";
   const { user } = useAuth();
   const { toast } = useToast();
   const { trackEvent } = usePixel();
@@ -411,6 +414,14 @@ const CourseDetail = () => {
           <div className="lg:col-span-1">
             <ScrollReveal direction="right" delay={150}>
             <div id="order-form" className="sticky top-20 scroll-mt-20 md:scroll-mt-28 rounded-xl glass-card p-6 glow-hover">
+              <SelectedItemSummary
+                title={course.title}
+                id={course.id}
+                type="course"
+                imageUrl={(course as any).image_url}
+                price={course.price}
+                fromFeatured={fromFeatured}
+              />
               <div className="flex items-baseline gap-2">
                 {course.price === 0 ? (
                   <span className="text-3xl font-bold text-success">ফ্রি</span>

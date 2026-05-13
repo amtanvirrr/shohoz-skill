@@ -1,4 +1,4 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useSearchParams } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { usePixel } from "@/components/MetaPixelProvider";
 import OrderSuccessDialog from "@/components/OrderSuccessDialog";
 import PaymentSelector from "@/components/PaymentSelector";
+import SelectedItemSummary from "@/components/checkout/SelectedItemSummary";
 import { z } from "zod";
 import { cn } from "@/lib/utils";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
@@ -74,6 +75,8 @@ interface ShippingZone {
 
 const BookDetail = () => {
   const { slug } = useParams();
+  const [searchParams] = useSearchParams();
+  const fromFeatured = searchParams.get("ref") === "featured";
   const { user } = useAuth();
   const { toast } = useToast();
   const { trackEvent } = usePixel();
@@ -346,6 +349,14 @@ const BookDetail = () => {
               </div>
             ) : book.price === 0 ? (
               <div id="order-form" className="mt-8 scroll-mt-20 md:scroll-mt-28 rounded-xl glass-card p-6">
+                <SelectedItemSummary
+                  title={book.title}
+                  id={book.id}
+                  type={isEbook ? "ebook" : "book"}
+                  imageUrl={(book as any).cover_image_url}
+                  price={book.price}
+                  fromFeatured={fromFeatured}
+                />
                 <h3 className="flex items-center gap-2 font-display text-lg font-semibold text-foreground">
                   <ShoppingBag className="h-5 w-5 text-primary" /> ফ্রি বই
                 </h3>
@@ -392,6 +403,14 @@ const BookDetail = () => {
               </div>
             ) : (
               <div id="order-form" className="mt-8 scroll-mt-20 md:scroll-mt-28 rounded-xl glass-card p-6 glow-hover">
+                <SelectedItemSummary
+                  title={book.title}
+                  id={book.id}
+                  type={isEbook ? "ebook" : "book"}
+                  imageUrl={(book as any).cover_image_url}
+                  price={book.price}
+                  fromFeatured={fromFeatured}
+                />
                 <h3 className="flex items-center gap-2 font-display text-lg font-semibold text-foreground">
                   <ShoppingBag className="h-5 w-5 text-primary" /> {isPhysical ? "এখনই অর্ডার করুন" : "এখনই কিনুন"}
                 </h3>
