@@ -62,7 +62,8 @@ const featuredCache: {
   books: DbBook[] | null;
   coursesKey: string;
   booksKey: string;
-} = { courses: null, books: null, coursesKey: "", booksKey: "" };
+  reviews: (DbReview & { course_title?: string })[] | null;
+} = { courses: null, books: null, coursesKey: "", booksKey: "", reviews: null };
 
 const Index = () => {
   const { user } = useAuth();
@@ -76,7 +77,8 @@ const Index = () => {
   // while the background refresh runs on subsequent visits.
   const [coursesLoading, setCoursesLoading] = useState(() => featuredCache.courses === null);
   const [booksLoading, setBooksLoading] = useState(() => featuredCache.books === null);
-  const [dbReviews, setDbReviews] = useState<(DbReview & { course_title?: string })[]>([]);
+  const [dbReviews, setDbReviews] = useState<(DbReview & { course_title?: string })[]>(() => featuredCache.reviews ?? []);
+  const [reviewsLoading, setReviewsLoading] = useState(() => featuredCache.reviews === null);
   const [bookOrderMap, setBookOrderMap] = useState<Record<string, OrderInfo>>({});
   const [courseOrderMap, setCourseOrderMap] = useState<Record<string, string>>({});
 
@@ -144,7 +146,9 @@ const Index = () => {
         id: r.id, reviewer_name: r.reviewer_name, rating: r.rating, comment: r.comment,
         course_id: r.course_id, course_title: r.courses?.title || "",
       }));
+      featuredCache.reviews = mapped;
       setDbReviews(mapped);
+      setReviewsLoading(false);
     });
   }, [settings.featured_course_ids, settings.featured_book_ids]);
 
