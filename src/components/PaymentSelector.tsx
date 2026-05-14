@@ -149,6 +149,9 @@ export const PaymentSelector = ({
   // Mandatory compliance: customer must explicitly agree to terms before
   // any order can be placed (SSL / MFS / COD).
   const [agreed, setAgreed] = useState(false);
+  // COD confirmation dialog visibility — gates the actual order insert behind
+  // an explicit "yes, place this order" step so users get a clear summary.
+  const [codConfirmOpen, setCodConfirmOpen] = useState(false);
 
   // On mount, look for a stored pending SSL session for this product.
   useEffect(() => {
