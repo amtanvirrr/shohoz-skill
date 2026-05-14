@@ -6,7 +6,8 @@ import { CheckCircle, Clock, Package, Truck, BookOpen } from "lucide-react";
 import { ScrollReveal } from "@/hooks/useScrollReveal";
 import ProductCardSkeleton from "@/components/ProductCardSkeleton";
 import EmptyState from "@/components/EmptyState";
-import { statusPillClass, bylineClass } from "@/lib/cardStyles";
+import { statusPillClass } from "@/lib/cardStyles";
+import Byline from "@/components/Byline";
 
 interface DbBook {
   id: string;
@@ -154,9 +155,7 @@ const BooksPage = () => {
                       </span>
                     </div>
                     <h3 className="mt-3 font-display text-lg font-semibold text-card-foreground transition-colors group-hover:text-primary">{book.title}</h3>
-                    <p className={bylineClass(book.author)}>
-                      {book.author?.trim() || "লেখক উল্লেখ করা হয়নি"}
-                    </p>
+                    <Byline value={book.author} emptyText="লেখক উল্লেখ করা হয়নি" />
                     <div className="mt-3 flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         {book.price === 0 ? (
