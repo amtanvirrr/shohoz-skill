@@ -516,6 +516,19 @@ const Index = () => {
                 <FeaturedCardSkeleton key={i} aspect="portrait" />
               ))}
             </MobileCarousel>
+          ) : booksError ? (
+            <div className="mt-8">
+              <EmptyState
+                icon={AlertTriangle}
+                title="লোড করা যায়নি"
+                description={booksError}
+                action={
+                  <Button variant="outline" size="sm" onClick={retryFeatured}>
+                    <RefreshCw className="mr-1 h-4 w-4" /> আবার চেষ্টা করুন
+                  </Button>
+                }
+              />
+            </div>
           ) : dbBooks.length > 0 ? (
             <MobileCarousel count={dbBooks.length} label="ফিচার্ড বই" desktopGridClass="sm:grid-cols-2 lg:grid-cols-3">
               {dbBooks.map((book, idx) => (
