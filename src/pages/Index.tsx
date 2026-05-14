@@ -365,7 +365,7 @@ const Index = () => {
                 <ScrollReveal key={course.id} delay={idx * 100} className="snap-start shrink-0 w-[82%] sm:w-auto sm:shrink">
                   <Link to={`/course/${(course as any).slug || course.id}?ref=featured#order-form`} className="group relative block h-full overflow-hidden rounded-xl glass-card shimmer">
                     {renderCourseBadge(course.id)}
-                    <FeaturedImage src={course.image_url} alt={course.title} aspect="video" />
+                    <FeaturedImage src={course.image_url} alt={course.title} aspect="video" priority={idx === 0} />
                     <div className="flex flex-col p-4 sm:p-5">
                       <div className="flex flex-wrap gap-2">
                         <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">{course.category}</span>

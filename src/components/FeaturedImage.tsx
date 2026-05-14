@@ -9,6 +9,8 @@ interface Props {
   /** "video" → 16:9 (courses), "portrait" → 3:4 (books) */
   aspect: "video" | "portrait";
   className?: string;
+  /** Mark as LCP candidate: eager-load with high fetch priority. */
+  priority?: boolean;
 }
 
 /**
@@ -17,7 +19,7 @@ interface Props {
  * lazy loading. Renders a neutral placeholder when src is missing/errors,
  * and fades the image in on load for a smoother visual.
  */
-const FeaturedImage = ({ src, alt, aspect, className }: Props) => {
+const FeaturedImage = ({ src, alt, aspect, className, priority = false }: Props) => {
   const [loaded, setLoaded] = useState(false);
   const [errored, setErrored] = useState(false);
   const wrapRef = useRef<HTMLDivElement | null>(null);
@@ -82,7 +84,9 @@ const FeaturedImage = ({ src, alt, aspect, className }: Props) => {
             alt={alt}
             width={w}
             height={h}
-            loading="lazy"
+            loading={priority ? "eager" : "lazy"}
+            // @ts-expect-error fetchpriority is a valid HTML attribute not yet in React types
+            fetchpriority={priority ? "high" : undefined}
             decoding="async"
             onLoad={() => setLoaded(true)}
             onError={() => setErrored(true)}
