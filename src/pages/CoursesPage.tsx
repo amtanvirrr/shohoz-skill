@@ -6,6 +6,7 @@ import { BookOpen, Clock, CheckCircle, GraduationCap } from "lucide-react";
 import { ScrollReveal } from "@/hooks/useScrollReveal";
 import ProductCardSkeleton from "@/components/ProductCardSkeleton";
 import EmptyState from "@/components/EmptyState";
+import { bylineClass } from "@/lib/cardStyles";
 
 interface DbCourse {
   id: string;
@@ -121,7 +122,9 @@ const CoursesPage = () => {
                         <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-xs font-medium text-primary dark:bg-primary/30 dark:text-primary">🎓 অনলাইন কোর্স</span>
                       </div>
                       <h3 className="mt-3 font-display text-lg font-semibold text-card-foreground line-clamp-2 transition-colors group-hover:text-primary">{course.title}</h3>
-                      <p className="mt-1 text-sm text-muted-foreground">{course.instructor}</p>
+                      <p className={bylineClass(course.instructor)}>
+                        {course.instructor?.trim() || "ইন্সট্রাক্টর শীঘ্রই জানানো হবে"}
+                      </p>
                       <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
                         <span className="flex items-center gap-1"><BookOpen className="h-3.5 w-3.5" /> {course.lesson_count} টি লেসন</span>
                         <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {course.duration}</span>
