@@ -398,7 +398,7 @@ const Index = () => {
                         <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-medium text-primary dark:bg-primary/30 dark:text-primary sm:px-2.5 sm:py-1 sm:text-xs">🎓 অনলাইন কোর্স</span>
                       </div>
                       <h3 className="mt-2 font-display text-sm font-semibold leading-snug text-card-foreground line-clamp-2 min-h-[2.5rem] transition-colors group-hover:text-primary sm:mt-3 sm:min-h-[3.25rem] sm:text-lg">{course.title}</h3>
-                      <p className="mt-1 text-xs text-muted-foreground line-clamp-1 sm:text-sm">{course.instructor}</p>
+                      <p className="mt-1 text-xs leading-5 text-muted-foreground line-clamp-1 min-h-[1.25rem] sm:text-sm sm:leading-6 sm:min-h-[1.5rem]">{course.instructor}</p>
                       {htmlToPreview(course.description) && (
                         <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground/90 line-clamp-2 min-h-[2rem] sm:mt-2 sm:min-h-[2.25rem]">
                           {htmlToPreview(course.description)}
@@ -507,7 +507,7 @@ const Index = () => {
                         </span>
                       </div>
                       <h3 className="mt-2 font-display text-sm font-semibold leading-snug text-card-foreground line-clamp-2 min-h-[2.5rem] transition-colors group-hover:text-primary sm:mt-3 sm:min-h-[3.25rem] sm:text-lg">{book.title}</h3>
-                      <p className="mt-1 text-xs text-muted-foreground line-clamp-1 sm:text-sm">{book.author}</p>
+                      <p className="mt-1 text-xs leading-5 text-muted-foreground line-clamp-1 min-h-[1.25rem] sm:text-sm sm:leading-6 sm:min-h-[1.5rem]">{book.author}</p>
                       {htmlToPreview(book.description) && (
                         <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground/90 line-clamp-2 min-h-[2rem] sm:mt-2 sm:min-h-[2.25rem]">
                           {htmlToPreview(book.description)}
