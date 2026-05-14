@@ -635,31 +635,67 @@ const Index = () => {
                 </div>
                 <h2 className="text-2xl font-bold text-foreground">{settings.homepage_track_title || "আপনার অর্ডার ট্র্যাক করুন"}</h2>
                 <p className="mt-2 text-sm text-muted-foreground">{settings.homepage_track_subtitle || "আপনার অর্ডারের বর্তমান অবস্থা জানুন"}</p>
-                <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                  <Input
-                    className={`glass-input ${trackError ? "border-destructive focus-visible:ring-destructive" : ""}`}
-                    placeholder="অর্ডার আইডি অথবা ফোন নম্বর"
-                    value={trackQuery}
-                    onChange={(e) => {
-                      setTrackQuery(e.target.value);
-                      if (trackError) setTrackError(null);
-                    }}
-                    onKeyDown={(e) => e.key === "Enter" && handleTrack()}
-                    aria-invalid={!!trackError}
-                    aria-describedby={trackError ? "track-error" : undefined}
-                  />
-                  <Button className="shrink-0 glow-hover" onClick={handleTrack}>
-                    <Search className="h-4 w-4 sm:hidden" /> ট্র্যাক করুন
+                <div className="mt-6 space-y-3 text-left">
+                  <div>
+                    <label htmlFor="track-order-id" className="mb-1 block text-xs font-medium text-foreground">
+                      অর্ডার আইডি
+                    </label>
+                    <Input
+                      id="track-order-id"
+                      className={`glass-input ${trackErrors.orderId ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                      placeholder="যেমন: ORD-XXXXXX"
+                      value={trackOrderId}
+                      onChange={(e) => {
+                        setTrackOrderId(e.target.value);
+                        if (trackErrors.orderId || trackErrors.form) setTrackErrors((p) => ({ ...p, orderId: undefined, form: undefined }));
+                      }}
+                      onKeyDown={(e) => e.key === "Enter" && handleTrack()}
+                      aria-invalid={!!trackErrors.orderId}
+                      aria-describedby={trackErrors.orderId ? "track-order-id-error" : undefined}
+                    />
+                    {trackErrors.orderId && (
+                      <p id="track-order-id-error" role="alert" className="mt-1 text-xs font-medium text-destructive">
+                        {trackErrors.orderId}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label htmlFor="track-phone" className="mb-1 block text-xs font-medium text-foreground">
+                      ফোন নম্বর
+                    </label>
+                    <Input
+                      id="track-phone"
+                      type="tel"
+                      inputMode="tel"
+                      className={`glass-input ${trackErrors.phone ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                      placeholder="01XXXXXXXXX"
+                      value={trackPhone}
+                      onChange={(e) => {
+                        setTrackPhone(e.target.value);
+                        if (trackErrors.phone || trackErrors.form) setTrackErrors((p) => ({ ...p, phone: undefined, form: undefined }));
+                      }}
+                      onKeyDown={(e) => e.key === "Enter" && handleTrack()}
+                      aria-invalid={!!trackErrors.phone}
+                      aria-describedby={trackErrors.phone ? "track-phone-error" : undefined}
+                    />
+                    {trackErrors.phone && (
+                      <p id="track-phone-error" role="alert" className="mt-1 text-xs font-medium text-destructive">
+                        {trackErrors.phone}
+                      </p>
+                    )}
+                  </div>
+                  <Button className="w-full glow-hover" onClick={handleTrack}>
+                    <Search className="mr-1 h-4 w-4" /> ট্র্যাক করুন
                   </Button>
-                </div>
-                {trackError && (
-                  <p id="track-error" role="alert" className="mt-2 text-left text-xs font-medium text-destructive">
-                    {trackError}
+                  {trackErrors.form && (
+                    <p role="alert" className="text-xs font-medium text-destructive">
+                      {trackErrors.form}
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    নিরাপত্তার জন্য অর্ডার আইডি ও ফোন নম্বর — দুটোই যাচাই হলে সম্পূর্ণ বিস্তারিত দেখানো হবে।
                   </p>
-                )}
-                <p className="mt-2 text-xs text-muted-foreground">
-                  পরবর্তী পেজে অর্ডার আইডি ও ফোন নম্বর — দুটোই যাচাই হলে সম্পূর্ণ বিস্তারিত দেখানো হবে।
-                </p>
+                </div>
                 {/* Status journey strip */}
                 <div className="mt-6 flex items-center justify-between gap-1 border-t border-border/50 pt-5">
                   {[
