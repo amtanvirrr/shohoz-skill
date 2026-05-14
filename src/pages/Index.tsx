@@ -14,6 +14,7 @@ import HeroBanner from "@/components/HeroBanner";
 import MobileCarousel from "@/components/MobileCarousel";
 import FeaturedCardSkeleton from "@/components/FeaturedCardSkeleton";
 import EmptyState from "@/components/EmptyState";
+import { bylineClass } from "@/lib/cardStyles";
 
 /** Strip HTML tags and decode common entities for a safe text-only preview. */
 const htmlToPreview = (html?: string | null): string => {
@@ -32,15 +33,6 @@ const htmlToPreview = (html?: string | null): string => {
     .trim();
 };
 
-/**
- * Shared responsive className for instructor/author meta line on featured cards.
- * Keeps spacing + line-height consistent across mobile/tablet/desktop and toggles
- * a muted italic style when the value is empty (placeholder).
- */
-const bylineClass = (value?: string | null): string =>
-  `mt-1 text-xs leading-5 line-clamp-2 break-words min-h-[2.5rem] sm:mt-1.5 sm:text-sm sm:leading-[1.375rem] sm:min-h-[2.75rem] md:mt-2 md:leading-6 md:line-clamp-1 md:min-h-[1.5rem] ${
-    value?.trim() ? "text-muted-foreground" : "text-muted-foreground/60 italic"
-  }`;
 
 interface DbBook {
   id: string;
