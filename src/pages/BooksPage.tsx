@@ -6,6 +6,7 @@ import { CheckCircle, Clock, Package, Truck, BookOpen } from "lucide-react";
 import { ScrollReveal } from "@/hooks/useScrollReveal";
 import ProductCardSkeleton from "@/components/ProductCardSkeleton";
 import EmptyState from "@/components/EmptyState";
+import { statusPillClass } from "@/lib/cardStyles";
 
 interface DbBook {
   id: string;
@@ -86,10 +87,10 @@ const BooksPage = () => {
             <span>{info.total} বার কেনা হয়েছে</span>
           </div>
           <div className="mt-1 flex flex-wrap gap-1.5">
-            {info.delivered > 0 && <span className="inline-flex items-center gap-0.5 rounded-full bg-success px-2 py-0.5 text-[10px] font-medium text-success dark:bg-success/30 dark:text-success"><CheckCircle className="h-2.5 w-2.5" /> {info.delivered} ডেলিভারি</span>}
-            {info.shipped > 0 && <span className="inline-flex items-center gap-0.5 rounded-full bg-primary px-2 py-0.5 text-[10px] font-medium text-primary dark:bg-primary/30 dark:text-primary"><Truck className="h-2.5 w-2.5" /> {info.shipped} শিপড</span>}
-            {info.confirmed > 0 && <span className="inline-flex items-center gap-0.5 rounded-full bg-success px-2 py-0.5 text-[10px] font-medium text-success dark:bg-success/30 dark:text-success"><CheckCircle className="h-2.5 w-2.5" /> {info.confirmed} কনফার্মড</span>}
-            {info.pending > 0 && <span className="inline-flex items-center gap-0.5 rounded-full bg-warning px-2 py-0.5 text-[10px] font-medium text-warning dark:bg-warning/30 dark:text-warning"><Clock className="h-2.5 w-2.5" /> {info.pending} পেন্ডিং</span>}
+            {info.delivered > 0 && <span className={statusPillClass("success")}><CheckCircle className="h-2.5 w-2.5" /> {info.delivered} ডেলিভারি</span>}
+            {info.shipped > 0 && <span className={statusPillClass("primary")}><Truck className="h-2.5 w-2.5" /> {info.shipped} শিপড</span>}
+            {info.confirmed > 0 && <span className={statusPillClass("success")}><CheckCircle className="h-2.5 w-2.5" /> {info.confirmed} কনফার্মড</span>}
+            {info.pending > 0 && <span className={statusPillClass("warning")}><Clock className="h-2.5 w-2.5" /> {info.pending} পেন্ডিং</span>}
           </div>
         </div>
       </div>
