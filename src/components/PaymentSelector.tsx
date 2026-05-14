@@ -923,6 +923,62 @@ export const PaymentSelector = ({
           <>নিশ্চিত করুন এবং অর্ডার দিন — ৳{price}</>
         )}
       </Button>
+
+      {/* COD confirmation — gives users a clear summary + delivery estimate
+          before the order actually gets inserted. */}
+      <AlertDialog
+        open={codConfirmOpen}
+        onOpenChange={(o) => {
+          if (submitting) return; // don't allow dismiss mid-submit
+          setCodConfirmOpen(o);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Truck className="h-5 w-5 text-primary" />
+              ক্যাশ অন ডেলিভারিতে অর্ডার নিশ্চিত করুন
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 text-sm text-muted-foreground">
+                <p>
+                  পণ্য হাতে পেয়ে ডেলিভারিম্যানকে ৳{price} পরিশোধ করুন। অগ্রিম পেমেন্ট প্রয়োজন নেই।
+                </p>
+                <div className="rounded-md border border-border bg-muted/30 p-3 space-y-1 text-foreground">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">সর্বমোট</span>
+                    <span className="font-semibold">৳{price}</span>
+                  </div>
+                  {codDeliveryText && (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">আনুমানিক ডেলিভারি</span>
+                      <span className="font-medium">{codDeliveryText}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={submitting}>ফিরে যান</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={submitting}
+              onClick={(e) => {
+                e.preventDefault();
+                runCodSubmit();
+              }}
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> অর্ডার দেওয়া হচ্ছে...
+                </>
+              ) : (
+                <>হ্যাঁ, অর্ডার করুন</>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
