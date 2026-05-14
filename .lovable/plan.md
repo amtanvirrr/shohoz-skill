@@ -1,35 +1,26 @@
-# Floating Menu Fixes + Mobile Header Polish + Sheet UI Enhancement
+## পরিবর্তন
 
-## 1. FAB clickable while open + toggle close — `src/components/layout/FloatingMenuFab.tsx`
+মোবাইলে Featured Course এবং Featured বই section এর কার্ডগুলো বর্তমানে `w-[82%]` width ব্যবহার করছে, যার ফলে স্ক্রিনে একটি কার্ড পুরোপুরি দেখা যায় এবং পরবর্তী কার্ডের সামান্য অংশ পিক করে। আপনি চান প্রায় দুইটি কার্ড একসাথে দেখা যাক এবং তৃতীয় কার্ডের একটি ছোট peek থাকুক — যাতে user বুঝতে পারে আরও কন্টেন্ট আছে এবং swipe করতে উৎসাহিত হয়।
 
-**Cause:** Radix `Dialog` (Sheet)-এর modal mode বাইরের সব element-এর pointer-events disable করে দেয়, ফলে sheet open থাকলে FAB icon click কাজ করে না।
+## পদ্ধতি
 
-**Fix:**
-- `<Sheet modal={false} ...>` — outside interactions allow হবে।
-- যেহেতু modal=false মানে overlay নিজে close করবে না, একটা custom dim layer add করব (`fixed inset-0 z-40 bg-black/50 backdrop-blur-sm`) যা open হলে দেখাবে এবং click করলে close হবে। FAB রাখব `z-[70]`, sheet content `z-50`, custom overlay `z-40` — fully clickable।
-- FAB-এর existing pointer-up toggle (`setOpen(o => !o)`) আগের মতোই — open অবস্থায় tap করলে close হবে।
-- Sheet open থাকা অবস্থায়ও drag allow থাকবে (যেহেতু modal=false)।
+কার্ডের mobile width `w-[82%]` থেকে কমিয়ে **`w-[44%]`** করা হবে। এই হিসাব:
 
-## 2. Mobile header — `src/components/layout/Header.tsx`
+- Container: `px-4` (16px padding) + কার্ডের মাঝে `gap-4` (16px gap)
+- 44% width-এ দুইটি পূর্ণ কার্ড আরামসে আঁটে এবং তৃতীয় কার্ডের ~10–12% peek দেখা যায়
+- ছোট ফোন (320–360px) এও কার্ডের content (ছবি, title, price, button) ভালোভাবে readable থাকে
 
-- **Logo-র পাশে site name mobile-এও দেখাবে:** `<span className="hidden sm:inline">` থেকে `hidden sm:inline` সরিয়ে সবসময় visible (smaller font on mobile e.g. `text-base sm:text-xl`, truncate)।
-- **Logged-out mobile login button:** বর্তমানে শুধু `UserIcon` দেখায়। সাথে "লগইন" text যোগ করব (`<UserIcon /> লগইন`)। `sm:hidden` Button এ icon + text।
+`sm:` breakpoint থেকে existing grid layout (২–৩ column) অপরিবর্তিত থাকবে — শুধু মোবাইলে পরিবর্তন।
 
-## 3. Slide-in menu UI enhancement — `src/components/layout/FloatingMenuFab.tsx` SheetContent
+## যে files পরিবর্তন হবে
 
-Redesign with:
-- **Header block:** Logged-in হলে avatar (initials/photo) + name + email এর mini profile card (gradient background `from-primary/10 to-accent/10`, rounded-2xl, border)। Logged-out হলে welcome message + prominent "লগইন / রেজিস্টার" CTA pair।
-- **Quick navigation grid (2-col):** হোম, কোর্স, বই, কুইজ — colored icon tiles (each its own subtle tint), active highlight সহ।
-- **Section "আরও":** ব্লগ, আমাদের সম্পর্কে, যোগাযোগ — list rows with icon tile, label, chevron।
-- **Section "অ্যাকাউন্ট":** ড্যাশবোর্ড, অ্যাডমিন প্যানেল (admin), লগআউট — same row style।
-- **Footer row:** Theme toggle as a segmented switch (Sun/Moon icons with active pill), site version/branding line।
-- **Visual polish:**
-  - SheetContent: `glass-card` style, rounded inner edge (left side: `rounded-r-3xl`, right side: `rounded-l-3xl`), subtle gradient border, `p-0` then internal padded sections, scrollable body।
-  - Section headers: tiny uppercase Bengali label in muted color।
-  - Smooth `animate-in slide-in-from-{side}` already provided by Radix; add per-item stagger via CSS delays (optional)।
-  - Reduced-motion respected।
+- `src/pages/Index.tsx` — Featured Course map (line ~365) এবং Featured Book map (line ~463) এর `ScrollReveal` wrapper-এ `w-[82%]` → `w-[44%]`
 
-## Out of Scope
-- Bottom nav, routes, auth flow — অপরিবর্তিত।
-- Desktop header layout — অপরিবর্তিত।
-- কোনো নতুন dependency নেই।
+## যা পরিবর্তন হবে না
+
+- কার্ডের ভেতরের design, content, spacing
+- Desktop/tablet grid layout
+- Quiz card বা অন্য section
+- Carousel logic, snap behavior, pagination dots
+
+বাস্তবায়ন approve করলে এগিয়ে যাব।
