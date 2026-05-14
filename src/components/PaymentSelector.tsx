@@ -8,6 +8,16 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { mapPaymentError, type MappedPaymentError } from "@/lib/paymentErrors";
 import CheckoutConsent from "@/components/CheckoutConsent";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export interface MfsMethod {
   id: string;
@@ -39,6 +49,8 @@ interface PaymentSelectorProps {
   showMfs?: boolean;
   /** Called when user confirms COD. Parent performs the order insert. */
   onCodSubmit?: () => Promise<void> | void;
+  /** Estimated delivery copy for the COD confirmation dialog (e.g. "৩-৫ দিন"). */
+  codDeliveryText?: string;
   /** Optional pre-flight validation (e.g. check address / shipping zone). Return false to abort. */
   validateBeforeSubmit?: () => boolean;
   submitting?: boolean;
@@ -99,6 +111,7 @@ export const PaymentSelector = ({
   showCod = false,
   showMfs = true,
   onCodSubmit,
+  codDeliveryText,
   validateBeforeSubmit,
   submitting = false,
   compact = false,
@@ -136,6 +149,9 @@ export const PaymentSelector = ({
   // Mandatory compliance: customer must explicitly agree to terms before
   // any order can be placed (SSL / MFS / COD).
   const [agreed, setAgreed] = useState(false);
+  // COD confirmation dialog visibility — gates the actual order insert behind
+  // an explicit "yes, place this order" step so users get a clear summary.
+  const [codConfirmOpen, setCodConfirmOpen] = useState(false);
 
   // On mount, look for a stored pending SSL session for this product.
   useEffect(() => {
@@ -377,6 +393,28 @@ export const PaymentSelector = ({
 
   if (price <= 0) return null;
 
+  const runCodSubmit = async () => {
+    if (!onCodSubmit || busyRef.current) return;
+    busyRef.current = true;
+    logEvent("cod_submit_start", { method: "cod" });
+    lastAttemptRef.current = { method: "cod", transactionId: "" };
+    try {
+      await onCodSubmit();
+      logEvent("cod_submit_success", { method: "cod" });
+      setCodConfirmOpen(false);
+    } catch (e) {
+      const msg = (e as Error).message || "অর্ডার সাবমিট করতে সমস্যা হয়েছে";
+      const info = mapPaymentError(msg, "cod");
+      setLastError(msg);
+      setErrorInfo(info);
+      toast({ title: info.title, description: info.message, variant: "destructive" });
+      logEvent("cod_submit_error", { method: "cod", message: msg, metadata: { category: info.category } });
+      setCodConfirmOpen(false);
+    } finally {
+      busyRef.current = false;
+    }
+  };
+
   if (methods.length === 0 && !sslEnabled && !showCod) {
     return (
       <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-center">
@@ -422,22 +460,10 @@ export const PaymentSelector = ({
         toast({ title: "ক্যাশ অন ডেলিভারি কনফিগার করা নেই", variant: "destructive" });
         return;
       }
-      busyRef.current = true;
-      logEvent("cod_submit_start", { method: "cod" });
-      lastAttemptRef.current = { method: "cod", transactionId: "" };
-      try {
-        await onCodSubmit();
-        logEvent("cod_submit_success", { method: "cod" });
-      } catch (e) {
-        const msg = (e as Error).message || "অর্ডার সাবমিট করতে সমস্যা হয়েছে";
-        const info = mapPaymentError(msg, "cod");
-        setLastError(msg);
-        setErrorInfo(info);
-        toast({ title: info.title, description: info.message, variant: "destructive" });
-        logEvent("cod_submit_error", { method: "cod", message: msg, metadata: { category: info.category } });
-      } finally {
-        busyRef.current = false;
-      }
+      // Defer the actual submit — show a confirmation dialog with a
+      // delivery estimate first so the user can review before placing.
+      logEvent("cod_confirm_open", { method: "cod" });
+      setCodConfirmOpen(true);
       return;
     }
 
@@ -897,6 +923,62 @@ export const PaymentSelector = ({
           <>নিশ্চিত করুন এবং অর্ডার দিন — ৳{price}</>
         )}
       </Button>
+
+      {/* COD confirmation — gives users a clear summary + delivery estimate
+          before the order actually gets inserted. */}
+      <AlertDialog
+        open={codConfirmOpen}
+        onOpenChange={(o) => {
+          if (submitting) return; // don't allow dismiss mid-submit
+          setCodConfirmOpen(o);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Truck className="h-5 w-5 text-primary" />
+              ক্যাশ অন ডেলিভারিতে অর্ডার নিশ্চিত করুন
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 text-sm text-muted-foreground">
+                <p>
+                  পণ্য হাতে পেয়ে ডেলিভারিম্যানকে ৳{price} পরিশোধ করুন। অগ্রিম পেমেন্ট প্রয়োজন নেই।
+                </p>
+                <div className="rounded-md border border-border bg-muted/30 p-3 space-y-1 text-foreground">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">সর্বমোট</span>
+                    <span className="font-semibold">৳{price}</span>
+                  </div>
+                  {codDeliveryText && (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">আনুমানিক ডেলিভারি</span>
+                      <span className="font-medium">{codDeliveryText}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={submitting}>ফিরে যান</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={submitting}
+              onClick={(e) => {
+                e.preventDefault();
+                runCodSubmit();
+              }}
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> অর্ডার দেওয়া হচ্ছে...
+                </>
+              ) : (
+                <>হ্যাঁ, অর্ডার করুন</>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
