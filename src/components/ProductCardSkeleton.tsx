@@ -1,3 +1,6 @@
+import { cn } from "@/lib/utils";
+import { BYLINE_LAYOUT_CLASS } from "@/lib/cardStyles";
+
 interface Props {
   aspect?: "video" | "portrait";
   count?: number;
@@ -19,7 +22,7 @@ const ProductCardSkeleton = ({ aspect = "video", count = 6 }: Props) => {
               <div className="skeleton-shimmer h-5 w-24 rounded-full" />
             </div>
             <div className="skeleton-shimmer h-5 w-4/5 rounded" />
-            <div className="skeleton-shimmer h-4 w-1/2 rounded min-h-[2.5rem] sm:min-h-[2.75rem] md:min-h-[1.5rem]" />
+            <div className={cn("skeleton-shimmer w-1/2 rounded", BYLINE_LAYOUT_CLASS)} />
             <div className="flex items-center justify-between pt-2">
               <div className="skeleton-shimmer h-6 w-20 rounded" />
               <div className="skeleton-shimmer h-4 w-16 rounded" />
