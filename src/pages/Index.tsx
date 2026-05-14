@@ -362,8 +362,8 @@ const Index = () => {
           ) : dbCourses.length > 0 ? (
             <MobileCarousel count={dbCourses.length} label="ফিচার্ড কোর্স" desktopGridClass="sm:grid-cols-2 lg:grid-cols-3">
               {dbCourses.map((course, idx) => (
-                <ScrollReveal key={course.id} delay={idx * 100} className="snap-start shrink-0 w-[62%] sm:w-auto sm:shrink">
-                  <Link to={`/course/${(course as any).slug || course.id}?ref=featured#order-form`} className="group relative block h-full overflow-hidden rounded-2xl glass-card shimmer ring-1 ring-border/40 transition-all duration-300 hover:-translate-y-1 hover:ring-primary/40 hover:shadow-xl hover:shadow-primary/10">
+                <ScrollReveal key={course.id} delay={idx * 100} className="snap-start shrink-0 w-[62%] sm:w-auto sm:shrink h-full">
+                  <Link to={`/course/${(course as any).slug || course.id}?ref=featured#order-form`} className="group relative flex h-full flex-col overflow-hidden rounded-2xl glass-card shimmer ring-1 ring-border/40 transition-all duration-300 hover:-translate-y-1 hover:ring-primary/40 hover:shadow-xl hover:shadow-primary/10">
                     {renderCourseBadge(course.id)}
                     <div className="relative">
                       <FeaturedImage src={course.image_url} alt={course.title} aspect="video" priority={idx === 0} />
@@ -373,7 +373,7 @@ const Index = () => {
                         </span>
                       )}
                     </div>
-                    <div className="flex flex-col p-3 sm:p-5">
+                    <div className="flex flex-1 flex-col p-3 sm:p-5">
                       <div className="flex flex-wrap gap-1.5 sm:gap-2">
                         <span className="inline-block rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary sm:px-3 sm:py-1 sm:text-xs">{course.category}</span>
                         <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-medium text-primary dark:bg-primary/30 dark:text-primary sm:px-2.5 sm:py-1 sm:text-xs">🎓 অনলাইন কোর্স</span>
@@ -384,7 +384,7 @@ const Index = () => {
                         <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {course.duration}</span>
                       </div>
                       <div className="my-3 h-px bg-gradient-to-r from-transparent via-border to-transparent sm:my-4" />
-                      <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="mt-auto flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-baseline gap-2">
                           {course.price === 0 ? (
                             <>
@@ -460,8 +460,8 @@ const Index = () => {
           ) : dbBooks.length > 0 ? (
             <MobileCarousel count={dbBooks.length} label="ফিচার্ড বই" desktopGridClass="sm:grid-cols-2 lg:grid-cols-3">
               {dbBooks.map((book, idx) => (
-                <ScrollReveal key={book.id} delay={idx * 100} className="snap-start shrink-0 w-[62%] sm:w-auto sm:shrink">
-                  <Link to={`/book/${(book as any).slug || book.id}?ref=featured#order-form`} className="group relative block h-full overflow-hidden rounded-2xl glass-card shimmer ring-1 ring-border/40 transition-all duration-300 hover:-translate-y-1 hover:ring-accent/40 hover:shadow-xl hover:shadow-accent/10">
+                <ScrollReveal key={book.id} delay={idx * 100} className="snap-start shrink-0 w-[62%] sm:w-auto sm:shrink h-full">
+                  <Link to={`/book/${(book as any).slug || book.id}?ref=featured#order-form`} className="group relative flex h-full flex-col overflow-hidden rounded-2xl glass-card shimmer ring-1 ring-border/40 transition-all duration-300 hover:-translate-y-1 hover:ring-accent/40 hover:shadow-xl hover:shadow-accent/10">
                     {renderBookBadge(book)}
                     <div className="relative">
                       <FeaturedImage src={book.image_url} alt={book.title} aspect="portrait" />
@@ -471,7 +471,7 @@ const Index = () => {
                         </span>
                       )}
                     </div>
-                    <div className="flex flex-col p-3 sm:p-5">
+                    <div className="flex flex-1 flex-col p-3 sm:p-5">
                       <div className="flex flex-wrap gap-1.5 sm:gap-2">
                         <span className="inline-block rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-medium text-accent sm:px-3 sm:py-1 sm:text-xs">{book.category}</span>
                         <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium sm:px-2.5 sm:py-1 sm:text-xs ${
@@ -485,7 +485,7 @@ const Index = () => {
                       <h3 className="mt-2 font-display text-sm font-semibold text-card-foreground line-clamp-2 transition-colors group-hover:text-primary sm:mt-3 sm:text-lg">{book.title}</h3>
                       <p className="mt-1 text-xs text-muted-foreground sm:text-sm">{book.author}</p>
                       <div className="my-3 h-px bg-gradient-to-r from-transparent via-border to-transparent sm:my-4" />
-                      <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="mt-auto flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-baseline gap-2">
                           {book.price === 0 ? (
                             <>
