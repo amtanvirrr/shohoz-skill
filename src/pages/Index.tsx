@@ -368,40 +368,40 @@ const Index = () => {
                     <div className="relative">
                       <FeaturedImage src={course.image_url} alt={course.title} aspect="video" priority={idx === 0} />
                       {course.original_price && course.original_price > course.price && course.price > 0 && (
-                        <span className="absolute bottom-3 left-3 z-10 inline-flex items-center gap-1 rounded-full bg-destructive/90 px-2.5 py-1 text-[11px] font-bold text-destructive-foreground shadow-md backdrop-blur-sm">
+                        <span className="absolute bottom-2 left-2 z-10 inline-flex items-center gap-1 rounded-full bg-destructive/90 px-2 py-0.5 text-[10px] font-bold text-destructive-foreground shadow-md backdrop-blur-sm sm:bottom-3 sm:left-3 sm:px-2.5 sm:py-1 sm:text-[11px]">
                           <Flame className="h-3 w-3" /> {Math.round(((course.original_price - course.price) / course.original_price) * 100)}% ছাড়
                         </span>
                       )}
                     </div>
-                    <div className="flex flex-col p-4 sm:p-5">
-                      <div className="flex flex-wrap gap-2">
-                        <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">{course.category}</span>
-                        <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-xs font-medium text-primary dark:bg-primary/30 dark:text-primary">🎓 অনলাইন কোর্স</span>
+                    <div className="flex flex-col p-3 sm:p-5">
+                      <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                        <span className="inline-block rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary sm:px-3 sm:py-1 sm:text-xs">{course.category}</span>
+                        <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-medium text-primary dark:bg-primary/30 dark:text-primary sm:px-2.5 sm:py-1 sm:text-xs">🎓 অনলাইন কোর্স</span>
                       </div>
-                      <h3 className="mt-3 font-display text-lg font-semibold text-card-foreground line-clamp-2 transition-colors group-hover:text-primary">{course.title}</h3>
-                      <p className="mt-1 text-sm text-muted-foreground">{course.instructor}</p>
-                      <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
+                      <h3 className="mt-2 font-display text-sm font-semibold text-card-foreground line-clamp-2 transition-colors group-hover:text-primary sm:mt-3 sm:text-lg">{course.title}</h3>
+                      <p className="mt-1 text-xs text-muted-foreground sm:text-sm">{course.instructor}</p>
+                      <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground sm:mt-3">
                         <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {course.duration}</span>
                       </div>
-                      <div className="my-4 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-                      <div className="flex items-center justify-between gap-2">
+                      <div className="my-3 h-px bg-gradient-to-r from-transparent via-border to-transparent sm:my-4" />
+                      <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-baseline gap-2">
                           {course.price === 0 ? (
                             <>
-                              <span className="text-xl font-extrabold text-success sm:text-lg">ফ্রি</span>
-                              {course.original_price && course.original_price > 0 && <span className="text-sm text-muted-foreground line-through">৳{course.original_price.toLocaleString()}</span>}
+                              <span className="text-base font-extrabold text-success sm:text-lg">ফ্রি</span>
+                              {course.original_price && course.original_price > 0 && <span className="text-xs text-muted-foreground line-through sm:text-sm">৳{course.original_price.toLocaleString()}</span>}
                             </>
                           ) : (
                             <>
-                              <span className="text-xl font-extrabold text-primary sm:text-lg sm:text-foreground">৳{course.price.toLocaleString()}</span>
-                              {course.original_price && <span className="text-sm text-muted-foreground line-through">৳{course.original_price.toLocaleString()}</span>}
+                              <span className="text-base font-extrabold text-primary sm:text-lg sm:text-foreground">৳{course.price.toLocaleString()}</span>
+                              {course.original_price && <span className="text-xs text-muted-foreground line-through sm:text-sm">৳{course.original_price.toLocaleString()}</span>}
                             </>
                           )}
                         </div>
                         {(() => {
                           const cta = getCourseCta(course);
                           return (
-                            <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold shadow-sm transition-transform group-hover:scale-105 ${ctaToneClass(cta.tone)}`}>
+                            <span className={`inline-flex w-full shrink-0 items-center justify-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-sm transition-transform group-hover:scale-105 sm:w-auto sm:justify-start sm:px-3 sm:py-1.5 sm:text-xs ${ctaToneClass(cta.tone)}`}>
                               {cta.text} <ArrowRight className="h-3.5 w-3.5" />
                             </span>
                           );
@@ -466,15 +466,15 @@ const Index = () => {
                     <div className="relative">
                       <FeaturedImage src={book.image_url} alt={book.title} aspect="portrait" />
                       {book.original_price && book.original_price > book.price && book.price > 0 && (
-                        <span className="absolute bottom-3 left-3 z-10 inline-flex items-center gap-1 rounded-full bg-destructive/90 px-2.5 py-1 text-[11px] font-bold text-destructive-foreground shadow-md backdrop-blur-sm">
+                        <span className="absolute bottom-2 left-2 z-10 inline-flex items-center gap-1 rounded-full bg-destructive/90 px-2 py-0.5 text-[10px] font-bold text-destructive-foreground shadow-md backdrop-blur-sm sm:bottom-3 sm:left-3 sm:px-2.5 sm:py-1 sm:text-[11px]">
                           <Flame className="h-3 w-3" /> {Math.round(((book.original_price - book.price) / book.original_price) * 100)}% ছাড়
                         </span>
                       )}
                     </div>
-                    <div className="flex flex-col p-4 sm:p-5">
-                      <div className="flex flex-wrap gap-2">
-                        <span className="inline-block rounded-full bg-accent/15 px-3 py-1 text-xs font-medium text-accent">{book.category}</span>
-                        <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
+                    <div className="flex flex-col p-3 sm:p-5">
+                      <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                        <span className="inline-block rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-medium text-accent sm:px-3 sm:py-1 sm:text-xs">{book.category}</span>
+                        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium sm:px-2.5 sm:py-1 sm:text-xs ${
                           book.book_type === "ebook"
                             ? "bg-primary/10 text-primary"
                             : "bg-accent/15 text-accent"
@@ -482,27 +482,27 @@ const Index = () => {
                           {book.book_type === "ebook" ? "📱 ইবুক" : "📦 ফিজিক্যাল বই"}
                         </span>
                       </div>
-                      <h3 className="mt-3 font-display text-lg font-semibold text-card-foreground line-clamp-2 transition-colors group-hover:text-primary">{book.title}</h3>
-                      <p className="mt-1 text-sm text-muted-foreground">{book.author}</p>
-                      <div className="my-4 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-                      <div className="flex items-center justify-between gap-2">
+                      <h3 className="mt-2 font-display text-sm font-semibold text-card-foreground line-clamp-2 transition-colors group-hover:text-primary sm:mt-3 sm:text-lg">{book.title}</h3>
+                      <p className="mt-1 text-xs text-muted-foreground sm:text-sm">{book.author}</p>
+                      <div className="my-3 h-px bg-gradient-to-r from-transparent via-border to-transparent sm:my-4" />
+                      <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-baseline gap-2">
                           {book.price === 0 ? (
                             <>
-                              <span className="text-xl font-extrabold text-success sm:text-lg">ফ্রি</span>
-                              {book.original_price && book.original_price > 0 && <span className="text-sm text-muted-foreground line-through">৳{book.original_price}</span>}
+                              <span className="text-base font-extrabold text-success sm:text-lg">ফ্রি</span>
+                              {book.original_price && book.original_price > 0 && <span className="text-xs text-muted-foreground line-through sm:text-sm">৳{book.original_price}</span>}
                             </>
                           ) : (
                             <>
-                              <span className="text-xl font-extrabold text-primary sm:text-lg sm:text-foreground">৳{book.price}</span>
-                              {book.original_price && <span className="text-sm text-muted-foreground line-through">৳{book.original_price}</span>}
+                              <span className="text-base font-extrabold text-primary sm:text-lg sm:text-foreground">৳{book.price}</span>
+                              {book.original_price && <span className="text-xs text-muted-foreground line-through sm:text-sm">৳{book.original_price}</span>}
                             </>
                           )}
                         </div>
                         {(() => {
                           const cta = getBookCta(book);
                           return (
-                            <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold shadow-sm transition-transform group-hover:scale-105 ${ctaToneClass(cta.tone)}`}>
+                            <span className={`inline-flex w-full shrink-0 items-center justify-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-sm transition-transform group-hover:scale-105 sm:w-auto sm:justify-start sm:px-3 sm:py-1.5 sm:text-xs ${ctaToneClass(cta.tone)}`}>
                               {cta.text} <ArrowRight className="h-3.5 w-3.5" />
                             </span>
                           );
