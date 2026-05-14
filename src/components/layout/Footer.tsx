@@ -48,9 +48,6 @@ const Footer = () => {
             <div className="mb-4 inline-flex items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary/70 p-3 shadow-lg shadow-primary/30">
               <Mail className="h-6 w-6 text-primary-foreground" />
             </div>
-            <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-accent/15 px-3 py-1 text-xs font-medium text-accent">
-              <Sparkles className="h-3.5 w-3.5" /> ফ্রি সাবস্ক্রিপশন
-            </div>
             <h3 className="font-display text-2xl font-bold text-foreground md:text-3xl">
               {settings.newsletter_title || "নিউজলেটার"}
             </h3>
@@ -79,7 +76,7 @@ const Footer = () => {
             )}
             <p className="mt-4 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
               <ShieldCheck className="h-3.5 w-3.5 text-success" />
-              আমরা স্প্যাম পাঠাই না। যেকোনো সময় আনসাবস্ক্রাইব করতে পারবেন।
+              আমরা স্প্যাম পাঠাই না।
             </p>
           </div>
         </div>
@@ -179,9 +176,6 @@ const Footer = () => {
 
         <div className="mt-6 flex flex-col items-center justify-between gap-2 border-t border-border pt-6 text-xs text-muted-foreground sm:flex-row">
           <div>{settings.copyright_text || `© ${new Date().getFullYear()} সর্বস্বত্ব সংরক্ষিত।`}</div>
-          <div className="inline-flex items-center gap-1">
-            তৈরি করা হয়েছে <Heart className="h-3 w-3 fill-destructive text-destructive animate-pulse" /> দিয়ে বাংলাদেশে
-          </div>
         </div>
       </div>
     </footer>
