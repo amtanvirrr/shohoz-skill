@@ -502,7 +502,7 @@ const Index = () => {
                         </span>
                       </div>
                       <h3 className="mt-2 font-display text-sm font-semibold leading-snug text-card-foreground line-clamp-2 min-h-[2.5rem] transition-colors group-hover:text-primary sm:mt-3 sm:min-h-[3.25rem] sm:text-lg">{book.title}</h3>
-                      <p className={`mt-1 text-xs leading-5 line-clamp-1 min-h-[1.25rem] sm:text-sm sm:leading-6 sm:min-h-[1.5rem] ${book.author?.trim() ? "text-muted-foreground" : "text-muted-foreground/60 italic"}`}>
+                      <p className={`mt-1 text-xs leading-5 line-clamp-1 min-h-[1.25rem] sm:mt-1.5 sm:text-sm sm:leading-[1.375rem] sm:min-h-[1.375rem] md:mt-2 md:leading-6 md:min-h-[1.5rem] ${book.author?.trim() ? "text-muted-foreground" : "text-muted-foreground/60 italic"}`}>
                         {book.author?.trim() || "লেখক উল্লেখ করা হয়নি"}
                       </p>
                       {htmlToPreview(book.description) && (
