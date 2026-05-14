@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CheckCircle, XCircle, Clock, ArrowLeft, AlertTriangle, History, Trophy, Medal, Lock, Smartphone, Eye, ChevronLeft, ChevronRight, Info, Lightbulb, Loader2 } from "lucide-react";
+import { CheckCircle, XCircle, Clock, ArrowLeft, AlertTriangle, History, Trophy, Medal, Lock, Smartphone, Eye, ChevronLeft, ChevronRight, Info, Lightbulb, Loader2, Brain, Flame, BookOpen } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -892,25 +892,48 @@ const QuizPage = () => {
 
               return (
                 <ScrollReveal key={quiz.id} delay={idx * 80}>
-                  <div className="rounded-xl glass-card shimmer p-6 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="font-display text-lg font-semibold text-foreground">{quiz.title}</h3>
-                      {statusBadge}
-                    </div>
-                    {quiz.description && <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{quiz.description}</p>}
-                    <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {quiz.duration_minutes} মিনিট</span>
-                      <span>{questionCounts[quiz.id] || 0} টি প্রশ্ন</span>
-                      {(sectionCounts[quiz.id] || 0) > 0 && (
-                        <span className="flex items-center gap-1">📖 {sectionCounts[quiz.id]} টি টপিক</span>
-                      )}
+                  <div className="group relative overflow-hidden rounded-2xl glass-card shimmer ring-1 ring-border/40 p-6 transition-all duration-300 hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-1 hover:ring-primary/40">
+                    {/* Top accent stripe */}
+                    <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary via-accent to-primary opacity-70" aria-hidden="true" />
+                    {quiz.original_price && quiz.original_price > quiz.price && quiz.price > 0 && (
+                      <span className="absolute top-3 right-3 z-10 inline-flex items-center gap-1 rounded-full bg-destructive/90 px-2.5 py-1 text-[11px] font-bold text-destructive-foreground shadow-md">
+                        <Flame className="h-3 w-3" /> {Math.round(((quiz.original_price - quiz.price) / quiz.original_price) * 100)}% ছাড়
+                      </span>
+                    )}
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary/15 to-accent/15 text-primary ring-1 ring-primary/20 transition-transform group-hover:scale-110">
+                        <Brain className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className="font-display text-lg font-semibold text-foreground line-clamp-2 transition-colors group-hover:text-primary">{quiz.title}</h3>
+                          {statusBadge}
+                        </div>
+                        {quiz.description && <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{quiz.description}</p>}
+                      </div>
                     </div>
 
-                    {/* Pricing */}
-                    <div className="mt-3">
+                    {/* Stats row */}
+                    <div className="mt-4 grid grid-cols-3 gap-2 rounded-xl bg-muted/40 p-2 text-center">
+                      <div className="flex flex-col items-center gap-0.5 px-1 py-1">
+                        <Clock className="h-3.5 w-3.5 text-primary" />
+                        <span className="text-[11px] font-semibold text-foreground">{quiz.duration_minutes}<span className="ml-0.5 font-normal text-muted-foreground">মিনিট</span></span>
+                      </div>
+                      <div className="flex flex-col items-center gap-0.5 border-x border-border/60 px-1 py-1">
+                        <CheckCircle className="h-3.5 w-3.5 text-accent" />
+                        <span className="text-[11px] font-semibold text-foreground">{questionCounts[quiz.id] || 0}<span className="ml-0.5 font-normal text-muted-foreground">প্রশ্ন</span></span>
+                      </div>
+                      <div className="flex flex-col items-center gap-0.5 px-1 py-1">
+                        <BookOpen className="h-3.5 w-3.5 text-primary" />
+                        <span className="text-[11px] font-semibold text-foreground">{sectionCounts[quiz.id] || 0}<span className="ml-0.5 font-normal text-muted-foreground">টপিক</span></span>
+                      </div>
+                    </div>
+
+                    {/* Pricing & negative marking */}
+                    <div className="mt-4 flex items-center justify-between gap-2">
                       {isPaid ? (
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg font-bold text-primary">৳{quiz.price}</span>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-xl font-extrabold text-foreground">৳{quiz.price}</span>
                           {quiz.original_price && quiz.original_price > quiz.price && (
                             <span className="text-sm text-muted-foreground line-through">৳{quiz.original_price}</span>
                           )}
@@ -918,13 +941,12 @@ const QuizPage = () => {
                       ) : (
                         <span className="inline-block rounded-full bg-success/10 px-3 py-1 text-sm font-semibold text-success">ফ্রি</span>
                       )}
+                      {quiz.negative_marking && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2.5 py-1 text-[11px] font-medium text-destructive">
+                          <AlertTriangle className="h-3 w-3" /> -{quiz.negative_mark_value}
+                        </span>
+                      )}
                     </div>
-
-                    {quiz.negative_marking && (
-                      <p className="mt-2 flex items-center gap-1 text-xs text-destructive">
-                        <AlertTriangle className="h-3.5 w-3.5" /> নেগেটিভ মার্কিং ({quiz.negative_mark_value})
-                      </p>
-                    )}
 
                     {/* Action area */}
                     <div className="mt-4 space-y-2">
