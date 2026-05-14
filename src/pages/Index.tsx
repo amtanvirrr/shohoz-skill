@@ -24,6 +24,7 @@ interface DbBook {
   image_url: string;
   category: string;
   book_type: string;
+  description?: string | null;
 }
 
 interface DbCourse {
@@ -35,6 +36,7 @@ interface DbCourse {
   image_url: string;
   category: string;
   duration: string;
+  description?: string | null;
 }
 
 interface DbReview {
