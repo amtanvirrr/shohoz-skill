@@ -16,7 +16,7 @@ interface BylineProps {
  * min-height across every page and the loading skeleton.
  */
 const Byline = ({ value, emptyText, className }: BylineProps) => (
-  <p className={cn(bylineClass(value), className)}>
+  <p data-testid="card-byline" className={cn(bylineClass(value), className)}>
     {value?.trim() || emptyText}
   </p>
 );
