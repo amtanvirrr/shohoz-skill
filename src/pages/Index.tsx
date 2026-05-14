@@ -90,8 +90,9 @@ const Index = () => {
   const { toast } = useToast();
   const { settings } = useSiteSettings();
   const navigate = useNavigate();
-  const [trackQuery, setTrackQuery] = useState("");
-  const [trackError, setTrackError] = useState<string | null>(null);
+  const [trackOrderId, setTrackOrderId] = useState("");
+  const [trackPhone, setTrackPhone] = useState("");
+  const [trackErrors, setTrackErrors] = useState<{ orderId?: string; phone?: string; form?: string }>({});
   const [dbBooks, setDbBooks] = useState<DbBook[]>(() => featuredCache.books ?? []);
   const [dbCourses, setDbCourses] = useState<DbCourse[]>(() => featuredCache.courses ?? []);
   // Only show skeleton on the very first fetch — keep cached cards visible
@@ -303,39 +304,31 @@ const Index = () => {
     return `0${m[1]}`;
   };
 
-  const validateTrackQuery = (raw: string): { ok: true; field: "order_id" | "phone"; value: string } | { ok: false; message: string } => {
-    const q = raw.trim();
-    if (!q) return { ok: false, message: "অর্ডার আইডি অথবা ফোন নম্বর দিন।" };
-    if (q.length < 4) return { ok: false, message: "ইনপুটটি অনেক ছোট — অন্তত ৪টি অক্ষর দিন।" };
-    if (q.length > 64) return { ok: false, message: "ইনপুটটি অনেক বড় — সঠিক অর্ডার আইডি বা ফোন নম্বর দিন।" };
-
-    const onlyDigits = /^[\d\s+\-()]+$/.test(q);
-    if (onlyDigits) {
-      const phone = normalizeBdPhone(q);
-      if (!phone) {
-        return { ok: false, message: "সঠিক বাংলাদেশী মোবাইল নম্বর দিন (যেমন: 01XXXXXXXXX)।" };
-      }
-      return { ok: true, field: "phone", value: phone };
-    }
-
-    // Treat as Order ID — allow letters, digits, dashes/underscores only
-    if (!/^[A-Za-z0-9_-]+$/.test(q)) {
-      return { ok: false, message: "অর্ডার আইডিতে শুধু অক্ষর, সংখ্যা ও '-' '_' ব্যবহার করুন।" };
-    }
-    return { ok: true, field: "order_id", value: q };
-  };
-
   const handleTrack = () => {
-    const result = validateTrackQuery(trackQuery);
-    if (result.ok === false) {
-      const msg = result.message;
-      setTrackError(msg);
-      toast({ title: "যাচাই ব্যর্থ", description: msg, variant: "destructive" });
+    const id = trackOrderId.trim();
+    const phoneRaw = trackPhone.trim();
+    const errs: { orderId?: string; phone?: string; form?: string } = {};
+
+    if (!id && !phoneRaw) {
+      errs.form = "অর্ডার আইডি ও ফোন নম্বর — দুটোই দিন।";
+    } else {
+      if (!id) errs.orderId = "অর্ডার আইডি দিন।";
+      else if (id.length < 4 || id.length > 64) errs.orderId = "অর্ডার আইডির দৈর্ঘ্য ৪–৬৪ অক্ষর হতে হবে।";
+      else if (!/^[A-Za-z0-9_-]+$/.test(id)) errs.orderId = "শুধু অক্ষর, সংখ্যা ও '-' '_' ব্যবহার করুন।";
+
+      if (!phoneRaw) errs.phone = "ফোন নম্বর দিন।";
+      else if (!normalizeBdPhone(phoneRaw)) errs.phone = "সঠিক বাংলাদেশী মোবাইল নম্বর দিন (01XXXXXXXXX)।";
+    }
+
+    if (errs.orderId || errs.phone || errs.form) {
+      setTrackErrors(errs);
+      toast({ title: "যাচাই ব্যর্থ", description: errs.form || errs.orderId || errs.phone, variant: "destructive" });
       return;
     }
-    setTrackError(null);
+    setTrackErrors({});
     const params = new URLSearchParams();
-    params.set(result.field, result.value);
+    params.set("order_id", id);
+    params.set("phone", normalizeBdPhone(phoneRaw)!);
     navigate(`/track-order?${params.toString()}`);
   };
 
