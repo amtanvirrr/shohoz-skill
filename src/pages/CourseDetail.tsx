@@ -284,18 +284,18 @@ const CourseDetail = () => {
                     return (
                       <AccordionItem key={lesson.id} value={lesson.id} className="rounded-lg border border-border bg-card">
                         <AccordionTrigger className="px-4 py-3 hover:no-underline">
-                          <div className="flex w-full items-center gap-3 text-left">
-                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                          <div className="flex w-full items-start gap-3 text-left min-h-[3.25rem]">
+                            <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
                               {i + 1}
                             </span>
                             {lesson.lesson_type === "video" ? (
-                              <Video className="h-4 w-4 shrink-0 text-primary" />
+                              <Video className="mt-1 h-4 w-4 shrink-0 text-primary" />
                             ) : (
-                              <BookOpen className="h-4 w-4 shrink-0 text-primary" />
+                              <BookOpen className="mt-1 h-4 w-4 shrink-0 text-primary" />
                             )}
-                            <div className="flex-1">
-                              <p className="text-sm font-medium text-card-foreground">{lesson.title}</p>
-                              <div className="mt-0.5 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium leading-snug text-card-foreground line-clamp-2 break-words">{lesson.title}</p>
+                              <div className="mt-1 flex flex-wrap gap-x-2 gap-y-1 text-xs text-muted-foreground">
                                 {lesson.lesson_type === "video" && <span>🎥 ভিডিও</span>}
                                 {lesson.duration && <span>⏱ {lesson.duration}</span>}
                                 {lessonResources.length > 0 && <span>📁 {lessonResources.length} রিসোর্স</span>}
