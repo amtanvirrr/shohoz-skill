@@ -8,6 +8,16 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { mapPaymentError, type MappedPaymentError } from "@/lib/paymentErrors";
 import CheckoutConsent from "@/components/CheckoutConsent";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export interface MfsMethod {
   id: string;
@@ -39,6 +49,8 @@ interface PaymentSelectorProps {
   showMfs?: boolean;
   /** Called when user confirms COD. Parent performs the order insert. */
   onCodSubmit?: () => Promise<void> | void;
+  /** Estimated delivery copy for the COD confirmation dialog (e.g. "৩-৫ দিন"). */
+  codDeliveryText?: string;
   /** Optional pre-flight validation (e.g. check address / shipping zone). Return false to abort. */
   validateBeforeSubmit?: () => boolean;
   submitting?: boolean;
@@ -99,6 +111,7 @@ export const PaymentSelector = ({
   showCod = false,
   showMfs = true,
   onCodSubmit,
+  codDeliveryText,
   validateBeforeSubmit,
   submitting = false,
   compact = false,
