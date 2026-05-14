@@ -461,9 +461,16 @@ const Index = () => {
             <MobileCarousel count={dbBooks.length} label="ফিচার্ড বই" desktopGridClass="sm:grid-cols-2 lg:grid-cols-3">
               {dbBooks.map((book, idx) => (
                 <ScrollReveal key={book.id} delay={idx * 100} className="snap-start shrink-0 w-[82%] sm:w-auto sm:shrink">
-                  <Link to={`/book/${(book as any).slug || book.id}?ref=featured#order-form`} className="group relative block h-full overflow-hidden rounded-xl glass-card shimmer">
+                  <Link to={`/book/${(book as any).slug || book.id}?ref=featured#order-form`} className="group relative block h-full overflow-hidden rounded-2xl glass-card shimmer ring-1 ring-border/40 transition-all duration-300 hover:-translate-y-1 hover:ring-accent/40 hover:shadow-xl hover:shadow-accent/10">
                     {renderBookBadge(book)}
-                    <FeaturedImage src={book.image_url} alt={book.title} aspect="portrait" />
+                    <div className="relative">
+                      <FeaturedImage src={book.image_url} alt={book.title} aspect="portrait" />
+                      {book.original_price && book.original_price > book.price && book.price > 0 && (
+                        <span className="absolute bottom-3 left-3 z-10 inline-flex items-center gap-1 rounded-full bg-destructive/90 px-2.5 py-1 text-[11px] font-bold text-destructive-foreground shadow-md backdrop-blur-sm">
+                          <Flame className="h-3 w-3" /> {Math.round(((book.original_price - book.price) / book.original_price) * 100)}% ছাড়
+                        </span>
+                      )}
+                    </div>
                     <div className="flex flex-col p-4 sm:p-5">
                       <div className="flex flex-wrap gap-2">
                         <span className="inline-block rounded-full bg-accent/15 px-3 py-1 text-xs font-medium text-accent">{book.category}</span>
@@ -475,9 +482,10 @@ const Index = () => {
                           {book.book_type === "ebook" ? "📱 ইবুক" : "📦 ফিজিক্যাল বই"}
                         </span>
                       </div>
-                      <h3 className="mt-3 font-display text-lg font-semibold text-card-foreground transition-colors group-hover:text-primary">{book.title}</h3>
+                      <h3 className="mt-3 font-display text-lg font-semibold text-card-foreground line-clamp-2 transition-colors group-hover:text-primary">{book.title}</h3>
                       <p className="mt-1 text-sm text-muted-foreground">{book.author}</p>
-                      <div className="mt-3 flex items-center justify-between gap-2">
+                      <div className="my-4 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+                      <div className="flex items-center justify-between gap-2">
                         <div className="flex items-baseline gap-2">
                           {book.price === 0 ? (
                             <>
