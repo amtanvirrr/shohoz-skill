@@ -28,7 +28,7 @@ const FeaturedCardSkeleton = ({ aspect = "video", className }: Props) => {
             <div className="h-5 w-24 animate-pulse rounded-full bg-muted/40" />
           </div>
           <div className="h-5 w-4/5 animate-pulse rounded bg-muted/60" />
-          <div className="h-4 w-2/5 animate-pulse rounded bg-muted/40" />
+          <div className="h-4 w-2/5 animate-pulse rounded bg-muted/40 min-h-[1.25rem] sm:min-h-[1.375rem] md:min-h-[1.5rem]" />
           <div className="mt-2 flex items-center justify-between">
             <div className="h-6 w-20 animate-pulse rounded bg-muted/60" />
             <div className="h-7 w-24 animate-pulse rounded-full bg-muted/40" />
