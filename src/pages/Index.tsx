@@ -362,7 +362,7 @@ const Index = () => {
           ) : dbCourses.length > 0 ? (
             <MobileCarousel count={dbCourses.length} label="ফিচার্ড কোর্স" desktopGridClass="sm:grid-cols-2 lg:grid-cols-3">
               {dbCourses.map((course, idx) => (
-                <ScrollReveal key={course.id} delay={idx * 100} className="snap-start shrink-0 w-[44%] sm:w-auto sm:shrink">
+                <ScrollReveal key={course.id} delay={idx * 100} className="snap-start shrink-0 w-[62%] sm:w-auto sm:shrink">
                   <Link to={`/course/${(course as any).slug || course.id}?ref=featured#order-form`} className="group relative block h-full overflow-hidden rounded-2xl glass-card shimmer ring-1 ring-border/40 transition-all duration-300 hover:-translate-y-1 hover:ring-primary/40 hover:shadow-xl hover:shadow-primary/10">
                     {renderCourseBadge(course.id)}
                     <div className="relative">
@@ -460,7 +460,7 @@ const Index = () => {
           ) : dbBooks.length > 0 ? (
             <MobileCarousel count={dbBooks.length} label="ফিচার্ড বই" desktopGridClass="sm:grid-cols-2 lg:grid-cols-3">
               {dbBooks.map((book, idx) => (
-                <ScrollReveal key={book.id} delay={idx * 100} className="snap-start shrink-0 w-[44%] sm:w-auto sm:shrink">
+                <ScrollReveal key={book.id} delay={idx * 100} className="snap-start shrink-0 w-[62%] sm:w-auto sm:shrink">
                   <Link to={`/book/${(book as any).slug || book.id}?ref=featured#order-form`} className="group relative block h-full overflow-hidden rounded-2xl glass-card shimmer ring-1 ring-border/40 transition-all duration-300 hover:-translate-y-1 hover:ring-accent/40 hover:shadow-xl hover:shadow-accent/10">
                     {renderBookBadge(book)}
                     <div className="relative">
