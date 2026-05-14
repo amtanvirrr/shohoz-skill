@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Star, Search, ArrowRight, BookOpen, GraduationCap, Clock, Users, CheckCircle, Package, Truck, Sparkles, Quote, ShieldCheck, Tag, Flame } from "lucide-react";
+import { Star, Search, ArrowRight, BookOpen, GraduationCap, Clock, Users, CheckCircle, Package, Truck, Sparkles, Quote, ShieldCheck, Tag, Flame, AlertTriangle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
@@ -107,12 +107,15 @@ const Index = () => {
   // while the background refresh runs on subsequent visits.
   const [coursesLoading, setCoursesLoading] = useState(() => featuredCache.courses === null);
   const [booksLoading, setBooksLoading] = useState(() => featuredCache.books === null);
+  const [coursesError, setCoursesError] = useState<string | null>(null);
+  const [booksError, setBooksError] = useState<string | null>(null);
   const [dbReviews, setDbReviews] = useState<(DbReview & { course_title?: string })[]>(() => featuredCache.reviews ?? []);
   const [reviewsLoading, setReviewsLoading] = useState(() => featuredCache.reviews === null);
   const [bookOrderMap, setBookOrderMap] = useState<Record<string, OrderInfo>>({});
   const [courseOrderMap, setCourseOrderMap] = useState<Record<string, string>>({});
 
-  // Fetch featured products based on settings
+  // Fetch featured products based on settings (re-run when retry counter bumps)
+  const [retryTick, setRetryTick] = useState(0);
   useEffect(() => {
     const featuredCourseIds = settings.featured_course_ids ? settings.featured_course_ids.split(",").filter(Boolean) : [];
     const featuredBookIds = settings.featured_book_ids ? settings.featured_book_ids.split(",").filter(Boolean) : [];
@@ -133,12 +136,24 @@ const Index = () => {
       featuredCache.courses = data;
       setDbCourses(data);
       setCoursesLoading(false);
+      setCoursesError(null);
     };
     const applyBooks = (data: DbBook[]) => {
       featuredCache.books = data;
       setDbBooks(data);
       setBooksLoading(false);
+      setBooksError(null);
     };
+    const failCourses = () => {
+      setCoursesLoading(false);
+      setCoursesError("ফিচার্ড কোর্স লোড করতে সমস্যা হয়েছে। ইন্টারনেট সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।");
+    };
+    const failBooks = () => {
+      setBooksLoading(false);
+      setBooksError("ফিচার্ড বই লোড করতে সমস্যা হয়েছে। ইন্টারনেট সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।");
+    };
+    setCoursesError(null);
+    setBooksError(null);
 
     // Courses
     if (featuredCourseIds.length > 0) {
@@ -146,13 +161,13 @@ const Index = () => {
         .select("id, title, instructor, price, original_price, image_url, category, duration, slug, description")
         .eq("is_published", true)
         .in("id", featuredCourseIds)
-        .then(({ data }) => applyCourses((data as DbCourse[]) || []));
+        .then(({ data, error }) => (error ? failCourses() : applyCourses((data as DbCourse[]) || [])));
     } else {
       supabase.from("courses")
         .select("id, title, instructor, price, original_price, image_url, category, duration, slug, description")
         .eq("is_published", true)
         .limit(3)
-        .then(({ data }) => applyCourses((data as DbCourse[]) || []));
+        .then(({ data, error }) => (error ? failCourses() : applyCourses((data as DbCourse[]) || [])));
     }
 
     // Books
@@ -161,13 +176,13 @@ const Index = () => {
         .select("id, title, author, price, original_price, image_url, category, book_type, slug, description")
         .eq("is_published", true)
         .in("id", featuredBookIds)
-        .then(({ data }) => applyBooks((data as DbBook[]) || []));
+        .then(({ data, error }) => (error ? failBooks() : applyBooks((data as DbBook[]) || [])));
     } else {
       supabase.from("books")
         .select("id, title, author, price, original_price, image_url, category, book_type, slug, description")
         .eq("is_published", true)
         .limit(3)
-        .then(({ data }) => applyBooks((data as DbBook[]) || []));
+        .then(({ data, error }) => (error ? failBooks() : applyBooks((data as DbBook[]) || [])));
     }
 
     // Reviews (always latest)
@@ -180,7 +195,13 @@ const Index = () => {
       setDbReviews(mapped);
       setReviewsLoading(false);
     });
-  }, [settings.featured_course_ids, settings.featured_book_ids]);
+  }, [settings.featured_course_ids, settings.featured_book_ids, retryTick]);
+
+  const retryFeatured = () => {
+    setCoursesLoading(true);
+    setBooksLoading(true);
+    setRetryTick((n) => n + 1);
+  };
 
   useEffect(() => {
     if (!user) return;
