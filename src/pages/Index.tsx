@@ -134,13 +134,13 @@ const Index = () => {
     // Courses
     if (featuredCourseIds.length > 0) {
       supabase.from("courses")
-        .select("id, title, instructor, price, original_price, image_url, category, duration, slug")
+        .select("id, title, instructor, price, original_price, image_url, category, duration, slug, description")
         .eq("is_published", true)
         .in("id", featuredCourseIds)
         .then(({ data }) => applyCourses((data as DbCourse[]) || []));
     } else {
       supabase.from("courses")
-        .select("id, title, instructor, price, original_price, image_url, category, duration, slug")
+        .select("id, title, instructor, price, original_price, image_url, category, duration, slug, description")
         .eq("is_published", true)
         .limit(3)
         .then(({ data }) => applyCourses((data as DbCourse[]) || []));
@@ -149,13 +149,13 @@ const Index = () => {
     // Books
     if (featuredBookIds.length > 0) {
       supabase.from("books")
-        .select("id, title, author, price, original_price, image_url, category, book_type, slug")
+        .select("id, title, author, price, original_price, image_url, category, book_type, slug, description")
         .eq("is_published", true)
         .in("id", featuredBookIds)
         .then(({ data }) => applyBooks((data as DbBook[]) || []));
     } else {
       supabase.from("books")
-        .select("id, title, author, price, original_price, image_url, category, book_type, slug")
+        .select("id, title, author, price, original_price, image_url, category, book_type, slug, description")
         .eq("is_published", true)
         .limit(3)
         .then(({ data }) => applyBooks((data as DbBook[]) || []));
