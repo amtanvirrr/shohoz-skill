@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
-import paymentMethodsImg from "@/assets/payment-methods.png";
+import paymentMethodsImg from "@/assets/payment-methods.webp";
 
 const Footer = () => {
   const [email, setEmail] = useState("");
