@@ -39,28 +39,39 @@ const MobileCarousel = ({ count, desktopGridClass = "sm:grid-cols-2 lg:grid-cols
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    let rafId = 0;
     const handle = () => {
       if (hint) {
         setHint(false);
         try { localStorage.setItem(HINT_STORAGE_KEY, "1"); } catch {}
       }
-      const kids = Array.from(el.children) as HTMLElement[];
-      const center = el.scrollLeft + el.clientWidth / 2;
-      let nearest = 0;
-      let min = Infinity;
-      kids.forEach((c, i) => {
-        const cc = c.offsetLeft + c.offsetWidth / 2;
-        const d = Math.abs(cc - center);
-        if (d < min) { min = d; nearest = i; }
+      // Defer geometry reads out of the scroll event to avoid forced reflow;
+      // coalesce bursts of scroll events into a single rAF callback.
+      if (rafId) return;
+      rafId = window.requestAnimationFrame(() => {
+        rafId = 0;
+        const kids = Array.from(el.children) as HTMLElement[];
+        const center = el.scrollLeft + el.clientWidth / 2;
+        let nearest = 0;
+        let min = Infinity;
+        kids.forEach((c, i) => {
+          const cc = c.offsetLeft + c.offsetWidth / 2;
+          const d = Math.abs(cc - center);
+          if (d < min) { min = d; nearest = i; }
+        });
+        setActive(nearest);
       });
-      setActive(nearest);
     };
     el.addEventListener("scroll", handle, { passive: true });
     const t = window.setTimeout(() => {
       setHint(false);
       try { localStorage.setItem(HINT_STORAGE_KEY, "1"); } catch {}
     }, 4500);
-    return () => { el.removeEventListener("scroll", handle); clearTimeout(t); };
+    return () => {
+      el.removeEventListener("scroll", handle);
+      clearTimeout(t);
+      if (rafId) cancelAnimationFrame(rafId);
+    };
   }, [hint]);
 
   const goto = (i: number) => {
