@@ -527,6 +527,17 @@ const BookDetail = () => {
                     onCodSubmit={handleCodSubmit}
                     validateBeforeSubmit={validateCustomer}
                     submitting={submitting}
+                    codDeliveryText={
+                      activeZone
+                        ? `${activeZone.delivery_time_min}-${activeZone.delivery_time_max} ${
+                            activeZone.delivery_time_unit === "days"
+                              ? "দিন"
+                              : activeZone.delivery_time_unit === "hours"
+                              ? "ঘণ্টা"
+                              : "সপ্তাহ"
+                          }`
+                        : undefined
+                    }
                   />
                 </div>
               </div>
