@@ -90,8 +90,9 @@ const Index = () => {
   const { toast } = useToast();
   const { settings } = useSiteSettings();
   const navigate = useNavigate();
-  const [trackQuery, setTrackQuery] = useState("");
-  const [trackError, setTrackError] = useState<string | null>(null);
+  const [trackOrderId, setTrackOrderId] = useState("");
+  const [trackPhone, setTrackPhone] = useState("");
+  const [trackErrors, setTrackErrors] = useState<{ orderId?: string; phone?: string; form?: string }>({});
   const [dbBooks, setDbBooks] = useState<DbBook[]>(() => featuredCache.books ?? []);
   const [dbCourses, setDbCourses] = useState<DbCourse[]>(() => featuredCache.courses ?? []);
   // Only show skeleton on the very first fetch — keep cached cards visible
@@ -303,39 +304,31 @@ const Index = () => {
     return `0${m[1]}`;
   };
 
-  const validateTrackQuery = (raw: string): { ok: true; field: "order_id" | "phone"; value: string } | { ok: false; message: string } => {
-    const q = raw.trim();
-    if (!q) return { ok: false, message: "অর্ডার আইডি অথবা ফোন নম্বর দিন।" };
-    if (q.length < 4) return { ok: false, message: "ইনপুটটি অনেক ছোট — অন্তত ৪টি অক্ষর দিন।" };
-    if (q.length > 64) return { ok: false, message: "ইনপুটটি অনেক বড় — সঠিক অর্ডার আইডি বা ফোন নম্বর দিন।" };
-
-    const onlyDigits = /^[\d\s+\-()]+$/.test(q);
-    if (onlyDigits) {
-      const phone = normalizeBdPhone(q);
-      if (!phone) {
-        return { ok: false, message: "সঠিক বাংলাদেশী মোবাইল নম্বর দিন (যেমন: 01XXXXXXXXX)।" };
-      }
-      return { ok: true, field: "phone", value: phone };
-    }
-
-    // Treat as Order ID — allow letters, digits, dashes/underscores only
-    if (!/^[A-Za-z0-9_-]+$/.test(q)) {
-      return { ok: false, message: "অর্ডার আইডিতে শুধু অক্ষর, সংখ্যা ও '-' '_' ব্যবহার করুন।" };
-    }
-    return { ok: true, field: "order_id", value: q };
-  };
-
   const handleTrack = () => {
-    const result = validateTrackQuery(trackQuery);
-    if (result.ok === false) {
-      const msg = result.message;
-      setTrackError(msg);
-      toast({ title: "যাচাই ব্যর্থ", description: msg, variant: "destructive" });
+    const id = trackOrderId.trim();
+    const phoneRaw = trackPhone.trim();
+    const errs: { orderId?: string; phone?: string; form?: string } = {};
+
+    if (!id && !phoneRaw) {
+      errs.form = "অর্ডার আইডি ও ফোন নম্বর — দুটোই দিন।";
+    } else {
+      if (!id) errs.orderId = "অর্ডার আইডি দিন।";
+      else if (id.length < 4 || id.length > 64) errs.orderId = "অর্ডার আইডির দৈর্ঘ্য ৪–৬৪ অক্ষর হতে হবে।";
+      else if (!/^[A-Za-z0-9_-]+$/.test(id)) errs.orderId = "শুধু অক্ষর, সংখ্যা ও '-' '_' ব্যবহার করুন।";
+
+      if (!phoneRaw) errs.phone = "ফোন নম্বর দিন।";
+      else if (!normalizeBdPhone(phoneRaw)) errs.phone = "সঠিক বাংলাদেশী মোবাইল নম্বর দিন (01XXXXXXXXX)।";
+    }
+
+    if (errs.orderId || errs.phone || errs.form) {
+      setTrackErrors(errs);
+      toast({ title: "যাচাই ব্যর্থ", description: errs.form || errs.orderId || errs.phone, variant: "destructive" });
       return;
     }
-    setTrackError(null);
+    setTrackErrors({});
     const params = new URLSearchParams();
-    params.set(result.field, result.value);
+    params.set("order_id", id);
+    params.set("phone", normalizeBdPhone(phoneRaw)!);
     navigate(`/track-order?${params.toString()}`);
   };
 
@@ -642,31 +635,67 @@ const Index = () => {
                 </div>
                 <h2 className="text-2xl font-bold text-foreground">{settings.homepage_track_title || "আপনার অর্ডার ট্র্যাক করুন"}</h2>
                 <p className="mt-2 text-sm text-muted-foreground">{settings.homepage_track_subtitle || "আপনার অর্ডারের বর্তমান অবস্থা জানুন"}</p>
-                <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                  <Input
-                    className={`glass-input ${trackError ? "border-destructive focus-visible:ring-destructive" : ""}`}
-                    placeholder="অর্ডার আইডি অথবা ফোন নম্বর"
-                    value={trackQuery}
-                    onChange={(e) => {
-                      setTrackQuery(e.target.value);
-                      if (trackError) setTrackError(null);
-                    }}
-                    onKeyDown={(e) => e.key === "Enter" && handleTrack()}
-                    aria-invalid={!!trackError}
-                    aria-describedby={trackError ? "track-error" : undefined}
-                  />
-                  <Button className="shrink-0 glow-hover" onClick={handleTrack}>
-                    <Search className="h-4 w-4 sm:hidden" /> ট্র্যাক করুন
+                <div className="mt-6 space-y-3 text-left">
+                  <div>
+                    <label htmlFor="track-order-id" className="mb-1 block text-xs font-medium text-foreground">
+                      অর্ডার আইডি
+                    </label>
+                    <Input
+                      id="track-order-id"
+                      className={`glass-input ${trackErrors.orderId ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                      placeholder="যেমন: ORD-XXXXXX"
+                      value={trackOrderId}
+                      onChange={(e) => {
+                        setTrackOrderId(e.target.value);
+                        if (trackErrors.orderId || trackErrors.form) setTrackErrors((p) => ({ ...p, orderId: undefined, form: undefined }));
+                      }}
+                      onKeyDown={(e) => e.key === "Enter" && handleTrack()}
+                      aria-invalid={!!trackErrors.orderId}
+                      aria-describedby={trackErrors.orderId ? "track-order-id-error" : undefined}
+                    />
+                    {trackErrors.orderId && (
+                      <p id="track-order-id-error" role="alert" className="mt-1 text-xs font-medium text-destructive">
+                        {trackErrors.orderId}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label htmlFor="track-phone" className="mb-1 block text-xs font-medium text-foreground">
+                      ফোন নম্বর
+                    </label>
+                    <Input
+                      id="track-phone"
+                      type="tel"
+                      inputMode="tel"
+                      className={`glass-input ${trackErrors.phone ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                      placeholder="01XXXXXXXXX"
+                      value={trackPhone}
+                      onChange={(e) => {
+                        setTrackPhone(e.target.value);
+                        if (trackErrors.phone || trackErrors.form) setTrackErrors((p) => ({ ...p, phone: undefined, form: undefined }));
+                      }}
+                      onKeyDown={(e) => e.key === "Enter" && handleTrack()}
+                      aria-invalid={!!trackErrors.phone}
+                      aria-describedby={trackErrors.phone ? "track-phone-error" : undefined}
+                    />
+                    {trackErrors.phone && (
+                      <p id="track-phone-error" role="alert" className="mt-1 text-xs font-medium text-destructive">
+                        {trackErrors.phone}
+                      </p>
+                    )}
+                  </div>
+                  <Button className="w-full glow-hover" onClick={handleTrack}>
+                    <Search className="mr-1 h-4 w-4" /> ট্র্যাক করুন
                   </Button>
-                </div>
-                {trackError && (
-                  <p id="track-error" role="alert" className="mt-2 text-left text-xs font-medium text-destructive">
-                    {trackError}
+                  {trackErrors.form && (
+                    <p role="alert" className="text-xs font-medium text-destructive">
+                      {trackErrors.form}
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    নিরাপত্তার জন্য অর্ডার আইডি ও ফোন নম্বর — দুটোই যাচাই হলে সম্পূর্ণ বিস্তারিত দেখানো হবে।
                   </p>
-                )}
-                <p className="mt-2 text-xs text-muted-foreground">
-                  পরবর্তী পেজে অর্ডার আইডি ও ফোন নম্বর — দুটোই যাচাই হলে সম্পূর্ণ বিস্তারিত দেখানো হবে।
-                </p>
+                </div>
                 {/* Status journey strip */}
                 <div className="mt-6 flex items-center justify-between gap-1 border-t border-border/50 pt-5">
                   {[
