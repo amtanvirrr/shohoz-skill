@@ -438,24 +438,34 @@ export const PaymentSelector = ({
         toast({ title: "ক্যাশ অন ডেলিভারি কনফিগার করা নেই", variant: "destructive" });
         return;
       }
-      busyRef.current = true;
-      logEvent("cod_submit_start", { method: "cod" });
-      lastAttemptRef.current = { method: "cod", transactionId: "" };
-      try {
-        await onCodSubmit();
-        logEvent("cod_submit_success", { method: "cod" });
-      } catch (e) {
-        const msg = (e as Error).message || "অর্ডার সাবমিট করতে সমস্যা হয়েছে";
-        const info = mapPaymentError(msg, "cod");
-        setLastError(msg);
-        setErrorInfo(info);
-        toast({ title: info.title, description: info.message, variant: "destructive" });
-        logEvent("cod_submit_error", { method: "cod", message: msg, metadata: { category: info.category } });
-      } finally {
-        busyRef.current = false;
-      }
+      // Defer the actual submit — show a confirmation dialog with a
+      // delivery estimate first so the user can review before placing.
+      logEvent("cod_confirm_open", { method: "cod" });
+      setCodConfirmOpen(true);
       return;
     }
+
+  const runCodSubmit = async () => {
+    if (!onCodSubmit || busyRef.current) return;
+    busyRef.current = true;
+    logEvent("cod_submit_start", { method: "cod" });
+    lastAttemptRef.current = { method: "cod", transactionId: "" };
+    try {
+      await onCodSubmit();
+      logEvent("cod_submit_success", { method: "cod" });
+      setCodConfirmOpen(false);
+    } catch (e) {
+      const msg = (e as Error).message || "অর্ডার সাবমিট করতে সমস্যা হয়েছে";
+      const info = mapPaymentError(msg, "cod");
+      setLastError(msg);
+      setErrorInfo(info);
+      toast({ title: info.title, description: info.message, variant: "destructive" });
+      logEvent("cod_submit_error", { method: "cod", message: msg, metadata: { category: info.category } });
+      setCodConfirmOpen(false);
+    } finally {
+      busyRef.current = false;
+    }
+  };
 
     if (isSsl) {
       if (belowMin) {
