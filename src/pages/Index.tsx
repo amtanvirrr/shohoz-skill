@@ -384,8 +384,8 @@ const Index = () => {
                         <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {course.duration}</span>
                       </div>
                       <div className="my-3 h-px bg-gradient-to-r from-transparent via-border to-transparent sm:my-4" />
-                      <div className="mt-auto flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex items-baseline gap-2">
+                      <div className="mt-auto flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
+                        <div className="flex items-baseline gap-1.5 min-w-0">
                           {course.price === 0 ? (
                             <>
                               <span className="text-base font-extrabold text-success sm:text-lg">ফ্রি</span>
@@ -401,7 +401,7 @@ const Index = () => {
                         {(() => {
                           const cta = getCourseCta(course);
                           return (
-                            <span className={`inline-flex w-full shrink-0 items-center justify-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-sm transition-transform group-hover:scale-105 sm:w-auto sm:justify-start sm:px-3 sm:py-1.5 sm:text-xs ${ctaToneClass(cta.tone)}`}>
+                            <span className={`inline-flex shrink-0 items-center justify-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-sm transition-transform group-hover:scale-105 sm:px-3 sm:py-1.5 sm:text-xs ${ctaToneClass(cta.tone)}`}>
                               {cta.text} <ArrowRight className="h-3.5 w-3.5" />
                             </span>
                           );
@@ -485,8 +485,8 @@ const Index = () => {
                       <h3 className="mt-2 font-display text-sm font-semibold text-card-foreground line-clamp-2 transition-colors group-hover:text-primary sm:mt-3 sm:text-lg">{book.title}</h3>
                       <p className="mt-1 text-xs text-muted-foreground sm:text-sm">{book.author}</p>
                       <div className="my-3 h-px bg-gradient-to-r from-transparent via-border to-transparent sm:my-4" />
-                      <div className="mt-auto flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex items-baseline gap-2">
+                      <div className="mt-auto flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
+                        <div className="flex items-baseline gap-1.5 min-w-0">
                           {book.price === 0 ? (
                             <>
                               <span className="text-base font-extrabold text-success sm:text-lg">ফ্রি</span>
@@ -502,7 +502,7 @@ const Index = () => {
                         {(() => {
                           const cta = getBookCta(book);
                           return (
-                            <span className={`inline-flex w-full shrink-0 items-center justify-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-sm transition-transform group-hover:scale-105 sm:w-auto sm:justify-start sm:px-3 sm:py-1.5 sm:text-xs ${ctaToneClass(cta.tone)}`}>
+                            <span className={`inline-flex shrink-0 items-center justify-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-sm transition-transform group-hover:scale-105 sm:px-3 sm:py-1.5 sm:text-xs ${ctaToneClass(cta.tone)}`}>
                               {cta.text} <ArrowRight className="h-3.5 w-3.5" />
                             </span>
                           );
