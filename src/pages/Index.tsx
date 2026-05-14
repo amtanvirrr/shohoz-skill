@@ -14,7 +14,13 @@ import HeroBanner from "@/components/HeroBanner";
 import MobileCarousel from "@/components/MobileCarousel";
 import FeaturedCardSkeleton from "@/components/FeaturedCardSkeleton";
 import EmptyState from "@/components/EmptyState";
-import { bylineClass } from "@/lib/cardStyles";
+import {
+  bylineClass,
+  CARD_TITLE_CLASS,
+  CARD_DESCRIPTION_CLASS,
+  categoryPillClass,
+  statusPillClass,
+} from "@/lib/cardStyles";
 
 /** Strip HTML tags and decode common entities for a safe text-only preview. */
 const htmlToPreview = (html?: string | null): string => {
@@ -224,10 +230,10 @@ const Index = () => {
             <span>{info.total} বার কেনা হয়েছে</span>
           </div>
           <div className="mt-1 flex flex-wrap gap-1.5">
-            {info.delivered > 0 && <span className="inline-flex items-center gap-0.5 rounded-full bg-success px-2 py-0.5 text-[10px] font-medium text-success dark:bg-success/30 dark:text-success"><CheckCircle className="h-2.5 w-2.5" /> {info.delivered} ডেলিভারি</span>}
-            {info.shipped > 0 && <span className="inline-flex items-center gap-0.5 rounded-full bg-primary px-2 py-0.5 text-[10px] font-medium text-primary dark:bg-primary/30 dark:text-primary"><Truck className="h-2.5 w-2.5" /> {info.shipped} শিপড</span>}
-            {info.confirmed > 0 && <span className="inline-flex items-center gap-0.5 rounded-full bg-success px-2 py-0.5 text-[10px] font-medium text-success dark:bg-success/30 dark:text-success"><CheckCircle className="h-2.5 w-2.5" /> {info.confirmed} কনফার্মড</span>}
-            {info.pending > 0 && <span className="inline-flex items-center gap-0.5 rounded-full bg-warning px-2 py-0.5 text-[10px] font-medium text-warning dark:bg-warning/30 dark:text-warning"><Clock className="h-2.5 w-2.5" /> {info.pending} পেন্ডিং</span>}
+            {info.delivered > 0 && <span className={statusPillClass("success")}><CheckCircle className="h-2.5 w-2.5" /> {info.delivered} ডেলিভারি</span>}
+            {info.shipped > 0 && <span className={statusPillClass("primary")}><Truck className="h-2.5 w-2.5" /> {info.shipped} শিপড</span>}
+            {info.confirmed > 0 && <span className={statusPillClass("success")}><CheckCircle className="h-2.5 w-2.5" /> {info.confirmed} কনফার্মড</span>}
+            {info.pending > 0 && <span className={statusPillClass("warning")}><Clock className="h-2.5 w-2.5" /> {info.pending} পেন্ডিং</span>}
           </div>
         </div>
       </div>
@@ -389,15 +395,15 @@ const Index = () => {
                     </div>
                     <div className="flex flex-1 flex-col p-3 sm:p-5">
                       <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                        <span className="inline-block rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary sm:px-3 sm:py-1 sm:text-xs">{course.category}</span>
+                        <span className={categoryPillClass("primary")}>{course.category}</span>
                         <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-medium text-primary dark:bg-primary/30 dark:text-primary sm:px-2.5 sm:py-1 sm:text-xs">🎓 অনলাইন কোর্স</span>
                       </div>
-                      <h3 className="mt-2 font-display text-sm font-semibold leading-snug text-card-foreground line-clamp-2 min-h-[2.5rem] transition-colors group-hover:text-primary sm:mt-3 sm:min-h-[3.25rem] sm:text-lg">{course.title}</h3>
+                      <h3 className={CARD_TITLE_CLASS}>{course.title}</h3>
                       <p className={bylineClass(course.instructor)}>
                         {course.instructor?.trim() || "ইন্সট্রাক্টর শীঘ্রই জানানো হবে"}
                       </p>
                       {htmlToPreview(course.description) && (
-                        <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground/90 line-clamp-2 min-h-[2rem] sm:mt-2 sm:min-h-[2.25rem]">
+                        <p className={CARD_DESCRIPTION_CLASS}>
                           {htmlToPreview(course.description)}
                         </p>
                       )}
@@ -494,7 +500,7 @@ const Index = () => {
                     </div>
                     <div className="flex flex-1 flex-col p-3 sm:p-5">
                       <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                        <span className="inline-block rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-medium text-accent sm:px-3 sm:py-1 sm:text-xs">{book.category}</span>
+                        <span className={categoryPillClass("accent")}>{book.category}</span>
                         <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium sm:px-2.5 sm:py-1 sm:text-xs ${
                           book.book_type === "ebook"
                             ? "bg-primary/10 text-primary"
@@ -503,12 +509,12 @@ const Index = () => {
                           {book.book_type === "ebook" ? "📱 ইবুক" : "📦 ফিজিক্যাল বই"}
                         </span>
                       </div>
-                      <h3 className="mt-2 font-display text-sm font-semibold leading-snug text-card-foreground line-clamp-2 min-h-[2.5rem] transition-colors group-hover:text-primary sm:mt-3 sm:min-h-[3.25rem] sm:text-lg">{book.title}</h3>
+                      <h3 className={CARD_TITLE_CLASS}>{book.title}</h3>
                       <p className={bylineClass(book.author)}>
                         {book.author?.trim() || "লেখক উল্লেখ করা হয়নি"}
                       </p>
                       {htmlToPreview(book.description) && (
-                        <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground/90 line-clamp-2 min-h-[2rem] sm:mt-2 sm:min-h-[2.25rem]">
+                        <p className={CARD_DESCRIPTION_CLASS}>
                           {htmlToPreview(book.description)}
                         </p>
                       )}
