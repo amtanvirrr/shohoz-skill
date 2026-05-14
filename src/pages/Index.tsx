@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Star, Search, ArrowRight, BookOpen, GraduationCap, Clock, Users, CheckCircle, Package, Truck, Sparkles } from "lucide-react";
+import { Star, Search, ArrowRight, BookOpen, GraduationCap, Clock, Users, CheckCircle, Package, Truck, Sparkles, Quote, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
@@ -552,16 +552,28 @@ const Index = () => {
                 ))
               ) : dbReviews.map((review, idx) => (
                 <ScrollReveal key={review.id} delay={idx * 80}>
-                  <div className="glass-card rounded-xl p-5 h-full">
-                    <div className="flex gap-0.5">
-                      {Array.from({ length: review.rating }).map((_, i) => (
-                        <Star key={i} className="h-4 w-4 fill-accent text-accent" />
+                  <div className="group relative glass-card rounded-2xl p-5 h-full transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/10 overflow-hidden">
+                    <Quote className="absolute -top-2 -right-2 h-16 w-16 text-primary/5 group-hover:text-primary/10 transition-colors" aria-hidden="true" />
+                    <div className="relative flex items-center gap-1 text-accent">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`h-4 w-4 ${i < review.rating ? "fill-accent text-accent" : "text-muted-foreground/30"}`}
+                        />
                       ))}
                     </div>
-                    <p className="mt-3 text-sm text-card-foreground leading-relaxed">"{review.comment}"</p>
-                    <div className="mt-4 border-t border-border/50 pt-3">
-                      <p className="text-sm font-semibold text-foreground">{review.reviewer_name}</p>
-                      {review.course_title && <p className="text-xs text-muted-foreground">{review.course_title}</p>}
+                    <p className="relative mt-3 text-sm text-card-foreground leading-relaxed line-clamp-5">"{review.comment}"</p>
+                    <div className="relative mt-4 flex items-center gap-3 border-t border-border/50 pt-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-accent/20 text-sm font-bold text-primary">
+                        {review.reviewer_name?.trim()?.charAt(0) || "?"}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1">
+                          <p className="truncate text-sm font-semibold text-foreground">{review.reviewer_name}</p>
+                          <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-success" aria-label="ভেরিফাইড" />
+                        </div>
+                        {review.course_title && <p className="truncate text-xs text-muted-foreground">{review.course_title}</p>}
+                      </div>
                     </div>
                   </div>
                 </ScrollReveal>
@@ -574,6 +586,8 @@ const Index = () => {
       {/* Track Order */}
       <section className="relative py-10 sm:py-16 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-secondary/60 via-primary/[0.04] to-secondary/60 pointer-events-none" />
+        <div className="absolute -top-12 -left-12 h-48 w-48 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-12 -right-12 h-48 w-48 rounded-full bg-accent/10 blur-3xl pointer-events-none" />
         <div className="container relative mx-auto px-4">
           <ScrollReveal>
             <div className="mx-auto max-w-lg">
@@ -583,7 +597,7 @@ const Index = () => {
                 </div>
                 <h2 className="text-2xl font-bold text-foreground">{settings.homepage_track_title || "আপনার অর্ডার ট্র্যাক করুন"}</h2>
                 <p className="mt-2 text-sm text-muted-foreground">{settings.homepage_track_subtitle || "আপনার অর্ডারের বর্তমান অবস্থা জানুন"}</p>
-                <div className="mt-6 flex gap-3">
+                <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                   <Input
                     className={`glass-input ${trackError ? "border-destructive focus-visible:ring-destructive" : ""}`}
                     placeholder="অর্ডার আইডি অথবা ফোন নম্বর"
@@ -596,7 +610,9 @@ const Index = () => {
                     aria-invalid={!!trackError}
                     aria-describedby={trackError ? "track-error" : undefined}
                   />
-                  <Button className="shrink-0 glow-hover" onClick={handleTrack}>ট্র্যাক করুন</Button>
+                  <Button className="shrink-0 glow-hover" onClick={handleTrack}>
+                    <Search className="h-4 w-4 sm:hidden" /> ট্র্যাক করুন
+                  </Button>
                 </div>
                 {trackError && (
                   <p id="track-error" role="alert" className="mt-2 text-left text-xs font-medium text-destructive">
@@ -606,6 +622,27 @@ const Index = () => {
                 <p className="mt-2 text-xs text-muted-foreground">
                   পরবর্তী পেজে অর্ডার আইডি ও ফোন নম্বর — দুটোই যাচাই হলে সম্পূর্ণ বিস্তারিত দেখানো হবে।
                 </p>
+                {/* Status journey strip */}
+                <div className="mt-6 flex items-center justify-between gap-1 border-t border-border/50 pt-5">
+                  {[
+                    { icon: CheckCircle, label: "পেন্ডিং", color: "text-warning bg-warning/10" },
+                    { icon: Package, label: "কনফার্মড", color: "text-primary bg-primary/10" },
+                    { icon: Truck, label: "শিপড", color: "text-accent bg-accent/15" },
+                    { icon: Sparkles, label: "ডেলিভারড", color: "text-success bg-success/10" },
+                  ].map((s, i, arr) => (
+                    <div key={s.label} className="flex flex-1 items-center">
+                      <div className="flex flex-col items-center gap-1">
+                        <div className={`flex h-9 w-9 items-center justify-center rounded-full ${s.color}`}>
+                          <s.icon className="h-4 w-4" />
+                        </div>
+                        <span className="text-[10px] font-medium text-muted-foreground sm:text-xs">{s.label}</span>
+                      </div>
+                      {i < arr.length - 1 && (
+                        <div className="mx-1 h-0.5 flex-1 bg-gradient-to-r from-border to-border/30" aria-hidden="true" />
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </ScrollReveal>
