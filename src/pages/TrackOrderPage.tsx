@@ -1,11 +1,12 @@
 import { useEffect, useState, FormEvent } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { z } from "zod";
-import { Search, Package, Truck, CheckCircle2, Clock, XCircle, ShieldCheck, ArrowRight, Loader2, AlertCircle } from "lucide-react";
+import { Search, Package, Truck, CheckCircle2, Clock, XCircle, ShieldCheck, ArrowRight, Loader2, AlertCircle, Phone, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { supabase } from "@/integrations/supabase/client";
 
 /** Verified order shape returned by the `track-order` edge function. */
@@ -52,6 +53,7 @@ const formatDate = (iso?: string | null) =>
 
 const TrackOrderPage = () => {
   const { toast } = useToast();
+  const { settings } = useSiteSettings();
   const [params, setParams] = useSearchParams();
 
   const [orderId, setOrderId] = useState(params.get("order_id") ?? params.get("q") ?? "");
@@ -124,6 +126,15 @@ const TrackOrderPage = () => {
     ? STEPS.findIndex((s) => s.key === order.status)
     : -1;
   const isCancelled = order?.status === "cancelled";
+
+  /** Best-effort timestamp derivation per timeline step. */
+  const stepTimestamp = (key: string): string | null => {
+    if (!order) return null;
+    if (key === "pending") return order.created_at;
+    if (key === "shipped") return order.courier_sent_at || (order.status === "shipped" ? order.updated_at : null);
+    if (key === order.status) return order.updated_at;
+    return null;
+  };
 
   return (
     <div className="container mx-auto max-w-3xl px-4 py-10 sm:py-16">
@@ -279,16 +290,32 @@ const TrackOrderPage = () => {
           </div>
 
           {/* Timeline */}
-          {!isCancelled && (
-            <div className="glass-card rounded-2xl p-6">
-              <h2 className="mb-5 text-base font-semibold text-foreground">
-                অর্ডারের অগ্রগতি
-              </h2>
+          <div className="glass-card rounded-2xl p-6">
+            <h2 className="mb-5 text-base font-semibold text-foreground">
+              অর্ডারের অগ্রগতি
+            </h2>
+            {isCancelled ? (
+              <div className="flex items-start gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-4">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-destructive/15 text-destructive ring-2 ring-destructive/30">
+                  <XCircle className="h-4 w-4" />
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-destructive">অর্ডারটি বাতিল হয়েছে</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    বাতিলের সময়: {formatDate(order.updated_at)}
+                  </p>
+                  {order.notes && (
+                    <p className="mt-1 text-xs text-muted-foreground">কারণ/মন্তব্য: {order.notes}</p>
+                  )}
+                </div>
+              </div>
+            ) : (
               <ol className="relative space-y-5">
                 {STEPS.map((step, idx) => {
                   const Icon = step.icon;
                   const reached = idx <= currentStepIdx;
                   const isCurrent = idx === currentStepIdx;
+                  const ts = stepTimestamp(step.key);
                   return (
                     <li key={step.key} className="flex items-start gap-3">
                       <span
@@ -307,19 +334,22 @@ const TrackOrderPage = () => {
                           }`}
                         >
                           {step.label}
+                          {isCurrent && (
+                            <span className="ml-2 inline-flex items-center rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                              বর্তমান
+                            </span>
+                          )}
                         </p>
-                        {isCurrent && (
-                          <p className="text-xs text-muted-foreground">
-                            সর্বশেষ আপডেট: {formatDate(order.updated_at)}
-                          </p>
+                        {ts && (
+                          <p className="text-xs text-muted-foreground">{formatDate(ts)}</p>
                         )}
                       </div>
                     </li>
                   );
                 })}
               </ol>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Courier */}
           {(order.courier_provider || order.courier_tracking_id) && (
@@ -365,6 +395,36 @@ const TrackOrderPage = () => {
               সাহায্য দরকার? যোগাযোগ করুন <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
+
+          {/* Contact details */}
+          {(settings.contact_phone || settings.contact_email) && (
+            <div className="glass-card rounded-2xl p-6">
+              <h2 className="mb-3 text-base font-semibold text-foreground">যোগাযোগ</h2>
+              <p className="mb-3 text-xs text-muted-foreground">
+                অর্ডার সংক্রান্ত যেকোনো জিজ্ঞাসায় নিচের যেকোনো মাধ্যমে যোগাযোগ করুন।
+              </p>
+              <div className="grid gap-2 text-sm sm:grid-cols-2">
+                {settings.contact_phone && (
+                  <a
+                    href={`tel:${settings.contact_phone}`}
+                    className="flex items-center gap-2 rounded-lg border border-border p-3 transition-colors hover:bg-muted/50"
+                  >
+                    <Phone className="h-4 w-4 text-primary" />
+                    <span className="font-medium text-foreground">{settings.contact_phone}</span>
+                  </a>
+                )}
+                {settings.contact_email && (
+                  <a
+                    href={`mailto:${settings.contact_email}`}
+                    className="flex items-center gap-2 rounded-lg border border-border p-3 transition-colors hover:bg-muted/50"
+                  >
+                    <Mail className="h-4 w-4 text-primary" />
+                    <span className="font-medium text-foreground">{settings.contact_email}</span>
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
