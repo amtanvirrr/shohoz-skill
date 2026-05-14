@@ -32,6 +32,16 @@ const htmlToPreview = (html?: string | null): string => {
     .trim();
 };
 
+/**
+ * Shared responsive className for instructor/author meta line on featured cards.
+ * Keeps spacing + line-height consistent across mobile/tablet/desktop and toggles
+ * a muted italic style when the value is empty (placeholder).
+ */
+const bylineClass = (value?: string | null): string =>
+  `mt-1 text-xs leading-5 line-clamp-1 min-h-[1.25rem] sm:mt-1.5 sm:text-sm sm:leading-[1.375rem] sm:min-h-[1.375rem] md:mt-2 md:leading-6 md:min-h-[1.5rem] ${
+    value?.trim() ? "text-muted-foreground" : "text-muted-foreground/60 italic"
+  }`;
+
 interface DbBook {
   id: string;
   title: string;
@@ -391,7 +401,7 @@ const Index = () => {
                         <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-medium text-primary dark:bg-primary/30 dark:text-primary sm:px-2.5 sm:py-1 sm:text-xs">🎓 অনলাইন কোর্স</span>
                       </div>
                       <h3 className="mt-2 font-display text-sm font-semibold leading-snug text-card-foreground line-clamp-2 min-h-[2.5rem] transition-colors group-hover:text-primary sm:mt-3 sm:min-h-[3.25rem] sm:text-lg">{course.title}</h3>
-                      <p className={`mt-1 text-xs leading-5 line-clamp-1 min-h-[1.25rem] sm:mt-1.5 sm:text-sm sm:leading-[1.375rem] sm:min-h-[1.375rem] md:mt-2 md:leading-6 md:min-h-[1.5rem] ${course.instructor?.trim() ? "text-muted-foreground" : "text-muted-foreground/60 italic"}`}>
+                      <p className={bylineClass(course.instructor)}>
                         {course.instructor?.trim() || "ইন্সট্রাক্টর শীঘ্রই জানানো হবে"}
                       </p>
                       {htmlToPreview(course.description) && (
@@ -502,7 +512,7 @@ const Index = () => {
                         </span>
                       </div>
                       <h3 className="mt-2 font-display text-sm font-semibold leading-snug text-card-foreground line-clamp-2 min-h-[2.5rem] transition-colors group-hover:text-primary sm:mt-3 sm:min-h-[3.25rem] sm:text-lg">{book.title}</h3>
-                      <p className={`mt-1 text-xs leading-5 line-clamp-1 min-h-[1.25rem] sm:mt-1.5 sm:text-sm sm:leading-[1.375rem] sm:min-h-[1.375rem] md:mt-2 md:leading-6 md:min-h-[1.5rem] ${book.author?.trim() ? "text-muted-foreground" : "text-muted-foreground/60 italic"}`}>
+                      <p className={bylineClass(book.author)}>
                         {book.author?.trim() || "লেখক উল্লেখ করা হয়নি"}
                       </p>
                       {htmlToPreview(book.description) && (
