@@ -19,7 +19,7 @@ const ProductCardSkeleton = ({ aspect = "video", count = 6 }: Props) => {
               <div className="skeleton-shimmer h-5 w-24 rounded-full" />
             </div>
             <div className="skeleton-shimmer h-5 w-4/5 rounded" />
-            <div className="skeleton-shimmer h-4 w-1/2 rounded" />
+            <div className="skeleton-shimmer h-4 w-1/2 rounded min-h-[1.25rem] sm:min-h-[1.375rem] md:min-h-[1.5rem]" />
             <div className="flex items-center justify-between pt-2">
               <div className="skeleton-shimmer h-6 w-20 rounded" />
               <div className="skeleton-shimmer h-4 w-16 rounded" />
