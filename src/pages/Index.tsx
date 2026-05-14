@@ -400,6 +400,19 @@ const Index = () => {
                 <FeaturedCardSkeleton key={i} aspect="video" />
               ))}
             </MobileCarousel>
+          ) : coursesError ? (
+            <div className="mt-8">
+              <EmptyState
+                icon={AlertTriangle}
+                title="লোড করা যায়নি"
+                description={coursesError}
+                action={
+                  <Button variant="outline" size="sm" onClick={retryFeatured}>
+                    <RefreshCw className="mr-1 h-4 w-4" /> আবার চেষ্টা করুন
+                  </Button>
+                }
+              />
+            </div>
           ) : dbCourses.length > 0 ? (
             <MobileCarousel count={dbCourses.length} label="ফিচার্ড কোর্স" desktopGridClass="sm:grid-cols-2 lg:grid-cols-3">
               {dbCourses.map((course, idx) => (
