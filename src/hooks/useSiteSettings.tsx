@@ -85,29 +85,52 @@ const defaults: SiteSettings = {
 
 const SETTING_KEYS = Object.keys(defaults) as (keyof SiteSettings)[];
 
+// Module-level cache so multiple consumers share a single network request.
+let cachedSettings: SiteSettings | null = null;
+let inflight: Promise<SiteSettings> | null = null;
+
+const fetchSettingsOnce = (): Promise<SiteSettings> => {
+  if (cachedSettings) return Promise.resolve(cachedSettings);
+  if (inflight) return inflight;
+  inflight = (async () => {
+    const { data } = await (supabase as any)
+      .from("public_site_settings")
+      .select("key, value")
+      .in("key", SETTING_KEYS);
+    const merged = { ...defaults };
+    if (data && data.length > 0) {
+      data.forEach((row: any) => {
+        if (row.key in merged && row.value) {
+          (merged as any)[row.key] = row.value;
+        }
+      });
+    }
+    cachedSettings = merged;
+    inflight = null;
+    return merged;
+  })();
+  return inflight;
+};
+
 export const useSiteSettings = () => {
-  const [settings, setSettings] = useState<SiteSettings>(defaults);
-  const [loading, setLoading] = useState(true);
+  const [settings, setSettings] = useState<SiteSettings>(cachedSettings ?? defaults);
+  const [loading, setLoading] = useState(!cachedSettings);
 
   useEffect(() => {
-    const fetchSettings = async () => {
-      const { data } = await (supabase as any)
-        .from("public_site_settings")
-        .select("key, value")
-        .in("key", SETTING_KEYS);
-
-      if (data && data.length > 0) {
-        const merged = { ...defaults };
-        data.forEach((row: any) => {
-          if (row.key in merged && row.value) {
-            (merged as any)[row.key] = row.value;
-          }
-        });
-        setSettings(merged);
-      }
+    let active = true;
+    if (cachedSettings) {
+      setSettings(cachedSettings);
       setLoading(false);
+      return;
+    }
+    fetchSettingsOnce().then((merged) => {
+      if (!active) return;
+      setSettings(merged);
+      setLoading(false);
+    });
+    return () => {
+      active = false;
     };
-    fetchSettings();
   }, []);
 
   return { settings, loading };
