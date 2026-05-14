@@ -22,7 +22,7 @@ const ProductCardSkeleton = ({ aspect = "video", count = 6 }: Props) => {
               <div className="skeleton-shimmer h-5 w-24 rounded-full" />
             </div>
             <div className="skeleton-shimmer h-5 w-4/5 rounded" />
-            <div className={cn("skeleton-shimmer w-1/2 rounded", BYLINE_LAYOUT_CLASS)} />
+            <div data-testid="card-byline" className={cn("skeleton-shimmer w-1/2 rounded", BYLINE_LAYOUT_CLASS)} />
             <div className="flex items-center justify-between pt-2">
               <div className="skeleton-shimmer h-6 w-20 rounded" />
               <div className="skeleton-shimmer h-4 w-16 rounded" />
