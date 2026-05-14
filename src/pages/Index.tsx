@@ -586,6 +586,8 @@ const Index = () => {
       {/* Track Order */}
       <section className="relative py-10 sm:py-16 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-secondary/60 via-primary/[0.04] to-secondary/60 pointer-events-none" />
+        <div className="absolute -top-12 -left-12 h-48 w-48 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-12 -right-12 h-48 w-48 rounded-full bg-accent/10 blur-3xl pointer-events-none" />
         <div className="container relative mx-auto px-4">
           <ScrollReveal>
             <div className="mx-auto max-w-lg">
@@ -595,7 +597,7 @@ const Index = () => {
                 </div>
                 <h2 className="text-2xl font-bold text-foreground">{settings.homepage_track_title || "আপনার অর্ডার ট্র্যাক করুন"}</h2>
                 <p className="mt-2 text-sm text-muted-foreground">{settings.homepage_track_subtitle || "আপনার অর্ডারের বর্তমান অবস্থা জানুন"}</p>
-                <div className="mt-6 flex gap-3">
+                <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                   <Input
                     className={`glass-input ${trackError ? "border-destructive focus-visible:ring-destructive" : ""}`}
                     placeholder="অর্ডার আইডি অথবা ফোন নম্বর"
@@ -608,7 +610,9 @@ const Index = () => {
                     aria-invalid={!!trackError}
                     aria-describedby={trackError ? "track-error" : undefined}
                   />
-                  <Button className="shrink-0 glow-hover" onClick={handleTrack}>ট্র্যাক করুন</Button>
+                  <Button className="shrink-0 glow-hover" onClick={handleTrack}>
+                    <Search className="h-4 w-4 sm:hidden" /> ট্র্যাক করুন
+                  </Button>
                 </div>
                 {trackError && (
                   <p id="track-error" role="alert" className="mt-2 text-left text-xs font-medium text-destructive">
@@ -618,6 +622,27 @@ const Index = () => {
                 <p className="mt-2 text-xs text-muted-foreground">
                   পরবর্তী পেজে অর্ডার আইডি ও ফোন নম্বর — দুটোই যাচাই হলে সম্পূর্ণ বিস্তারিত দেখানো হবে।
                 </p>
+                {/* Status journey strip */}
+                <div className="mt-6 flex items-center justify-between gap-1 border-t border-border/50 pt-5">
+                  {[
+                    { icon: CheckCircle, label: "পেন্ডিং", color: "text-warning bg-warning/10" },
+                    { icon: Package, label: "কনফার্মড", color: "text-primary bg-primary/10" },
+                    { icon: Truck, label: "শিপড", color: "text-accent bg-accent/15" },
+                    { icon: Sparkles, label: "ডেলিভারড", color: "text-success bg-success/10" },
+                  ].map((s, i, arr) => (
+                    <div key={s.label} className="flex flex-1 items-center">
+                      <div className="flex flex-col items-center gap-1">
+                        <div className={`flex h-9 w-9 items-center justify-center rounded-full ${s.color}`}>
+                          <s.icon className="h-4 w-4" />
+                        </div>
+                        <span className="text-[10px] font-medium text-muted-foreground sm:text-xs">{s.label}</span>
+                      </div>
+                      {i < arr.length - 1 && (
+                        <div className="mx-1 h-0.5 flex-1 bg-gradient-to-r from-border to-border/30" aria-hidden="true" />
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </ScrollReveal>
