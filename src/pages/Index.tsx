@@ -378,8 +378,8 @@ const Index = () => {
                         <span className="inline-block rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary sm:px-3 sm:py-1 sm:text-xs">{course.category}</span>
                         <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-medium text-primary dark:bg-primary/30 dark:text-primary sm:px-2.5 sm:py-1 sm:text-xs">🎓 অনলাইন কোর্স</span>
                       </div>
-                      <h3 className="mt-2 font-display text-sm font-semibold text-card-foreground line-clamp-2 transition-colors group-hover:text-primary sm:mt-3 sm:text-lg">{course.title}</h3>
-                      <p className="mt-1 text-xs text-muted-foreground sm:text-sm">{course.instructor}</p>
+                      <h3 className="mt-2 font-display text-sm font-semibold leading-snug text-card-foreground line-clamp-2 min-h-[2.5rem] transition-colors group-hover:text-primary sm:mt-3 sm:min-h-[3.25rem] sm:text-lg">{course.title}</h3>
+                      <p className="mt-1 text-xs text-muted-foreground line-clamp-1 sm:text-sm">{course.instructor}</p>
                       <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground sm:mt-3">
                         <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {course.duration}</span>
                       </div>
@@ -482,8 +482,8 @@ const Index = () => {
                           {book.book_type === "ebook" ? "📱 ইবুক" : "📦 ফিজিক্যাল বই"}
                         </span>
                       </div>
-                      <h3 className="mt-2 font-display text-sm font-semibold text-card-foreground line-clamp-2 transition-colors group-hover:text-primary sm:mt-3 sm:text-lg">{book.title}</h3>
-                      <p className="mt-1 text-xs text-muted-foreground sm:text-sm">{book.author}</p>
+                      <h3 className="mt-2 font-display text-sm font-semibold leading-snug text-card-foreground line-clamp-2 min-h-[2.5rem] transition-colors group-hover:text-primary sm:mt-3 sm:min-h-[3.25rem] sm:text-lg">{book.title}</h3>
+                      <p className="mt-1 text-xs text-muted-foreground line-clamp-1 sm:text-sm">{book.author}</p>
                       <div className="my-3 h-px bg-gradient-to-r from-transparent via-border to-transparent sm:my-4" />
                       <div className="mt-auto flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
                         <div className="flex items-baseline gap-1.5 min-w-0">
