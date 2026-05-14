@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Star, Search, ArrowRight, BookOpen, GraduationCap, Clock, Users, CheckCircle, Package, Truck, Sparkles } from "lucide-react";
+import { Star, Search, ArrowRight, BookOpen, GraduationCap, Clock, Users, CheckCircle, Package, Truck, Sparkles, Quote, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
@@ -552,16 +552,28 @@ const Index = () => {
                 ))
               ) : dbReviews.map((review, idx) => (
                 <ScrollReveal key={review.id} delay={idx * 80}>
-                  <div className="glass-card rounded-xl p-5 h-full">
-                    <div className="flex gap-0.5">
-                      {Array.from({ length: review.rating }).map((_, i) => (
-                        <Star key={i} className="h-4 w-4 fill-accent text-accent" />
+                  <div className="group relative glass-card rounded-2xl p-5 h-full transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/10 overflow-hidden">
+                    <Quote className="absolute -top-2 -right-2 h-16 w-16 text-primary/5 group-hover:text-primary/10 transition-colors" aria-hidden="true" />
+                    <div className="relative flex items-center gap-1 text-accent">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`h-4 w-4 ${i < review.rating ? "fill-accent text-accent" : "text-muted-foreground/30"}`}
+                        />
                       ))}
                     </div>
-                    <p className="mt-3 text-sm text-card-foreground leading-relaxed">"{review.comment}"</p>
-                    <div className="mt-4 border-t border-border/50 pt-3">
-                      <p className="text-sm font-semibold text-foreground">{review.reviewer_name}</p>
-                      {review.course_title && <p className="text-xs text-muted-foreground">{review.course_title}</p>}
+                    <p className="relative mt-3 text-sm text-card-foreground leading-relaxed line-clamp-5">"{review.comment}"</p>
+                    <div className="relative mt-4 flex items-center gap-3 border-t border-border/50 pt-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-accent/20 text-sm font-bold text-primary">
+                        {review.reviewer_name?.trim()?.charAt(0) || "?"}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1">
+                          <p className="truncate text-sm font-semibold text-foreground">{review.reviewer_name}</p>
+                          <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-success" aria-label="ভেরিফাইড" />
+                        </div>
+                        {review.course_title && <p className="truncate text-xs text-muted-foreground">{review.course_title}</p>}
+                      </div>
                     </div>
                   </div>
                 </ScrollReveal>
