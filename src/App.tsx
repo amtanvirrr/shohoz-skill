@@ -13,47 +13,50 @@ import RouteTransition from "@/components/RouteTransition";
 import MobileBottomNav from "@/components/layout/MobileBottomNav";
 import FloatingMenuFab from "@/components/layout/FloatingMenuFab";
 import { useLocation } from "react-router-dom";
+import { lazy, Suspense } from "react";
 import Index from "./pages/Index";
-import About from "./pages/About";
-import Contact from "./pages/Contact";
-import Terms from "./pages/Terms";
-import Privacy from "./pages/Privacy";
-import Refund from "./pages/Refund";
-import CoursesPage from "./pages/CoursesPage";
-import BooksPage from "./pages/BooksPage";
-import CourseDetail from "./pages/CourseDetail";
-import BookDetail from "./pages/BookDetail";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
-import QuizPage from "./pages/QuizPage";
-import UserDashboard from "./pages/UserDashboard";
-import EbookReader from "./pages/EbookReader";
-import EnrolledCourse from "./pages/EnrolledCourse";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminBooks from "./pages/admin/AdminBooks";
-import AdminCourses from "./pages/admin/AdminCourses";
-import AdminCourseDetail from "./pages/admin/AdminCourseDetail";
-import AdminOrders from "./pages/admin/AdminOrders";
-import AdminUsers from "./pages/admin/AdminUsers";
-import AdminQuizzes from "./pages/admin/AdminQuizzes";
-import AdminSettings from "./pages/admin/AdminSettings";
-import AdminReviews from "./pages/admin/AdminReviews";
-import AdminBlog from "./pages/admin/AdminBlog";
-import AdminNewsletter from "./pages/admin/AdminNewsletter";
-import AdminComments from "./pages/admin/AdminComments";
-import AdminPayments from "./pages/admin/AdminPayments";
-import AdminShipping from "./pages/admin/AdminShipping";
-import AdminHero from "./pages/admin/AdminHero";
-import AdminLandingPages from "./pages/admin/AdminLandingPages";
-import AdminCoupons from "./pages/admin/AdminCoupons";
-import BlogPage from "./pages/BlogPage";
-import BlogDetailPage from "./pages/BlogDetailPage";
-import LandingPage from "./pages/LandingPage";
-import TrackOrderPage from "./pages/TrackOrderPage";
-import NotFound from "./pages/NotFound";
-import PaymentResult from "./pages/PaymentResult";
+
+// Lazy-loaded routes to reduce initial JS bundle size
+const About = lazy(() => import("./pages/About"));
+const Contact = lazy(() => import("./pages/Contact"));
+const Terms = lazy(() => import("./pages/Terms"));
+const Privacy = lazy(() => import("./pages/Privacy"));
+const Refund = lazy(() => import("./pages/Refund"));
+const CoursesPage = lazy(() => import("./pages/CoursesPage"));
+const BooksPage = lazy(() => import("./pages/BooksPage"));
+const CourseDetail = lazy(() => import("./pages/CourseDetail"));
+const BookDetail = lazy(() => import("./pages/BookDetail"));
+const Login = lazy(() => import("./pages/Login"));
+const Register = lazy(() => import("./pages/Register"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const QuizPage = lazy(() => import("./pages/QuizPage"));
+const UserDashboard = lazy(() => import("./pages/UserDashboard"));
+const EbookReader = lazy(() => import("./pages/EbookReader"));
+const EnrolledCourse = lazy(() => import("./pages/EnrolledCourse"));
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const AdminBooks = lazy(() => import("./pages/admin/AdminBooks"));
+const AdminCourses = lazy(() => import("./pages/admin/AdminCourses"));
+const AdminCourseDetail = lazy(() => import("./pages/admin/AdminCourseDetail"));
+const AdminOrders = lazy(() => import("./pages/admin/AdminOrders"));
+const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
+const AdminQuizzes = lazy(() => import("./pages/admin/AdminQuizzes"));
+const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
+const AdminReviews = lazy(() => import("./pages/admin/AdminReviews"));
+const AdminBlog = lazy(() => import("./pages/admin/AdminBlog"));
+const AdminNewsletter = lazy(() => import("./pages/admin/AdminNewsletter"));
+const AdminComments = lazy(() => import("./pages/admin/AdminComments"));
+const AdminPayments = lazy(() => import("./pages/admin/AdminPayments"));
+const AdminShipping = lazy(() => import("./pages/admin/AdminShipping"));
+const AdminHero = lazy(() => import("./pages/admin/AdminHero"));
+const AdminLandingPages = lazy(() => import("./pages/admin/AdminLandingPages"));
+const AdminCoupons = lazy(() => import("./pages/admin/AdminCoupons"));
+const BlogPage = lazy(() => import("./pages/BlogPage"));
+const BlogDetailPage = lazy(() => import("./pages/BlogDetailPage"));
+const LandingPage = lazy(() => import("./pages/LandingPage"));
+const TrackOrderPage = lazy(() => import("./pages/TrackOrderPage"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const PaymentResult = lazy(() => import("./pages/PaymentResult"));
 
 const queryClient = new QueryClient();
 
@@ -78,6 +81,7 @@ const App = () => (
           <MetaPixelProvider>
           <ScrollToTop />
           <RouteTransition>
+          <Suspense fallback={null}>
           <Routes>
             {/* Public routes with Layout */}
             <Route path="/" element={<Layout><Index /></Layout>} />
@@ -129,6 +133,7 @@ const App = () => (
 
             <Route path="*" element={<Layout><NotFound /></Layout>} />
           </Routes>
+          </Suspense>
           </RouteTransition>
           <GlobalMobileNav />
           </MetaPixelProvider>
