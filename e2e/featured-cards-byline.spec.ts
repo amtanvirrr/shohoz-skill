@@ -14,19 +14,12 @@ import { test, expect, type Page } from "@playwright/test";
  *   3. Assert byline heights match between the two states.
  */
 
-const SECTIONS = [
-  { id: "featured-courses", bylineSelector: '[data-testid="card-byline"], p.line-clamp-2.break-words' },
-  { id: "featured-books",   bylineSelector: '[data-testid="card-byline"], p.line-clamp-2.break-words' },
-] as const;
+const SECTIONS = [{ id: "featured-courses" }, { id: "featured-books" }] as const;
 
 async function firstBylineHeight(page: Page, sectionId: string): Promise<number> {
   return page.evaluate((id) => {
     const section = document.getElementById(id);
-    if (!section) return -1;
-    // Match the BYLINE_LAYOUT_CLASS signature (responsive min-h + line-clamp).
-    const el = section.querySelector<HTMLElement>(
-      "[data-testid='card-byline'], p.line-clamp-2.break-words, p.line-clamp-1.break-words"
-    );
+    const el = section?.querySelector<HTMLElement>("[data-testid='card-byline']");
     return el ? Math.round(el.getBoundingClientRect().height) : -1;
   }, sectionId);
 }
