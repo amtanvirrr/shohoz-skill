@@ -32,6 +32,16 @@ const htmlToPreview = (html?: string | null): string => {
     .trim();
 };
 
+/**
+ * Shared responsive className for instructor/author meta line on featured cards.
+ * Keeps spacing + line-height consistent across mobile/tablet/desktop and toggles
+ * a muted italic style when the value is empty (placeholder).
+ */
+const bylineClass = (value?: string | null): string =>
+  `mt-1 text-xs leading-5 line-clamp-1 min-h-[1.25rem] sm:mt-1.5 sm:text-sm sm:leading-[1.375rem] sm:min-h-[1.375rem] md:mt-2 md:leading-6 md:min-h-[1.5rem] ${
+    value?.trim() ? "text-muted-foreground" : "text-muted-foreground/60 italic"
+  }`;
+
 interface DbBook {
   id: string;
   title: string;
