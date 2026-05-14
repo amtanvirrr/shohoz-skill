@@ -15,6 +15,23 @@ import MobileCarousel from "@/components/MobileCarousel";
 import FeaturedCardSkeleton from "@/components/FeaturedCardSkeleton";
 import EmptyState from "@/components/EmptyState";
 
+/** Strip HTML tags and decode common entities for a safe text-only preview. */
+const htmlToPreview = (html?: string | null): string => {
+  if (!html) return "";
+  return html
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+};
+
 interface DbBook {
   id: string;
   title: string;
@@ -24,6 +41,7 @@ interface DbBook {
   image_url: string;
   category: string;
   book_type: string;
+  description?: string | null;
 }
 
 interface DbCourse {
@@ -35,6 +53,7 @@ interface DbCourse {
   image_url: string;
   category: string;
   duration: string;
+  description?: string | null;
 }
 
 interface DbReview {
@@ -115,13 +134,13 @@ const Index = () => {
     // Courses
     if (featuredCourseIds.length > 0) {
       supabase.from("courses")
-        .select("id, title, instructor, price, original_price, image_url, category, duration, slug")
+        .select("id, title, instructor, price, original_price, image_url, category, duration, slug, description")
         .eq("is_published", true)
         .in("id", featuredCourseIds)
         .then(({ data }) => applyCourses((data as DbCourse[]) || []));
     } else {
       supabase.from("courses")
-        .select("id, title, instructor, price, original_price, image_url, category, duration, slug")
+        .select("id, title, instructor, price, original_price, image_url, category, duration, slug, description")
         .eq("is_published", true)
         .limit(3)
         .then(({ data }) => applyCourses((data as DbCourse[]) || []));
@@ -130,13 +149,13 @@ const Index = () => {
     // Books
     if (featuredBookIds.length > 0) {
       supabase.from("books")
-        .select("id, title, author, price, original_price, image_url, category, book_type, slug")
+        .select("id, title, author, price, original_price, image_url, category, book_type, slug, description")
         .eq("is_published", true)
         .in("id", featuredBookIds)
         .then(({ data }) => applyBooks((data as DbBook[]) || []));
     } else {
       supabase.from("books")
-        .select("id, title, author, price, original_price, image_url, category, book_type, slug")
+        .select("id, title, author, price, original_price, image_url, category, book_type, slug, description")
         .eq("is_published", true)
         .limit(3)
         .then(({ data }) => applyBooks((data as DbBook[]) || []));
@@ -380,6 +399,11 @@ const Index = () => {
                       </div>
                       <h3 className="mt-2 font-display text-sm font-semibold leading-snug text-card-foreground line-clamp-2 min-h-[2.5rem] transition-colors group-hover:text-primary sm:mt-3 sm:min-h-[3.25rem] sm:text-lg">{course.title}</h3>
                       <p className="mt-1 text-xs text-muted-foreground line-clamp-1 sm:text-sm">{course.instructor}</p>
+                      {htmlToPreview(course.description) && (
+                        <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground/90 line-clamp-2 min-h-[2rem] sm:mt-2 sm:min-h-[2.25rem]">
+                          {htmlToPreview(course.description)}
+                        </p>
+                      )}
                       <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground sm:mt-3">
                         <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {course.duration}</span>
                       </div>
@@ -484,6 +508,11 @@ const Index = () => {
                       </div>
                       <h3 className="mt-2 font-display text-sm font-semibold leading-snug text-card-foreground line-clamp-2 min-h-[2.5rem] transition-colors group-hover:text-primary sm:mt-3 sm:min-h-[3.25rem] sm:text-lg">{book.title}</h3>
                       <p className="mt-1 text-xs text-muted-foreground line-clamp-1 sm:text-sm">{book.author}</p>
+                      {htmlToPreview(book.description) && (
+                        <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground/90 line-clamp-2 min-h-[2rem] sm:mt-2 sm:min-h-[2.25rem]">
+                          {htmlToPreview(book.description)}
+                        </p>
+                      )}
                       <div className="my-3 h-px bg-gradient-to-r from-transparent via-border to-transparent sm:my-4" />
                       <div className="mt-auto flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
                         <div className="flex items-baseline gap-1.5 min-w-0">
