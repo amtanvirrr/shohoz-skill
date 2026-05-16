@@ -32,6 +32,24 @@ const docsUrl = (anchor) => {
   return `${DOCS_PATH}${frag}`;
 };
 
+/**
+ * Build a deep link to a source file at a specific line on the PR's commit.
+ * GitHub's blob viewer scrolls to and highlights `#L<n>`, so reviewers can
+ * jump straight from the PR check summary to the offending line. Falls back
+ * to a repo-relative `path:line` string when not running in Actions (local
+ * dev / non-GitHub CI) so the column still renders something useful.
+ */
+const sourceUrl = (file, line) => {
+  const server = process.env.GITHUB_SERVER_URL;
+  const repo = process.env.GITHUB_REPOSITORY;
+  const sha = process.env.GITHUB_SHA;
+  const ref = process.env.GITHUB_HEAD_REF || sha;
+  if (server && repo && ref) {
+    return `${server}/${repo}/blob/${ref}/${file}#L${line}`;
+  }
+  return null;
+};
+
 /** Map TOKEN_MISMATCH `source` → anchor in docs/card-style-tokens.md. */
 const sourceToDocsAnchor = (source) => {
   if (/^BYLINE_LAYOUT_CLASS|^bylineClass\(|^<Byline>/.test(source)) return "byline-layout-class";
@@ -269,7 +287,11 @@ for (const f of failures) {
       const loc = locateSource(parsed.source);
       const anchor = sourceToDocsAnchor(parsed.source);
       const docs = docsUrl(anchor);
-      md += `| ${f.name} | \`${parsed.source}\` | \`${parsed.token}\` | \`${parsed.expected}\` | \`${actual}\` | \`${loc.file}:${loc.line}\` | [${anchor}](${docs}) |\n`;
+      const url = sourceUrl(loc.file, loc.line);
+      const locCell = url
+        ? `[\`${loc.file}:${loc.line}\`](${url})`
+        : `\`${loc.file}:${loc.line}\``;
+      md += `| ${f.name} | \`${parsed.source}\` | \`${parsed.token}\` | \`${parsed.expected}\` | \`${actual}\` | ${locCell} | [${anchor}](${docs}) |\n`;
       annotate({
         file: loc.file,
         line: loc.line,
