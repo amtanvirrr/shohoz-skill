@@ -12,11 +12,24 @@
  *                                                              # the SKELETON
  *                                                              # section from
  *                                                              # ProductCardSkeleton.tsx
+ *   bun run scripts/update-card-style-snapshots.mjs --check-only
+ *                                                              # CI mode: never
+ *                                                              # writes, prints
+ *                                                              # a compact
+ *                                                              # single-line-per-
+ *                                                              # field diff,
+ *                                                              # disables ANSI
+ *                                                              # color so logs
+ *                                                              # stay readable.
  *
  * Safety:
  *   - Dry-run is the default. Exits 0 when in sync, 1 when drifted (CI-ready).
  *   - --write requires the explicit flag — typos / accidental runs cannot
  *     silently rewrite the contract.
+ *   - --check-only is mutually exclusive with --write / --write-skeleton.
+ *     It guarantees the script touches no files (safe for read-only CI
+ *     environments) and emits a compact diff format intended for grep-ability
+ *     in GitHub Actions log output.
  *   - SKELETON placeholder widths live in src/components/ProductCardSkeleton.tsx,
  *     NOT in cardStyles.ts. By default they're preserved from the previous
  *     snapshot to avoid accidental drift. Pass `--write-skeleton` (alongside
@@ -39,6 +52,7 @@ const SNAPSHOT = resolve(
 
 const WRITE = process.argv.includes("--write") || process.argv.includes("-w");
 const WRITE_SKELETON = process.argv.includes("--write-skeleton");
+const CHECK_ONLY = process.argv.includes("--check-only");
 
 if (WRITE_SKELETON && !WRITE) {
   console.error(
@@ -48,10 +62,19 @@ if (WRITE_SKELETON && !WRITE) {
   process.exit(2);
 }
 
-const RED = "\x1b[31m";
-const GREEN = "\x1b[32m";
-const DIM = "\x1b[2m";
-const RESET = "\x1b[0m";
+if (CHECK_ONLY && (WRITE || WRITE_SKELETON)) {
+  console.error(
+    "\x1b[31m✗\x1b[0m --check-only cannot be combined with --write / --write-skeleton.",
+  );
+  process.exit(2);
+}
+
+// Disable ANSI color in --check-only so CI log scrapers / grep stay clean.
+const COLOR = !CHECK_ONLY;
+const RED = COLOR ? "\x1b[31m" : "";
+const GREEN = COLOR ? "\x1b[32m" : "";
+const DIM = COLOR ? "\x1b[2m" : "";
+const RESET = COLOR ? "\x1b[0m" : "";
 
 /** Extract the string literal assigned to `export const NAME = "...";`. */
 function extractClass(source, name) {
@@ -140,21 +163,46 @@ const previousJson = JSON.stringify(previous, null, 2);
 const nextJson = JSON.stringify(next, null, 2) + "\n";
 
 if (previousJson === nextJson.trimEnd()) {
-  console.log(`${GREEN}✓${RESET} Card style token snapshot is up to date.`);
+  console.log(
+    CHECK_ONLY
+      ? "card-style-snapshot: OK (in sync with cardStyles.ts)"
+      : `${GREEN}✓${RESET} Card style token snapshot is up to date.`,
+  );
   process.exit(0);
 }
 
-// Build a friendly diff of the changed fields.
+// Build a diff of the changed fields. In --check-only mode we emit a single
+// compact line per field ("key: <prev> -> <next>") so a CI log entry like
+// "card-style-snapshot DRIFT: 2 field(s) out of sync" is followed by
+// grep-friendly one-liners. Otherwise we use the multi-line colored diff.
+const changedKeys = [];
 const diff = [];
 for (const key of Object.keys(next)) {
   if (key === "$schema") continue;
   const a = JSON.stringify(previous[key] ?? null);
   const b = JSON.stringify(next[key]);
   if (a !== b) {
-    diff.push(`  ${key}`);
-    diff.push(`    ${RED}- ${a}${RESET}`);
-    diff.push(`    ${GREEN}+ ${b}${RESET}`);
+    changedKeys.push(key);
+    if (CHECK_ONLY) {
+      diff.push(`  ${key}: ${a} -> ${b}`);
+    } else {
+      diff.push(`  ${key}`);
+      diff.push(`    ${RED}- ${a}${RESET}`);
+      diff.push(`    ${GREEN}+ ${b}${RESET}`);
+    }
   }
+}
+
+if (CHECK_ONLY) {
+  console.error(
+    `card-style-snapshot DRIFT: ${changedKeys.length} field(s) out of sync ` +
+      `[${changedKeys.join(", ")}]`,
+  );
+  console.error(diff.join("\n"));
+  console.error(
+    "fix: bun run scripts/update-card-style-snapshots.mjs --write",
+  );
+  process.exit(1);
 }
 
 if (!WRITE) {
