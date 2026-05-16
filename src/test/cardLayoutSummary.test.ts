@@ -110,4 +110,21 @@ describe("card-layout-summary parser — vitest JSON shape compatibility", () =>
     // Sanity check: the token does show up at least once.
     expect(rows.length).toBeGreaterThan(0);
   });
+
+  it("attaches raw-text recovered extras to the originating failure (not '(unattributed)')", () => {
+    const out = runScript("partial-truncation-attach.json");
+    // All three drifts (1 structured + 2 recovered) for the SAME source must
+    // appear, each under the real test name, and the synthetic unattributed
+    // bucket must NOT be created since every recovered hit has an owner.
+    for (const tok of [
+      "min-h-[2.5rem]",
+      "sm:min-h-[2.75rem]",
+      "md:min-h-[1.5rem]",
+    ]) {
+      expect(out, `missing ${tok}`).toContain(tok);
+    }
+    expect(out).toContain("ProductCardSkeleton holds contract");
+    expect(out).not.toContain("(unattributed — recovered from raw report)");
+    expect(out).toMatch(/3 mismatched token\(s\) across 1 failing test\(s\)/);
+  });
 });
