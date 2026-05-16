@@ -239,7 +239,7 @@ const CourseDetail = () => {
   };
 
   return (
-    <div className="py-10 lg:py-16">
+    <div className="py-10 lg:py-16" data-testid="product-hero" data-product-kind="course">
       <div className="container mx-auto px-4">
         <Link to="/courses" className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors">
           <ArrowLeft className="h-4 w-4" /> কোর্সের তালিকায় ফিরে যান
