@@ -45,6 +45,9 @@ jobs:
       - name: Typecheck (catches missing/renamed tokens)
         run: bunx tsc --noEmit
 
+      - name: Verify card style token snapshot is in sync
+        run: node scripts/update-card-style-snapshots.mjs
+
       - name: Run card layout stability tests
         id: vitest
         run: |
