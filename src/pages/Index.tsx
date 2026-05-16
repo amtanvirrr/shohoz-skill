@@ -412,57 +412,15 @@ const Index = () => {
             <MobileCarousel count={dbCourses.length} label="ফিচার্ড কোর্স" desktopGridClass="sm:grid-cols-2 lg:grid-cols-3">
               {dbCourses.map((course, idx) => (
                 <ScrollReveal key={course.id} delay={idx * 100} className="snap-start shrink-0 w-[62%] max-w-[260px] sm:w-auto sm:max-w-none sm:shrink h-full">
-                  <Link to={`/course/${(course as any).slug || course.id}?ref=featured#order-form`} className="group relative flex h-full flex-col overflow-hidden rounded-2xl glass-card shimmer ring-1 ring-border/40 transition-all duration-300 hover:-translate-y-1 hover:ring-primary/40 hover:shadow-xl hover:shadow-primary/10">
-                    {renderCourseBadge(course.id)}
-                    <div className="relative">
-                      <FeaturedImage src={course.image_url} alt={course.title} aspect="video" priority={idx === 0} />
-                      {course.original_price && course.original_price > course.price && course.price > 0 && (
-                        <span className="absolute bottom-2 left-2 z-10 inline-flex items-center gap-1 rounded-full bg-destructive/90 px-2 py-0.5 text-[10px] font-bold text-destructive-foreground shadow-md backdrop-blur-sm sm:bottom-3 sm:left-3 sm:px-2.5 sm:py-1 sm:text-[11px]">
-                          <Flame className="h-3 w-3" /> {Math.round(((course.original_price - course.price) / course.original_price) * 100)}% ছাড়
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex flex-1 flex-col p-3 sm:p-5">
-                      <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                        <span className={categoryPillClass("primary")}>{course.category}</span>
-                        <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-medium text-primary dark:bg-primary/30 dark:text-primary sm:px-2.5 sm:py-1 sm:text-xs">🎓 অনলাইন কোর্স</span>
-                      </div>
-                      <h3 className={CARD_TITLE_CLASS}>{course.title}</h3>
-                      <Byline value={course.instructor} emptyText="ইন্সট্রাক্টর শীঘ্রই জানানো হবে" />
-                      {htmlToPreview(course.description) && (
-                        <p className={CARD_DESCRIPTION_CLASS}>
-                          {htmlToPreview(course.description)}
-                        </p>
-                      )}
-                      <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground sm:mt-3">
-                        <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {course.duration}</span>
-                      </div>
-                      <div className="my-3 h-px bg-gradient-to-r from-transparent via-border to-transparent sm:my-4" />
-                      <div className="mt-auto flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
-                        <div className="flex items-baseline gap-1.5 min-w-0">
-                          {course.price === 0 ? (
-                            <>
-                              <span className="text-base font-extrabold text-success sm:text-lg">ফ্রি</span>
-                              {course.original_price && course.original_price > 0 && <span className="text-xs text-muted-foreground line-through sm:text-sm">৳{course.original_price.toLocaleString()}</span>}
-                            </>
-                          ) : (
-                            <>
-                              <span className="text-base font-extrabold text-primary sm:text-lg sm:text-foreground">৳{course.price.toLocaleString()}</span>
-                              {course.original_price && <span className="text-xs text-muted-foreground line-through sm:text-sm">৳{course.original_price.toLocaleString()}</span>}
-                            </>
-                          )}
-                        </div>
-                        {(() => {
-                          const cta = getCourseCta(course);
-                          return (
-                            <span className={`inline-flex shrink-0 items-center justify-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-sm transition-transform group-hover:scale-105 sm:px-3 sm:py-1.5 sm:text-xs ${ctaToneClass(cta.tone)}`}>
-                              {cta.text} <ArrowRight className="h-3.5 w-3.5" />
-                            </span>
-                          );
-                        })()}
-                      </div>
-                    </div>
-                  </Link>
+                  <CourseCard
+                    course={course}
+                    variant="featured"
+                    to={`/course/${(course as any).slug || course.id}?ref=featured#order-form`}
+                    badge={renderCourseBadge(course.id)}
+                    cta={getCourseCta(course)}
+                    descriptionPreview={htmlToPreview(course.description)}
+                    priority={idx === 0}
+                  />
                 </ScrollReveal>
               ))}
             </MobileCarousel>
