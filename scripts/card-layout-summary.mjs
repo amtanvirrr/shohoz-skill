@@ -11,6 +11,11 @@
  *   Appends Markdown to $GITHUB_STEP_SUMMARY (or stdout when not in CI).
  */
 import { readFileSync, appendFileSync, existsSync } from "node:fs";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const ROOT = resolve(__dirname, "..");
 
 const reportPath = process.argv[2] || "vitest-report.json";
 const summaryPath = process.env.GITHUB_STEP_SUMMARY;
@@ -18,6 +23,55 @@ const summaryPath = process.env.GITHUB_STEP_SUMMARY;
 const write = (md) => {
   if (summaryPath) appendFileSync(summaryPath, md);
   else process.stdout.write(md);
+};
+
+/**
+ * Emit a GitHub workflow command that renders an inline annotation on the
+ * PR's "Files changed" diff at file:line. See
+ * https://docs.github.com/actions/using-workflows/workflow-commands-for-github-actions
+ */
+const annotate = ({ file, line, title, message }) => {
+  const esc = (s) =>
+    String(s).replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A");
+  process.stdout.write(
+    `::error file=${file},line=${line},title=${esc(title)}::${esc(message)}\n`,
+  );
+};
+
+/** Map TOKEN_MISMATCH `source` → file that owns the offending class. */
+const SOURCE_FILE_MAP = [
+  { match: /^BYLINE_LAYOUT_CLASS|^bylineClass\(/, file: "src/lib/cardStyles.ts", needle: "BYLINE_LAYOUT_CLASS" },
+  { match: /^CARD_TITLE_CLASS/, file: "src/lib/cardStyles.ts", needle: "CARD_TITLE_CLASS" },
+  { match: /^CARD_DESCRIPTION_CLASS/, file: "src/lib/cardStyles.ts", needle: "CARD_DESCRIPTION_CLASS" },
+  { match: /^<Byline>/, file: "src/components/Byline.tsx", needle: "BYLINE_LAYOUT_CLASS" },
+  { match: /^FeaturedCardSkeleton/, file: "src/components/FeaturedCardSkeleton.tsx", needle: null },
+  { match: /^ProductCardSkeleton/, file: "src/components/ProductCardSkeleton.tsx", needle: null },
+  { match: /^CourseCard/, file: "src/components/cards/CourseCard.tsx", needle: "CARD_TITLE_CLASS" },
+  { match: /^BookCard/, file: "src/components/cards/BookCard.tsx", needle: "CARD_TITLE_CLASS" },
+];
+
+const findLine = (relPath, needle) => {
+  try {
+    const abs = resolve(ROOT, relPath);
+    if (!existsSync(abs) || !needle) return 1;
+    const lines = readFileSync(abs, "utf8").split(/\r?\n/);
+    for (let i = 0; i < lines.length; i++) if (lines[i].includes(needle)) return i + 1;
+    return 1;
+  } catch {
+    return 1;
+  }
+};
+
+const locateSource = (source) => {
+  for (const entry of SOURCE_FILE_MAP) {
+    if (entry.match.test(source)) {
+      return { file: entry.file, line: findLine(entry.file, entry.needle) };
+    }
+  }
+  return {
+    file: "src/components/__tests__/cardLayoutStability.test.tsx",
+    line: 1,
+  };
 };
 
 if (!existsSync(reportPath)) {
@@ -60,8 +114,8 @@ const parseMismatch = (message) => {
 let md = `## Card layout stability — ❌ ${failures.length} failure(s)\n\n`;
 md += `The card style token contract (see \`docs/card-style-tokens.md\`) drifted. `;
 md += `Restore the listed tokens or update both the cards and matching skeletons together.\n\n`;
-md += `| Test | Source | Missing token | Expected | Actual |\n`;
-md += `| --- | --- | --- | --- | --- |\n`;
+md += `| Test | Source | Missing token | Expected | Actual | Location |\n`;
+md += `| --- | --- | --- | --- | --- | --- |\n`;
 
 const unstructured = [];
 for (const f of failures) {
@@ -69,9 +123,27 @@ for (const f of failures) {
   if (parsed) {
     const actual =
       parsed.actual.length > 80 ? parsed.actual.slice(0, 77) + "…" : parsed.actual;
-    md += `| ${f.name} | \`${parsed.source}\` | \`${parsed.token}\` | \`${parsed.expected}\` | \`${actual}\` |\n`;
+    const loc = locateSource(parsed.source);
+    md += `| ${f.name} | \`${parsed.source}\` | \`${parsed.token}\` | \`${parsed.expected}\` | \`${actual}\` | \`${loc.file}:${loc.line}\` |\n`;
+    annotate({
+      file: loc.file,
+      line: loc.line,
+      title: `Card layout token missing: ${parsed.token}`,
+      message:
+        `${f.name}\n` +
+        `Source: ${parsed.source}\n` +
+        `Expected token: ${parsed.expected}\n` +
+        `Actual: ${actual}\n` +
+        `See docs/card-style-tokens.md — update cards AND skeletons together.`,
+    });
   } else {
     unstructured.push(f);
+    annotate({
+      file: "src/components/__tests__/cardLayoutStability.test.tsx",
+      line: 1,
+      title: `Card layout test failed: ${f.name}`,
+      message: f.message.slice(0, 500),
+    });
   }
 }
 
