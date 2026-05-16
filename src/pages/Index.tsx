@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Star, Search, ArrowRight, BookOpen, GraduationCap, Clock, Users, CheckCircle, Package, Truck, Sparkles, Quote, ShieldCheck, Tag, Flame, AlertTriangle, RefreshCw } from "lucide-react";
+import { Star, Search, ArrowRight, BookOpen, GraduationCap, Clock, Users, CheckCircle, Package, Truck, Sparkles, Quote, ShieldCheck, Tag, AlertTriangle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
@@ -8,19 +8,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { ScrollReveal } from "@/hooks/useScrollReveal";
-import FeaturedImage from "@/components/FeaturedImage";
 
 import HeroBanner from "@/components/HeroBanner";
 import MobileCarousel from "@/components/MobileCarousel";
 import FeaturedCardSkeleton from "@/components/FeaturedCardSkeleton";
 import EmptyState from "@/components/EmptyState";
-import {
-  CARD_TITLE_CLASS,
-  CARD_DESCRIPTION_CLASS,
-  categoryPillClass,
-  statusPillClass,
-} from "@/lib/cardStyles";
-import Byline from "@/components/Byline";
+import { statusPillClass } from "@/lib/cardStyles";
+import CourseCard from "@/components/cards/CourseCard";
+import BookCard from "@/components/cards/BookCard";
 
 /** Strip HTML tags and decode common entities for a safe text-only preview. */
 const htmlToPreview = (html?: string | null): string => {
