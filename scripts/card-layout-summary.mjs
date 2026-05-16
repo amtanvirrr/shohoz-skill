@@ -182,6 +182,42 @@ const visit = (node) => {
 if (report) visit(report);
 
 /**
+ * Last-resort fallback: scan the raw report text for TOKEN_MISMATCH blocks
+ * the structured walker missed (unknown JSON shape, malformed JSON, or
+ * mismatches buried in fields we didn't recognise). Anything found here is
+ * surfaced under a synthetic "(unattributed)" failure so reviewers still see
+ * the drift.
+ */
+(() => {
+  const re =
+    /TOKEN_MISMATCH source="([^"]+)" token="([^"]+)"\s*\n\s*expected:\s*([^\n]+)\n\s*actual:\s*([^\n]+)/g;
+  const seenKeys = new Set(
+    failures.flatMap((f) =>
+      [...f.message.matchAll(re)].map((m) => `${m[1]}::${m[2]}`),
+    ),
+  );
+  const orphans = [];
+  let m;
+  while ((m = re.exec(rawReport)) !== null) {
+    const key = `${m[1]}::${m[2]}`;
+    if (seenKeys.has(key)) continue;
+    seenKeys.add(key);
+    orphans.push(m[0]);
+  }
+  if (orphans.length) {
+    failures.push({
+      name: "(unattributed — recovered from raw report)",
+      message: orphans.join("\n---\n"),
+    });
+  }
+})();
+
+if (failures.length === 0) {
+  write(`## Card layout stability\n\n✅ All token/class contracts hold.\n`);
+  process.exit(0);
+}
+
+/**
  * A single failure message can contain MULTIPLE TOKEN_MISMATCH blocks now
  * (expectAllTokens collects every missing token before throwing). Return them
  * all so the summary lists each drifted token on its own row.
