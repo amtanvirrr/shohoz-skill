@@ -1225,7 +1225,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      __export_auth_users: { Args: never; Returns: Json }
       get_quiz_leaderboard: {
         Args: { _limit?: number; _quiz_id: string }
         Returns: {
