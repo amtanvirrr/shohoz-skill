@@ -614,3 +614,23 @@ jobs:
               });
               core.info('created new PR comment');
             }
+      # ────────────────────────────────────────────────────────────────────────
+      # Known-snapshot manifest (save)
+      # ────────────────────────────────────────────────────────────────────────
+      # Persist the *current* manifest (built by the guard step) only on a
+      # fully successful job. This guarantees the cache only ever contains
+      # snapshot states that were either label-approved or had no changes —
+      # a blocked run never auto-promotes its diffs into the "known" set.
+      - name: Save known-snapshot manifest
+        if: success() && github.event_name == 'pull_request' && hashFiles('.ci-cache/known-snapshots.next.tsv') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: .ci-cache/known-snapshots.tsv
+          key: snap-manifest-pr-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}
+
+      - name: Promote next-manifest to saved path
+        if: success() && github.event_name == 'pull_request'
+        run: |
+          if [ -f .ci-cache/known-snapshots.next.tsv ]; then
+            mv .ci-cache/known-snapshots.next.tsv .ci-cache/known-snapshots.tsv
+          fi
