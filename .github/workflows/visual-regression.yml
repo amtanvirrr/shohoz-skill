@@ -28,6 +28,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Need enough history to diff against the PR base — shallow=1
+          # would make `git diff origin/<base>...HEAD` impossible.
+          fetch-depth: 0
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -124,12 +128,72 @@ jobs:
         if: steps.pw-cache.outputs.cache-hit == 'true'
         run: bunx playwright install-deps chromium
 
+      # ────────────────────────────────────────────────────────────────────────
+      # Smart spec selection
+      # ────────────────────────────────────────────────────────────────────────
+      # On a PR, only run the visual specs that exercise files the PR
+      # actually changed. On push-to-main (or anything else without a
+      # diffable base), fall back to running everything.
+      #
+      # The selector emits one of:
+      #   ALL           → run the entire visual suite
+      #   SKIP          → no visual surfaces affected, mark job successful
+      #   <args...>     → pass straight to `playwright test` (spec files
+      #                   and an optional --grep narrowing)
+      - name: Compute changed files (PR only)
+        id: changed
+        if: github.event_name == 'pull_request'
+        run: |
+          base_sha="${{ github.event.pull_request.base.sha }}"
+          git diff --name-only "$base_sha"...HEAD > changed.txt || true
+          echo "files=$(wc -l < changed.txt | tr -d ' ')" >> "$GITHUB_OUTPUT"
+          echo "--- changed files ---"
+          cat changed.txt
+
+      - name: Select Playwright specs
+        id: select
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ] && [ -f changed.txt ]; then
+            selection=$(node scripts/select-playwright-specs.mjs changed.txt --debug)
+          else
+            selection="ALL"
+          fi
+          echo "selection<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$selection"     >> "$GITHUB_OUTPUT"
+          echo "EOF"             >> "$GITHUB_OUTPUT"
+          echo "Selection: $selection"
+
+      - name: Skip — no visual surfaces affected
+        if: steps.select.outputs.selection == 'SKIP'
+        run: |
+          {
+            echo "## Visual regression — ⏭️ skipped"
+            echo ""
+            echo "No files in this PR touch components or pages covered by the"
+            echo "Playwright visual suite. Tripwire files (\`cardStyles.ts\`,"
+            echo "\`index.css\`, \`tailwind.config.*\`, \`vite.config.*\`,"
+            echo "\`playwright.config.*\`, \`e2e/**\`, \`Byline.tsx\`) would"
+            echo "have forced a full run."
+            echo ""
+            echo "See \`scripts/select-playwright-specs.mjs\` for the mapping table."
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Run Playwright tests
-        run: bunx playwright test --reporter=list,html
+        if: steps.select.outputs.selection != 'SKIP'
         env:
           # Force a stable CI baseline so screenshot diffs aren't tainted by
           # the local dev fonts the contributor happened to have installed.
           CI: "1"
+        run: |
+          sel="${{ steps.select.outputs.selection }}"
+          if [ "$sel" = "ALL" ]; then
+            echo "▶ Running FULL visual suite"
+            bunx playwright test --reporter=list,html
+          else
+            echo "▶ Running SELECTED specs: $sel"
+            # shellcheck disable=SC2086  # intentional word splitting for argv
+            eval "bunx playwright test $sel --reporter=list,html"
+          fi
 
       - name: Upload Playwright HTML report
         if: always()
