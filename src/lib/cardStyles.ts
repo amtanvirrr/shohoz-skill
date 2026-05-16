@@ -1,7 +1,38 @@
 /**
- * Shared className helpers for product/featured cards.
- * Centralised so course, book, and skeleton variants stay byte-identical
- * across pages and there is zero layout shift on data load.
+ * =============================================================================
+ *  CARD STYLE TOKEN CONTRACT
+ * =============================================================================
+ *
+ * Single source of truth for product / featured card typography & spacing.
+ * Course cards, book cards, and their loading skeletons MUST use these exact
+ * tokens — that is what guarantees zero layout shift when data swaps in.
+ *
+ * Contract (DO NOT BREAK):
+ *   1. Every text row that can wrap (title, description, byline) MUST own a
+ *      reserved min-height at EACH breakpoint it changes line-clamp at.
+ *   2. The matching skeleton block (in Byline.Skeleton / FeaturedCardSkeleton
+ *      / ProductCardSkeleton) MUST consume the SAME token — never re-derive
+ *      the height inline.
+ *   3. If you add a new breakpoint (e.g. lg:) that changes font-size or
+ *      line-clamp, you MUST also add a matching `lg:min-h-[…]`.
+ *   4. Any change to a *_CLASS below is a CLS-risk change — the assertions in
+ *      src/components/__tests__/cardLayoutStability.test.tsx will fail if the
+ *      contract drifts. Update tests AND skeletons in the same PR.
+ *
+ * Reserved heights at each breakpoint (keep in sync with the test file):
+ *   token                     base        sm           md/lg
+ *   BYLINE_LAYOUT_CLASS       2.50rem     2.75rem      1.50rem (md drops to 1 line)
+ *   CARD_TITLE_CLASS          2.50rem     3.25rem      —
+ *   CARD_DESCRIPTION_CLASS    2.00rem     2.25rem      —
+ *   Price row (skeleton)      h-6 w-20    —            —     (CourseCard/BookCard
+ *                                                             render `<span>৳…</span>`
+ *                                                             with text-base/lg; the
+ *                                                             h-6 skeleton block matches
+ *                                                             that natural line-height)
+ *
+ * If you need a richer style for one specific page, compose ON TOP of the
+ * shared class — do not fork it. Example:
+ *   <h3 className={`${CARD_TITLE_CLASS} text-balance`}>{title}</h3>
  */
 
 /** Instructor/author "byline" line — layout-only (font size, leading, margin, min-h, line-clamp). */
