@@ -589,6 +589,7 @@ const Index = () => {
                     </label>
                     <Input
                       id="track-order-id"
+                      data-testid="track-order-id-input"
                       className={`glass-input ${trackErrors.orderId ? "border-destructive focus-visible:ring-destructive" : ""}`}
                       placeholder="যেমন: ORD-XXXXXX"
                       value={trackOrderId}
@@ -601,7 +602,7 @@ const Index = () => {
                       aria-describedby={trackErrors.orderId ? "track-order-id-error" : undefined}
                     />
                     {trackErrors.orderId && (
-                      <p id="track-order-id-error" role="alert" className="mt-1 text-xs font-medium text-destructive">
+                      <p id="track-order-id-error" data-testid="track-order-id-error" role="alert" className="mt-1 text-xs font-medium text-destructive">
                         {trackErrors.orderId}
                       </p>
                     )}
@@ -612,6 +613,7 @@ const Index = () => {
                     </label>
                     <Input
                       id="track-phone"
+                      data-testid="track-order-phone-input"
                       type="tel"
                       inputMode="tel"
                       className={`glass-input ${trackErrors.phone ? "border-destructive focus-visible:ring-destructive" : ""}`}
@@ -626,16 +628,16 @@ const Index = () => {
                       aria-describedby={trackErrors.phone ? "track-phone-error" : undefined}
                     />
                     {trackErrors.phone && (
-                      <p id="track-phone-error" role="alert" className="mt-1 text-xs font-medium text-destructive">
+                      <p id="track-phone-error" data-testid="track-order-phone-error" role="alert" className="mt-1 text-xs font-medium text-destructive">
                         {trackErrors.phone}
                       </p>
                     )}
                   </div>
-                  <Button className="w-full glow-hover" onClick={handleTrack}>
+                  <Button data-testid="track-order-submit" className="w-full glow-hover" onClick={handleTrack}>
                     <Search className="mr-1 h-4 w-4" /> ট্র্যাক করুন
                   </Button>
                   {trackErrors.form && (
-                    <p role="alert" className="text-xs font-medium text-destructive">
+                    <p data-testid="track-order-form-error" role="alert" className="text-xs font-medium text-destructive">
                       {trackErrors.form}
                     </p>
                   )}
