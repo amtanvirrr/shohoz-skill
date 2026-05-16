@@ -150,6 +150,70 @@ jobs:
           echo "--- changed files ---"
           cat changed.txt
 
+      # ────────────────────────────────────────────────────────────────────────
+      # Snapshot-update safeguard
+      # ────────────────────────────────────────────────────────────────────────
+      # Playwright baselines live next to their specs in `<spec>-snapshots/`
+      # directories (plus any committed `*-expected.png` reference). Updating
+      # them is a deliberate act: a reviewer must confirm the new screenshots
+      # match the intended visual change. To make that explicit, we fail the
+      # job whenever a PR modifies snapshot files *unless* the PR carries the
+      # `update-snapshots` label. Maintainers add the label after eyeballing
+      # the diff thumbnails posted by the failure path below.
+      - name: Guard against unlabeled snapshot updates
+        if: github.event_name == 'pull_request' && steps.changed.outputs.files != '0'
+        env:
+          PR_LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+        run: |
+          set -euo pipefail
+          # Match Playwright's default baseline locations + any hand-committed
+          # expected PNGs that live alongside e2e specs.
+          snapshot_changes=$(grep -E '(-snapshots/.*\.(png|jpg|jpeg|webp)$|^e2e/.*-expected\.(png|jpg|jpeg|webp)$)' changed.txt || true)
+          if [ -z "$snapshot_changes" ]; then
+            echo "No snapshot files touched — guard passes."
+            exit 0
+          fi
+          echo "Snapshot files changed in this PR:"
+          echo "$snapshot_changes" | sed 's/^/  - /'
+          # `PR_LABELS` is a JSON array like ["bug","update-snapshots"].
+          if echo "$PR_LABELS" | grep -q '"update-snapshots"'; then
+            echo "✅ \`update-snapshots\` label present — allowing snapshot changes."
+            {
+              echo "## Visual regression — snapshot update approved"
+              echo ""
+              echo "PR carries the \`update-snapshots\` label; the following baselines were updated:"
+              echo ""
+              echo '```'
+              echo "$snapshot_changes"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          {
+            echo "## Visual regression — 🚫 snapshot update blocked"
+            echo ""
+            echo "This PR modifies committed Playwright baseline images but does"
+            echo "not carry the \`update-snapshots\` label. Snapshot changes must"
+            echo "be reviewed deliberately:"
+            echo ""
+            echo '```'
+            echo "$snapshot_changes"
+            echo '```'
+            echo ""
+            echo "### To proceed"
+            echo ""
+            echo "1. Open the failing run, confirm the new screenshots match the"
+            echo "   intended visual change (use the diff thumbnails posted on"
+            echo "   the PR comment)."
+            echo "2. Add the \`update-snapshots\` label to this PR."
+            echo "3. Re-run this workflow (Actions → Re-run failed jobs)."
+            echo ""
+            echo "If the snapshot change was unintentional, revert the baseline"
+            echo "files instead of adding the label."
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "::error::Snapshot baselines changed without the 'update-snapshots' label. See job summary for details."
+          exit 1
+
       - name: Select Playwright specs
         id: select
         run: |
