@@ -486,60 +486,14 @@ const Index = () => {
             <MobileCarousel count={dbBooks.length} label="ফিচার্ড বই" desktopGridClass="sm:grid-cols-2 lg:grid-cols-3">
               {dbBooks.map((book, idx) => (
                 <ScrollReveal key={book.id} delay={idx * 100} className="snap-start shrink-0 w-[62%] max-w-[260px] sm:w-auto sm:max-w-none sm:shrink h-full">
-                  <Link to={`/book/${(book as any).slug || book.id}?ref=featured#order-form`} className="group relative flex h-full flex-col overflow-hidden rounded-2xl glass-card shimmer ring-1 ring-border/40 transition-all duration-300 hover:-translate-y-1 hover:ring-accent/40 hover:shadow-xl hover:shadow-accent/10">
-                    {renderBookBadge(book)}
-                    <div className="relative">
-                      <FeaturedImage src={book.image_url} alt={book.title} aspect="portrait" />
-                      {book.original_price && book.original_price > book.price && book.price > 0 && (
-                        <span className="absolute bottom-2 left-2 z-10 inline-flex items-center gap-1 rounded-full bg-destructive/90 px-2 py-0.5 text-[10px] font-bold text-destructive-foreground shadow-md backdrop-blur-sm sm:bottom-3 sm:left-3 sm:px-2.5 sm:py-1 sm:text-[11px]">
-                          <Flame className="h-3 w-3" /> {Math.round(((book.original_price - book.price) / book.original_price) * 100)}% ছাড়
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex flex-1 flex-col p-3 sm:p-5">
-                      <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                        <span className={categoryPillClass("accent")}>{book.category}</span>
-                        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium sm:px-2.5 sm:py-1 sm:text-xs ${
-                          book.book_type === "ebook"
-                            ? "bg-primary/10 text-primary"
-                            : "bg-accent/15 text-accent"
-                        }`}>
-                          {book.book_type === "ebook" ? "📱 ইবুক" : "📦 ফিজিক্যাল বই"}
-                        </span>
-                      </div>
-                      <h3 className={CARD_TITLE_CLASS}>{book.title}</h3>
-                      <Byline value={book.author} emptyText="লেখক উল্লেখ করা হয়নি" />
-                      {htmlToPreview(book.description) && (
-                        <p className={CARD_DESCRIPTION_CLASS}>
-                          {htmlToPreview(book.description)}
-                        </p>
-                      )}
-                      <div className="my-3 h-px bg-gradient-to-r from-transparent via-border to-transparent sm:my-4" />
-                      <div className="mt-auto flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
-                        <div className="flex items-baseline gap-1.5 min-w-0">
-                          {book.price === 0 ? (
-                            <>
-                              <span className="text-base font-extrabold text-success sm:text-lg">ফ্রি</span>
-                              {book.original_price && book.original_price > 0 && <span className="text-xs text-muted-foreground line-through sm:text-sm">৳{book.original_price}</span>}
-                            </>
-                          ) : (
-                            <>
-                              <span className="text-base font-extrabold text-primary sm:text-lg sm:text-foreground">৳{book.price}</span>
-                              {book.original_price && <span className="text-xs text-muted-foreground line-through sm:text-sm">৳{book.original_price}</span>}
-                            </>
-                          )}
-                        </div>
-                        {(() => {
-                          const cta = getBookCta(book);
-                          return (
-                            <span className={`inline-flex shrink-0 items-center justify-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-sm transition-transform group-hover:scale-105 sm:px-3 sm:py-1.5 sm:text-xs ${ctaToneClass(cta.tone)}`}>
-                              {cta.text} <ArrowRight className="h-3.5 w-3.5" />
-                            </span>
-                          );
-                        })()}
-                      </div>
-                    </div>
-                  </Link>
+                  <BookCard
+                    book={book}
+                    variant="featured"
+                    to={`/book/${(book as any).slug || book.id}?ref=featured#order-form`}
+                    badge={renderBookBadge(book)}
+                    cta={getBookCta(book)}
+                    descriptionPreview={htmlToPreview(book.description)}
+                  />
                 </ScrollReveal>
               ))}
             </MobileCarousel>
