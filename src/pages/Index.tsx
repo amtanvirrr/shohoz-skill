@@ -304,12 +304,6 @@ const Index = () => {
     return { text: isDigital ? "এখনই কিনুন" : "অর্ডার করুন", tone: "primary" as const };
   };
 
-  const ctaToneClass = (tone: "primary" | "success" | "warning") => {
-    if (tone === "success") return "bg-success text-success-foreground sm:bg-success/15 sm:text-success sm:shadow-none";
-    if (tone === "warning") return "bg-warning text-warning-foreground sm:bg-warning/15 sm:text-warning sm:shadow-none";
-    return "bg-primary text-primary-foreground sm:bg-primary/10 sm:text-primary sm:shadow-none";
-  };
-
   /**
    * Homepage track handler — sends the user to the dedicated /track-order
    * page with the typed value pre-filled into the matching field
