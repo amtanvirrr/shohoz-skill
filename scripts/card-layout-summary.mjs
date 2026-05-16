@@ -266,7 +266,14 @@ if (report) visit(report);
   // + actual, whitespace-normalised) so two *distinct* drifts that happen to
   // share a source/token pair are NOT collapsed, while exact repeats across
   // the structured walker and the raw-text scanner ARE.
-  const norm = (s) => String(s).replace(/\s+/g, " ").trim();
+  //
+  // Strip trailing JSON-escape artifacts (`"`, `\`, whitespace) — when the
+  // raw-text scanner reads through escaped JSON, the `[^\n]+` capture for
+  // `actual:` greedily consumes the closing string quote, so the same drift
+  // would otherwise produce `clipped` (structured) vs `clipped"` (raw) and
+  // slip past dedup.
+  const norm = (s) =>
+    String(s).replace(/[\s"\\]+$/, "").replace(/^[\s"\\]+/, "").replace(/\s+/g, " ");
   const fingerprint = (m) =>
     `${m[1]}::${m[2]}::${norm(m[3])}::${norm(m[4])}`;
 
