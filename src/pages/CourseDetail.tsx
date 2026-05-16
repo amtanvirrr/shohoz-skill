@@ -15,6 +15,7 @@ import { usePixel } from "@/components/MetaPixelProvider";
 import OrderSuccessDialog from "@/components/OrderSuccessDialog";
 import PaymentSelector from "@/components/PaymentSelector";
 import SelectedItemSummary from "@/components/checkout/SelectedItemSummary";
+import ReviewCardSkeleton from "@/components/ReviewCardSkeleton";
 
 interface DbCourse {
   id: string;
