@@ -69,4 +69,45 @@ describe("card-layout-summary parser — vitest JSON shape compatibility", () =>
     // Orphan rows are bucketed under the synthetic recovery label.
     expect(out).toContain("(unattributed — recovered from raw report)");
   });
+
+  it("recovers TOKEN_MISMATCH even when the report is non-JSON garbage", () => {
+    const out = runScript("garbage.json");
+    expect(out).toContain("CARD_TITLE_CLASS");
+    expect(out).toContain("leading-snug");
+    expect(out).toContain("(unattributed — recovered from raw report)");
+  });
+
+  it("recovers only the complete TOKEN_MISMATCH block when JSON cuts mid-block", () => {
+    const out = runScript("truncated-mid-block.json");
+    // First block (complete) must surface.
+    expect(out).toContain("min-h-[2.5rem]");
+    // Second block was cut mid-token — it must NOT be reported as if complete.
+    expect(out).not.toContain("sm:min-h-\n");
+    expect(out).not.toContain("`sm:min-h-`");
+    // Exactly one row in the table (footer count proves it).
+    expect(out).toMatch(/1 mismatched token\(s\)/);
+  });
+
+  it("recovers TOKEN_MISMATCH buried in an unrecognised JSON field", () => {
+    const out = runScript("unknown-field.json");
+    // The structured walker can't find a `failed` node here — the raw-text
+    // fallback is the ONLY path that surfaces this drift.
+    expect(out).toContain("BYLINE_LAYOUT_CLASS");
+    expect(out).toContain("md:line-clamp-1");
+    expect(out).toContain("(unattributed — recovered from raw report)");
+  });
+
+  it("does not double-count when the same TOKEN_MISMATCH appears in JSON and raw text", () => {
+    const out = runScript("dedup.json");
+    // The exact same drift shows up in both the assertion's failureMessages
+    // AND a sibling stderr field. We must report it exactly once.
+    const rows = out.match(/min-h-\[2\.5rem\]/g) ?? [];
+    // Cell appears in: token column, expected column, annotation message —
+    // that's per-row noise. The footer count is the authoritative signal.
+    expect(out).toMatch(/1 mismatched token\(s\) across 1 failing test\(s\)/);
+    // And the "(unattributed)" bucket must NOT appear for the duplicate.
+    expect(out).not.toContain("(unattributed — recovered from raw report)");
+    // Sanity check: the token does show up at least once.
+    expect(rows.length).toBeGreaterThan(0);
+  });
 });

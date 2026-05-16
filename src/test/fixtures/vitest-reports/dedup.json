@@ -1,0 +1,16 @@
+{
+  "testResults": [
+    {
+      "assertionResults": [
+        {
+          "fullName": "card layout > dedup",
+          "status": "failed",
+          "failureMessages": [
+            "TOKEN_MISMATCH source=\"CARD_TITLE_CLASS\" token=\"min-h-[2.5rem]\"\n        expected: min-h-[2.5rem]\n        actual: nope"
+          ]
+        }
+      ]
+    }
+  ],
+  "stderrTail": "TOKEN_MISMATCH source=\"CARD_TITLE_CLASS\" token=\"min-h-[2.5rem]\"\n        expected: min-h-[2.5rem]\n        actual: nope"
+}
