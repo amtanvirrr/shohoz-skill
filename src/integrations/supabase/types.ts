@@ -1226,10 +1226,6 @@ export type Database = {
     }
     Functions: {
       __export_auth_users: { Args: never; Returns: Json }
-      __sign_storage: {
-        Args: { _bucket: string; _expires?: number; _path: string }
-        Returns: string
-      }
       get_quiz_leaderboard: {
         Args: { _limit?: number; _quiz_id: string }
         Returns: {
