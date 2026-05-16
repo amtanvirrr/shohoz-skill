@@ -128,22 +128,53 @@ regenerated in the **same PR** as the source change — otherwise CI fails on
 ### Standard flow (token change only)
 
 1. **Edit the tokens** in [`src/lib/cardStyles.ts`](../src/lib/cardStyles.ts).
-   Touch only `min-h-…`, `leading-…`, or `line-clamp-…` utilities — other
-   classes are not part of the locked contract.
+   The locked contract now covers **six** layout-affecting utility groups:
+   | Group       | Utilities tracked                                  | Why it's locked                                  |
+   | ----------- | -------------------------------------------------- | ------------------------------------------------ |
+   | `minHeight` | `min-h-…`                                          | Reserves vertical space (CLS guard).             |
+   | `leading`   | `leading-…`                                        | Line-box height; changes effective row height.   |
+   | `clamp`     | `line-clamp-…`                                     | Number of visible lines → required min-height.   |
+   | `fontSize`  | `text-xs`…`text-9xl`, `text-[…]` (NOT colors)      | Natural line-height → skeleton sizing.           |
+   | `padding`   | `p-`, `px-`, `py-`, `pt-`, `pr-`, `pb-`, `pl-`     | Card content box dimensions.                     |
+   | `tracking`  | `tracking-…`                                       | Letter-spacing → horizontal text fit / width.    |
+
+   Color, hover, transition, font-family, border, and background utilities
+   are intentionally **excluded** — they don't shift layout, so churning the
+   snapshot on a color tweak would add noise without catching real bugs.
+
+   **Breakpoint cascade rule (enforced):** if you add a `sm:` / `md:` /
+   `lg:` / `xl:` / `2xl:` variant of a `minHeight` / `leading` / `clamp` /
+   `fontSize` token, you **must** keep an unprefixed base token of the same
+   group. Tailwind's responsive prefixes are min-width — without a base,
+   the smallest viewport renders with **no reserved layout** and the card
+   visibly jumps on data load. `update-card-style-snapshots.mjs` fails fast
+   with a `path:line` annotation if this rule is violated.
 2. **Preview the diff** to confirm only the fields you meant to change moved:
    ```bash
    bun run scripts/update-card-style-snapshots.mjs
    ```
-   Exits `1` with a colored diff when out of sync, `0` when in sync.
+   Exits `1` with a colored diff when out of sync, `0` when in sync. The
+   diff annotates every drifted field with the exact `src/lib/cardStyles.ts:line`
+   where the offending token lives — click straight through to the source
+   line instead of grepping. If a breakpoint cascade is violated the script
+   exits `1` **before** showing the snapshot diff so you fix the cascade
+   first.
 3. **Accept the new contract** by rewriting the snapshot:
    ```bash
    bun run scripts/update-card-style-snapshots.mjs --write
    ```
+   `--write` requires the explicit flag — typos or accidental script runs
+   can never silently rewrite the contract. The skeleton placeholder widths
+   are preserved from the previous snapshot unless you also pass
+   `--write-skeleton` (see [Skeleton width change](#skeleton-width-change)).
 4. **Run the unit tests** to confirm cards + skeletons still match the new
    contract:
    ```bash
    bunx vitest run src/components/__tests__/cardLayoutStability.test.tsx
    ```
+   The test helpers tokenize on whitespace and require **exact whole-token
+   matches**, so e.g. `sm:min-h-[2.5rem]` will never silently satisfy a
+   contract that expects the unprefixed `min-h-[2.5rem]` base.
 5. **Run the visual regression suite** (Playwright) to catch any pixel-level
    regressions the token change introduced:
    ```bash
@@ -154,6 +185,26 @@ regenerated in the **same PR** as the source change — otherwise CI fails on
    for the safe-regeneration checklist).
 6. **Commit** the edited `cardStyles.ts`, the regenerated
    `cardStyleTokens.json`, and any updated Playwright PNG baselines together.
+
+### Adding a new tracked group
+
+If a future change requires locking another utility family (e.g. `gap-…`,
+`rounded-…`), extend the contract in **three** places in the same PR:
+
+1. **`scripts/update-card-style-snapshots.mjs`** — add a new extractor next
+   to `tokensMatching` / `fontSizeTokens` / `paddingTokens`, include it in
+   the `groups` object inside `tokenMap()`, and (if the group is
+   CLS-sensitive) add it to the `CASCADE_GROUPS` array so the breakpoint
+   cascade validator covers it too.
+2. **`docs/card-style-tokens.md`** — add a row to the table above so
+   reviewers know the group is locked.
+3. **`src/components/__tests__/cardLayoutStability.test.tsx`** — pull the
+   new group out of the snapshot (e.g.
+   `const PADDING_TOKENS = snapshot.CARD_TITLE_CLASS.padding`) and assert
+   it on the relevant component(s) via `expectAllTokens`.
+
+Then run `--write` once to seed the new group into the snapshot JSON and
+commit everything together.
 
 ### Skeleton width change
 
