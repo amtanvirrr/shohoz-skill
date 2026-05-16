@@ -122,7 +122,7 @@ const parseMismatches = (message) => {
   return out;
 };
 
-let md = `## Card layout stability — ❌ ${failures.length} failure(s)\n\n`;
+let md = `## Card layout stability — ❌ ${failures.length} failing test(s)\n\n`;
 md += `The card style token contract (see \`docs/card-style-tokens.md\`) drifted. `;
 md += `Restore the listed tokens or update both the cards and matching skeletons together.\n\n`;
 md += `| Test | Source | Missing token | Expected | Actual | Location |\n`;
