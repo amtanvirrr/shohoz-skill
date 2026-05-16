@@ -265,7 +265,8 @@ jobs:
           fi
 
           # Replace this PR-sha's directory so we don't accumulate stale runs.
-          rm -rf "$WORK/$DEST_REL"
+          # `${var:?}` aborts if either var is empty so rm can never expand to /.
+          rm -rf "${WORK:?}/${DEST_REL:?}"
           mkdir -p "$WORK/$DEST_REL"
 
           # Copy every *-diff.png plus the sibling -actual / -expected.
