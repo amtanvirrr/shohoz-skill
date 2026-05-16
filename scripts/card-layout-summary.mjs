@@ -40,9 +40,9 @@ const annotate = ({ file, line, title, message }) => {
 
 /** Map TOKEN_MISMATCH `source` → file that owns the offending class. */
 const SOURCE_FILE_MAP = [
-  { match: /^BYLINE_LAYOUT_CLASS|^bylineClass\(/, file: "src/lib/cardStyles.ts", needle: "BYLINE_LAYOUT_CLASS" },
-  { match: /^CARD_TITLE_CLASS/, file: "src/lib/cardStyles.ts", needle: "CARD_TITLE_CLASS" },
-  { match: /^CARD_DESCRIPTION_CLASS/, file: "src/lib/cardStyles.ts", needle: "CARD_DESCRIPTION_CLASS" },
+  { match: /^BYLINE_LAYOUT_CLASS|^bylineClass\(/, file: "src/lib/cardStyles.ts", needle: "export const BYLINE_LAYOUT_CLASS" },
+  { match: /^CARD_TITLE_CLASS/, file: "src/lib/cardStyles.ts", needle: "export const CARD_TITLE_CLASS" },
+  { match: /^CARD_DESCRIPTION_CLASS/, file: "src/lib/cardStyles.ts", needle: "export const CARD_DESCRIPTION_CLASS" },
   { match: /^<Byline>/, file: "src/components/Byline.tsx", needle: "BYLINE_LAYOUT_CLASS" },
   { match: /^FeaturedCardSkeleton/, file: "src/components/FeaturedCardSkeleton.tsx", needle: null },
   { match: /^ProductCardSkeleton/, file: "src/components/ProductCardSkeleton.tsx", needle: null },
