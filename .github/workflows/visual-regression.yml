@@ -151,6 +151,33 @@ jobs:
           cat changed.txt
 
       # ────────────────────────────────────────────────────────────────────────
+      # Known-snapshot manifest (restore)
+      # ────────────────────────────────────────────────────────────────────────
+      # The guard step below treats snapshot file changes as suspicious by
+      # default. But within a single PR, the same baseline change can show up
+      # on every push — once a reviewer has acknowledged it (either by adding
+      # the `update-snapshots` label, or by letting the workflow succeed once
+      # with it labelled), there's no value in re-failing future pushes for
+      # the *same* file+content.
+      #
+      # We persist a `path<TAB>sha256` manifest of every snapshot file changed
+      # in this PR under a cache key scoped to the PR number. The guard then
+      # ignores entries already present in the restored manifest and fails
+      # only on *new* snapshot diffs since the last successful run. The
+      # manifest is rewritten (save step at end of job) only when the job
+      # succeeds, so a blocked run never "ratchets" unknown changes into the
+      # known set.
+      - name: Restore known-snapshot manifest
+        id: snap-manifest
+        if: github.event_name == 'pull_request'
+        uses: actions/cache/restore@v4
+        with:
+          path: .ci-cache/known-snapshots.tsv
+          key: snap-manifest-pr-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}
+          restore-keys: |
+            snap-manifest-pr-${{ github.event.pull_request.number }}-
+
+      # ────────────────────────────────────────────────────────────────────────
       # Snapshot-update safeguard
       # ────────────────────────────────────────────────────────────────────────
       # Playwright baselines live next to their specs in `<spec>-snapshots/`
@@ -158,8 +185,11 @@ jobs:
       # them is a deliberate act: a reviewer must confirm the new screenshots
       # match the intended visual change. To make that explicit, we fail the
       # job whenever a PR modifies snapshot files *unless* the PR carries the
-      # `update-snapshots` label. Maintainers add the label after eyeballing
-      # the diff thumbnails posted by the failure path below.
+      # `update-snapshots` label — *and only when the diff is new compared to
+      # the last successful run for this PR* (see manifest step above).
+      # Maintainers add the label after eyeballing the diff thumbnails posted
+      # by the failure path below; once accepted, subsequent pushes that
+      # carry the same baselines won't re-trigger the guard.
       - name: Guard against unlabeled snapshot updates
         if: github.event_name == 'pull_request' && steps.changed.outputs.files != '0'
         env:
@@ -171,20 +201,71 @@ jobs:
           snapshot_changes=$(grep -E '(-snapshots/.*\.(png|jpg|jpeg|webp)$|^e2e/.*-expected\.(png|jpg|jpeg|webp)$)' changed.txt || true)
           if [ -z "$snapshot_changes" ]; then
             echo "No snapshot files touched — guard passes."
+            mkdir -p .ci-cache
+            : > .ci-cache/known-snapshots.next.tsv
             exit 0
           fi
+
+          # Build a `path<TAB>sha256` manifest of the snapshot files as they
+          # exist in the PR HEAD. Files deleted in the PR are still listed
+          # (with sha=DELETED) so a re-add of a previously-removed baseline
+          # is still classified as "new".
+          mkdir -p .ci-cache
+          : > .ci-cache/known-snapshots.next.tsv
+          while IFS= read -r f; do
+            if [ -f "$f" ]; then
+              sha=$(sha256sum "$f" | awk '{print $1}')
+            else
+              sha="DELETED"
+            fi
+            printf '%s\t%s\n' "$f" "$sha" >> .ci-cache/known-snapshots.next.tsv
+          done <<< "$snapshot_changes"
+
+          known=.ci-cache/known-snapshots.tsv
+          [ -f "$known" ] || known=/dev/null
+
+          # `new_entries` = current manifest lines that are NOT in the
+          # restored known set. `comm -23` requires sorted inputs.
+          sort -u .ci-cache/known-snapshots.next.tsv > .ci-cache/current.sorted
+          sort -u "$known"                            > .ci-cache/known.sorted
+          comm -23 .ci-cache/current.sorted .ci-cache/known.sorted > .ci-cache/new.tsv
+          new_paths=$(awk -F'\t' '{print $1}' .ci-cache/new.tsv | sort -u)
+          known_unchanged=$(comm -12 .ci-cache/current.sorted .ci-cache/known.sorted | awk -F'\t' '{print $1}' | sort -u)
+
           echo "Snapshot files changed in this PR:"
           echo "$snapshot_changes" | sed 's/^/  - /'
+          if [ -n "$known_unchanged" ]; then
+            echo ""
+            echo "Already-acknowledged from a prior successful run (ignored):"
+            echo "$known_unchanged" | sed 's/^/  ✓ /'
+          fi
+          if [ -z "$new_paths" ]; then
+            echo ""
+            echo "✅ No *new* snapshot diffs vs. the last successful run — guard passes."
+            {
+              echo "## Visual regression — snapshot guard (no new diffs)"
+              echo ""
+              echo "All snapshot file changes in this PR are byte-identical to a"
+              echo "previously-acknowledged run, so the guard is a no-op."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          echo ""
+          echo "NEW snapshot diffs since the last successful run:"
+          echo "$new_paths" | sed 's/^/  ✗ /'
+
           # `PR_LABELS` is a JSON array like ["bug","update-snapshots"].
           if echo "$PR_LABELS" | grep -q '"update-snapshots"'; then
-            echo "✅ \`update-snapshots\` label present — allowing snapshot changes."
+            echo "✅ \`update-snapshots\` label present — allowing new snapshot changes."
             {
               echo "## Visual regression — snapshot update approved"
               echo ""
-              echo "PR carries the \`update-snapshots\` label; the following baselines were updated:"
+              echo "PR carries the \`update-snapshots\` label; the following baselines"
+              echo "are newly accepted (and will be remembered for future pushes):"
               echo ""
               echo '```'
-              echo "$snapshot_changes"
+              echo "$new_paths"
               echo '```'
             } >> "$GITHUB_STEP_SUMMARY"
             exit 0
@@ -192,13 +273,23 @@ jobs:
           {
             echo "## Visual regression — 🚫 snapshot update blocked"
             echo ""
-            echo "This PR modifies committed Playwright baseline images but does"
-            echo "not carry the \`update-snapshots\` label. Snapshot changes must"
-            echo "be reviewed deliberately:"
+            echo "This PR modifies committed Playwright baseline images that have"
+            echo "not been seen in a prior successful run, and does not carry the"
+            echo "\`update-snapshots\` label. New snapshot changes must be reviewed"
+            echo "deliberately:"
             echo ""
             echo '```'
-            echo "$snapshot_changes"
+            echo "$new_paths"
             echo '```'
+            if [ -n "$known_unchanged" ]; then
+              echo ""
+              echo "_The following baselines were already acknowledged on a"
+              echo "previous successful run and are ignored:_"
+              echo ""
+              echo '```'
+              echo "$known_unchanged"
+              echo '```'
+            fi
             echo ""
             echo "### To proceed"
             echo ""
@@ -211,7 +302,7 @@ jobs:
             echo "If the snapshot change was unintentional, revert the baseline"
             echo "files instead of adding the label."
           } >> "$GITHUB_STEP_SUMMARY"
-          echo "::error::Snapshot baselines changed without the 'update-snapshots' label. See job summary for details."
+          echo "::error::New snapshot baselines changed without the 'update-snapshots' label. See job summary for details."
           exit 1
 
       - name: Select Playwright specs
@@ -523,3 +614,26 @@ jobs:
               });
               core.info('created new PR comment');
             }
+      # ────────────────────────────────────────────────────────────────────────
+      # Known-snapshot manifest (save)
+      # ────────────────────────────────────────────────────────────────────────
+      # Persist the *current* manifest (built by the guard step) only on a
+      # fully successful job. This guarantees the cache only ever contains
+      # snapshot states that were either label-approved or had no changes —
+      # a blocked run never auto-promotes its diffs into the "known" set.
+      # The promote step runs first so the cache action sees the final file
+      # at the expected path.
+      - name: Promote next-manifest to saved path
+        if: success() && github.event_name == 'pull_request'
+        run: |
+          mkdir -p .ci-cache
+          if [ -f .ci-cache/known-snapshots.next.tsv ]; then
+            mv .ci-cache/known-snapshots.next.tsv .ci-cache/known-snapshots.tsv
+          fi
+
+      - name: Save known-snapshot manifest
+        if: success() && github.event_name == 'pull_request' && hashFiles('.ci-cache/known-snapshots.tsv') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: .ci-cache/known-snapshots.tsv
+          key: snap-manifest-pr-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}
