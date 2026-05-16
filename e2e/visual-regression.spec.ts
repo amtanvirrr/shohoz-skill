@@ -48,7 +48,8 @@ test.describe("Homepage featured sections — visual regression", () => {
     test(`${id} grid matches baseline`, async ({ page }, testInfo) => {
       const device = testInfo.project.name;
       await page.goto("/", { waitUntil: "domcontentloaded" });
-      const section = page.locator(`#${id}`);
+      // Prefer the stable test id; fall back to the id for backwards compat.
+      const section = page.getByTestId(`${id}-section`);
       await section.scrollIntoViewIfNeeded();
       await expect(section).toBeVisible();
       await page.waitForLoadState("networkidle");
@@ -94,10 +95,10 @@ test.describe("Product detail — visual regression", () => {
       });
 
       await page.goto(href!, { waitUntil: "domcontentloaded" });
-      const hero = page.locator("main").first();
+      const hero = page.getByTestId("product-hero");
       await expect(hero).toBeVisible();
-      // The detail skeleton sets aria-busy on its root.
-      await page.locator("[aria-busy='true']").first().waitFor({ timeout: 5_000 });
+      // The skeleton root carries aria-busy="true"; wait for it before snapping.
+      await expect(hero).toHaveAttribute("aria-busy", "true", { timeout: 5_000 });
       await freezeAnimations(page);
 
       await expect(hero).toHaveScreenshot(
@@ -108,16 +109,13 @@ test.describe("Product detail — visual regression", () => {
       // 3. Release the stall and wait for the real card to render.
       release();
       await page.waitForLoadState("networkidle");
-      await page
-        .locator("[aria-busy='true']")
-        .first()
-        .waitFor({ state: "detached", timeout: 15_000 })
-        .catch(() => {});
-      // Heading is the loaded-state signal for both course and book detail pages.
+      // Loaded state: the same product-hero node re-renders without aria-busy.
+      const loadedHero = page.getByTestId("product-hero");
+      await expect(loadedHero).not.toHaveAttribute("aria-busy", "true", { timeout: 15_000 });
       await page.locator("h1").first().waitFor({ timeout: 15_000 });
       await freezeAnimations(page);
 
-      await expect(hero).toHaveScreenshot(
+      await expect(loadedHero).toHaveScreenshot(
         `${kind.name}-detail-${device}-loaded.png`,
         SCREENSHOT_OPTS(page),
       );

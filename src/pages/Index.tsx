@@ -365,7 +365,11 @@ const Index = () => {
       <HeroBanner />
 
       {/* Featured Courses */}
-      <section id="featured-courses" className="relative scroll-mt-24 py-10 sm:py-16 lg:py-20">
+      <section
+        id="featured-courses"
+        data-testid="featured-courses-section"
+        className="relative scroll-mt-24 py-10 sm:py-16 lg:py-20"
+      >
         {/* Subtle gradient background */}
         <div className="absolute inset-0 bg-gradient-to-b from-background via-primary/[0.02] to-background pointer-events-none" />
         <div className="container relative mx-auto px-4">
@@ -440,7 +444,11 @@ const Index = () => {
       </section>
 
       {/* Featured Books */}
-      <section id="featured-books" className="relative scroll-mt-24 py-10 sm:py-16 lg:py-20 overflow-hidden">
+      <section
+        id="featured-books"
+        data-testid="featured-books-section"
+        className="relative scroll-mt-24 py-10 sm:py-16 lg:py-20 overflow-hidden"
+      >
         <div className="absolute inset-0 bg-gradient-to-br from-secondary/60 via-primary/[0.03] to-secondary/60 pointer-events-none" />
         <div className="container relative mx-auto px-4">
           <ScrollReveal>
