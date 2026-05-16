@@ -1,0 +1,6 @@
+{
+  "summary": "All good?",
+  "weirdField": {
+    "embeddedLog": "noise noise TOKEN_MISMATCH source=\"BYLINE_LAYOUT_CLASS\" token=\"md:line-clamp-1\"\n        expected: md:line-clamp-1\n        actual: line-clamp-2 noise noise"
+  }
+}
