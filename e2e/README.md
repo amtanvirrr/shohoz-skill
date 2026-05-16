@@ -32,3 +32,14 @@ The spec also asserts that the byline element height in pixels is identical
 between the skeleton and the loaded card. If that assertion fails, the
 `BYLINE_LAYOUT_CLASS` constant in `src/lib/cardStyles.ts` is out of sync
 between `Byline.tsx`, `FeaturedCardSkeleton.tsx`, and `ProductCardSkeleton.tsx`.
+
+## Visual regression specs
+
+- `featured-cards-byline.spec.ts` — byline height parity (pixel assertions).
+- `card-height-stability.spec.ts` — full-card height parity skeleton ↔ loaded.
+- `visual-regression.spec.ts` — **screenshot baselines** for the homepage
+  featured grids and the course/book detail hero cards (both skeleton and
+  loaded states) at desktop, tablet, and mobile. Catches layout shifts that
+  still typecheck — e.g. a wrong-but-valid Tailwind class that renders at the
+  wrong height. Update with `bunx playwright test --update-snapshots` after an
+  intentional design change.
