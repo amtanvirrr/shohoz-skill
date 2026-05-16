@@ -17,6 +17,13 @@ that rule impossible to violate accidentally.
 
 ## Tokens
 
+<!-- Stable anchors used by scripts/card-layout-summary.mjs to deep-link PR
+     check annotations to the exact token that drifted. Do not rename. -->
+<a id="token-byline"></a>
+<a id="token-card-title"></a>
+<a id="token-card-description"></a>
+<a id="token-price-row"></a>
+
 | Token                       | What it styles                                       | Reserved height (base → sm → md/lg)         | Wrapping                       |
 | --------------------------- | ---------------------------------------------------- | ------------------------------------------- | ------------------------------ |
 | `BYLINE_LAYOUT_CLASS`       | Instructor / author line                             | **2.50rem → 2.75rem → 1.50rem** (md=1-line) | `line-clamp-2`, `md:line-clamp-1` |
