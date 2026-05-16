@@ -1,0 +1,21 @@
+{
+  "numTotalTests": 1,
+  "numFailedTests": 1,
+  "testResults": [
+    {
+      "name": "src/components/__tests__/cardLayoutStability.test.tsx",
+      "status": "failed",
+      "assertionResults": [
+        {
+          "ancestorTitles": ["card layout stability"],
+          "fullName": "card layout stability > byline reserves height",
+          "title": "byline reserves height",
+          "status": "failed",
+          "failureMessages": [
+            "Error: TOKEN_MISMATCH source=\"BYLINE_LAYOUT_CLASS\" token=\"min-h-[2.5rem]\"\n        expected: min-h-[2.5rem]\n        actual: mt-1 text-xs leading-5\n    at expectAllTokens (cardLayoutStability.test.tsx:55:11)"
+          ]
+        }
+      ]
+    }
+  ]
+}
