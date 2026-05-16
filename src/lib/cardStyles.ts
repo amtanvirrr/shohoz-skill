@@ -40,3 +40,11 @@ export const statusPillClass = (tone: StatusTone): string => {
       : "bg-success text-success dark:bg-success/30 dark:text-success";
   return `inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[10px] font-medium ${colour}`;
 };
+
+/** CTA pill tone (action button at bottom-right of featured cards). */
+export type CtaTone = "primary" | "success" | "warning";
+export const ctaToneClass = (tone: CtaTone): string => {
+  if (tone === "success") return "bg-success text-success-foreground sm:bg-success/15 sm:text-success sm:shadow-none";
+  if (tone === "warning") return "bg-warning text-warning-foreground sm:bg-warning/15 sm:text-warning sm:shadow-none";
+  return "bg-primary text-primary-foreground sm:bg-primary/10 sm:text-primary sm:shadow-none";
+};
