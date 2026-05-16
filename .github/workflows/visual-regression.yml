@@ -621,16 +621,19 @@ jobs:
       # fully successful job. This guarantees the cache only ever contains
       # snapshot states that were either label-approved or had no changes —
       # a blocked run never auto-promotes its diffs into the "known" set.
+      # The promote step runs first so the cache action sees the final file
+      # at the expected path.
+      - name: Promote next-manifest to saved path
+        if: success() && github.event_name == 'pull_request'
+        run: |
+          mkdir -p .ci-cache
+          if [ -f .ci-cache/known-snapshots.next.tsv ]; then
+            mv .ci-cache/known-snapshots.next.tsv .ci-cache/known-snapshots.tsv
+          fi
+
       - name: Save known-snapshot manifest
-        if: success() && github.event_name == 'pull_request' && hashFiles('.ci-cache/known-snapshots.next.tsv') != ''
+        if: success() && github.event_name == 'pull_request' && hashFiles('.ci-cache/known-snapshots.tsv') != ''
         uses: actions/cache/save@v4
         with:
           path: .ci-cache/known-snapshots.tsv
           key: snap-manifest-pr-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}
-
-      - name: Promote next-manifest to saved path
-        if: success() && github.event_name == 'pull_request'
-        run: |
-          if [ -f .ci-cache/known-snapshots.next.tsv ]; then
-            mv .ci-cache/known-snapshots.next.tsv .ci-cache/known-snapshots.tsv
-          fi
