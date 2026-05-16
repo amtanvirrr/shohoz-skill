@@ -12,6 +12,7 @@ import { ScrollReveal } from "@/hooks/useScrollReveal";
 import HeroBanner from "@/components/HeroBanner";
 import MobileCarousel from "@/components/MobileCarousel";
 import FeaturedCardSkeleton from "@/components/FeaturedCardSkeleton";
+import ReviewCardSkeleton from "@/components/ReviewCardSkeleton";
 import EmptyState from "@/components/EmptyState";
 import { statusPillClass } from "@/lib/cardStyles";
 import CourseCard from "@/components/cards/CourseCard";
