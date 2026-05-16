@@ -640,13 +640,14 @@ jobs:
         uses: actions/github-script@v7
         env:
           REPORT_URL: ${{ steps.upload-report.outputs.artifact-url }}
+          PAGES_URL: ${{ steps.publish-report.outputs.url }}
           BRANCH: ${{ steps.publish-diffs.outputs.branch }}
           DEST: ${{ steps.publish-diffs.outputs.dest }}
         with:
           script: |
             const fs = require('fs');
             const path = require('path');
-            const { BRANCH, DEST, REPORT_URL } = process.env;
+            const { BRANCH, DEST, REPORT_URL, PAGES_URL } = process.env;
             const { owner, repo } = context.repo;
             const prNumber = context.payload.pull_request.number;
             const headSha  = context.payload.pull_request.head.sha;
@@ -687,9 +688,10 @@ jobs:
             });
 
             const marker = '<!-- visual-regression-diff-comment -->';
-            const reportLine = REPORT_URL
-              ? `📊 [Full Playwright HTML report](${REPORT_URL}) · `
-              : '';
+            const links = [];
+            if (PAGES_URL)  links.push(`🌐 [Live HTML report (Pages)](${PAGES_URL})`);
+            if (REPORT_URL) links.push(`📊 [Artifact ZIP](${REPORT_URL})`);
+            const reportLine = links.length ? `${links.join(' · ')} · ` : '';
             const body = [
               marker,
               `## Visual regression — ❌ ${diffs.length} failing screenshot(s)`,
