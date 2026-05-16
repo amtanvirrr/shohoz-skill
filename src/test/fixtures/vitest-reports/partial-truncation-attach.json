@@ -1,0 +1,16 @@
+{
+  "testResults": [
+    {
+      "assertionResults": [
+        {
+          "fullName": "card layout > ProductCardSkeleton holds contract",
+          "status": "failed",
+          "failureMessages": [
+            "TOKEN_MISMATCH source=\"ProductCardSkeleton.innerHTML\" token=\"min-h-[2.5rem]\"\n        expected: min-h-[2.5rem]\n        actual: clipped"
+          ]
+        }
+      ]
+    }
+  ],
+  "rawStderrTail": "TOKEN_MISMATCH source=\"ProductCardSkeleton.innerHTML\" token=\"min-h-[2.5rem]\"\n        expected: min-h-[2.5rem]\n        actual: clipped\nTOKEN_MISMATCH source=\"ProductCardSkeleton.innerHTML\" token=\"sm:min-h-[2.75rem]\"\n        expected: sm:min-h-[2.75rem]\n        actual: clipped\nTOKEN_MISMATCH source=\"ProductCardSkeleton.innerHTML\" token=\"md:min-h-[1.5rem]\"\n        expected: md:min-h-[1.5rem]\n        actual: clipped"
+}
