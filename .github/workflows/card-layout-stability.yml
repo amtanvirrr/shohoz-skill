@@ -32,4 +32,20 @@ jobs:
         run: bunx tsc --noEmit
 
       - name: Run card layout stability tests
-        run: bunx vitest run src/components/__tests__/cardLayoutStability.test.tsx --reporter=verbose
+        id: vitest
+        run: |
+          bunx vitest run src/components/__tests__/cardLayoutStability.test.tsx \
+            --reporter=verbose \
+            --reporter=json --outputFile=vitest-report.json
+
+      - name: Write PR check summary (token/class mismatches)
+        if: always()
+        run: node scripts/card-layout-summary.mjs vitest-report.json
+
+      - name: Upload vitest report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: card-layout-vitest-report
+          path: vitest-report.json
+          if-no-files-found: ignore
