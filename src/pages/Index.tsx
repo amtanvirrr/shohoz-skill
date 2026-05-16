@@ -525,25 +525,7 @@ const Index = () => {
             </ScrollReveal>
             <div className="mt-6 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 sm:mt-10 sm:gap-6">
               {reviewsLoading ? (
-                Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="glass-card rounded-xl p-5 h-full" aria-hidden="true">
-                    <div className="flex gap-1">
-                      {Array.from({ length: 5 }).map((_, s) => (
-                        <div key={s} className="h-4 w-4 rounded-sm skeleton-shimmer bg-muted/50" />
-                      ))}
-                    </div>
-                    <div className="mt-4 space-y-2">
-                      <div className="h-3 w-full rounded skeleton-shimmer bg-muted/50" />
-                      <div className="h-3 w-[92%] rounded skeleton-shimmer bg-muted/50" />
-                      <div className="h-3 w-[78%] rounded skeleton-shimmer bg-muted/50" />
-                    </div>
-                    <div className="mt-4 border-t border-border/50 pt-3 space-y-2">
-                      <div className="h-3.5 w-32 rounded skeleton-shimmer bg-muted/50" />
-                      <div className="h-3 w-24 rounded skeleton-shimmer bg-muted/40" />
-                    </div>
-                    <span className="sr-only">রিভিউ লোড হচ্ছে…</span>
-                  </div>
-                ))
+                <ReviewCardSkeleton count={4} />
               ) : dbReviews.map((review, idx) => (
                 <ScrollReveal key={review.id} delay={idx * 80}>
                   <div className="group relative glass-card rounded-2xl p-5 h-full transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/10 overflow-hidden">
