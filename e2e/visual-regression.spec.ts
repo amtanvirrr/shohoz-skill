@@ -14,12 +14,44 @@ import { test, expect, type Page } from "@playwright/test";
  * are responsive.
  */
 
-// Mask elements that legitimately change between runs (counters, timestamps,
-// auto-rotating media) so they don't generate noisy diffs.
+// Mask elements that legitimately change between runs so they don't generate
+// noisy diffs. We want screenshots to capture *layout structure only* —
+// boxes, spacing, alignment — not the live content inside them.
+//
+// Categories masked:
+//   - Counters: views, purchases, ratings, review counts, enrolled students
+//   - Timestamps: any "X minutes ago" / absolute date strings
+//   - Rotating media: hero banner carousel, auto-sliding landing-page media
+//   - Video thumbnails / posters: YouTube/Vimeo embeds, <video> elements
+//   - Avatars and remote images that may not have decoded deterministically
+//   - Live leaderboard / realtime widgets
 const dynamicMasks = (page: Page) => [
+  // Counters & numeric badges
   page.locator("[data-testid='view-count']"),
   page.locator("[data-testid='purchase-count']"),
-  page.locator("video, [data-testid='hero-media']"),
+  page.locator("[data-testid='review-count']"),
+  page.locator("[data-testid='rating-value']"),
+  page.locator("[data-testid='enrolled-count']"),
+  page.locator("[data-dynamic='counter']"),
+  // Timestamps
+  page.locator("[data-testid='timestamp']"),
+  page.locator("time"),
+  // Rotating / auto-playing banners
+  page.locator("[data-testid='hero-media']"),
+  page.locator("[data-testid='hero-banner']"),
+  page.locator("[data-testid='landing-media-slider']"),
+  page.locator("[data-rotating='true']"),
+  // Video thumbnails / posters / embeds
+  page.locator("video"),
+  page.locator("iframe[src*='youtube'], iframe[src*='youtu.be'], iframe[src*='vimeo']"),
+  page.locator("[data-testid='video-thumbnail']"),
+  page.locator("[data-testid='video-poster']"),
+  // Live / realtime widgets
+  page.locator("[data-testid='leaderboard']"),
+  page.locator("[data-realtime='true']"),
+  // Remote avatars (Supabase storage / Google) whose decode timing varies
+  page.locator("img[src*='googleusercontent']"),
+  page.locator("[data-testid='user-avatar']"),
 ];
 
 const SCREENSHOT_OPTS = (page: Page) => ({
