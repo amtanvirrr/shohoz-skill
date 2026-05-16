@@ -33,6 +33,13 @@ The price row is **not** a shared token (the markup is bespoke per card type)
 but skeletons reserve **`h-6 w-20`** to match the natural line-height of the
 `<span>৳…</span>` price element in `CourseCard`/`BookCard`.
 
+<!-- Per-token anchors used by scripts/card-layout-summary.mjs to deep-link
+     PR check annotations. Renaming these breaks the CI summary links. -->
+<a id="byline-layout-class"></a>
+<a id="card-title-class"></a>
+<a id="card-description-class"></a>
+<a id="price-row"></a>
+
 ---
 
 ## Who consumes each token
