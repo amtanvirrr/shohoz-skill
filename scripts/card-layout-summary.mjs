@@ -50,6 +50,49 @@ const sourceUrl = (file, line) => {
   return null;
 };
 
+/**
+ * Index the test file once so we can map a TOKEN_MISMATCH `source` label
+ * back to the exact `expectAllTokens(..., "<label>")` call line, and an
+ * `it("<name>", …)` block back to its declaration line. This lets the
+ * annotation point at the failing assertion / test instead of line 1 when
+ * SOURCE_FILE_MAP doesn't match confidently or when parsing fails entirely.
+ */
+const TEST_FILE = "src/components/__tests__/cardLayoutStability.test.tsx";
+const testIndex = (() => {
+  const sourceLines = new Map(); // label -> 1-based line
+  const itLines = new Map(); // test name -> 1-based line
+  try {
+    const abs = resolve(ROOT, TEST_FILE);
+    if (!existsSync(abs)) return { sourceLines, itLines };
+    const lines = readFileSync(abs, "utf8").split(/\r?\n/);
+    const sourceRe = /expectAllTokens\([^)]*?,\s*["'`]([^"'`]+)["'`]\s*\)/;
+    const itRe = /\b(?:it|test)\(\s*["'`]([^"'`]+)["'`]/;
+    for (let i = 0; i < lines.length; i++) {
+      const sm = lines[i].match(sourceRe);
+      if (sm && !sourceLines.has(sm[1])) sourceLines.set(sm[1], i + 1);
+      const im = lines[i].match(itRe);
+      if (im && !itLines.has(im[1])) itLines.set(im[1], i + 1);
+    }
+  } catch {
+    // Best-effort indexing — silently fall back to line 1.
+  }
+  return { sourceLines, itLines };
+})();
+
+/** Best-effort: line of the `expectAllTokens` call that emitted this label. */
+const testLineForSource = (source) => testIndex.sourceLines.get(source) ?? 1;
+
+/** Best-effort: line of the `it("…")` block matching a failing test name. */
+const testLineForName = (name) => {
+  if (!name) return 1;
+  if (testIndex.itLines.has(name)) return testIndex.itLines.get(name);
+  // Failure `name` from vitest is often "describe > it" — try the trailing
+  // segment so we still resolve when the full path doesn't match verbatim.
+  const tail = name.split(">").pop()?.trim();
+  if (tail && testIndex.itLines.has(tail)) return testIndex.itLines.get(tail);
+  return 1;
+};
+
 /** Map TOKEN_MISMATCH `source` → anchor in docs/card-style-tokens.md. */
 const sourceToDocsAnchor = (source) => {
   if (/^BYLINE_LAYOUT_CLASS|^bylineClass\(|^<Byline>/.test(source)) return "byline-layout-class";
@@ -110,10 +153,9 @@ const locateSource = (source) => {
       return { file: entry.file, line: findLine(entry.file, entry.needle) };
     }
   }
-  return {
-    file: "src/components/__tests__/cardLayoutStability.test.tsx",
-    line: 1,
-  };
+  // Unmapped source — point at the exact `expectAllTokens(..., "<source>")`
+  // call so reviewers land on the failing assertion, not the file header.
+  return { file: TEST_FILE, line: testLineForSource(source), unmapped: true };
 };
 
 if (!existsSync(reportPath)) {
@@ -306,9 +348,12 @@ for (const f of failures) {
     }
   } else {
     unstructured.push(f);
+    // Parsing fell through — try to land on the failing `it("…")` block
+    // rather than line 1 of the test file.
+    const fallbackLine = testLineForName(f.name);
     annotate({
-      file: "src/components/__tests__/cardLayoutStability.test.tsx",
-      line: 1,
+      file: TEST_FILE,
+      line: fallbackLine,
       title: `Card layout test failed: ${f.name}`,
       message: f.message.slice(0, 500),
     });
