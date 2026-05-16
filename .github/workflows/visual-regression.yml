@@ -106,6 +106,7 @@ jobs:
       - name: Upload Playwright HTML report
         if: always()
         uses: actions/upload-artifact@v4
+        id: upload-report
         with:
           name: playwright-report
           path: playwright-report/
@@ -115,26 +116,70 @@ jobs:
       - name: Upload screenshot diffs (failures only)
         if: failure()
         uses: actions/upload-artifact@v4
+        id: upload-diffs
         with:
           name: playwright-test-results
           path: test-results/
           if-no-files-found: ignore
           retention-days: 14
 
-      - name: Summary
+      # On failure, surface the uploaded artifacts directly in the run
+      # summary: a clickable link to download the HTML report + diff bundle,
+      # plus an enumerated table of every failing test's actual / expected /
+      # diff PNG path inside the test-results artifact. Reviewers no longer
+      # need to scroll to the artifact panel or guess paths.
+      - name: Summary (failure)
         if: failure()
+        env:
+          REPORT_URL: ${{ steps.upload-report.outputs.artifact-url }}
+          DIFFS_URL: ${{ steps.upload-diffs.outputs.artifact-url }}
         run: |
           {
             echo "## Visual regression — ❌ failure"
             echo ""
-            echo "Download the **playwright-report** artifact above and open"
-            echo "\`index.html\` to view the actual vs expected vs diff PNG for"
-            echo "each failing test. The raw diff images live in the"
-            echo "**playwright-test-results** artifact."
+            echo "### Artifacts"
             echo ""
-            echo "To accept an intentional visual change locally:"
+            if [ -n "$REPORT_URL" ]; then
+              echo "- 📊 [**playwright-report**]($REPORT_URL) — open \`index.html\` for the interactive actual vs expected vs diff viewer."
+            else
+              echo "- 📊 **playwright-report** — see the artifacts panel above."
+            fi
+            if [ -n "$DIFFS_URL" ]; then
+              echo "- 🖼️ [**playwright-test-results**]($DIFFS_URL) — raw \`*-actual.png\`, \`*-expected.png\`, \`*-diff.png\` files per failing test."
+            else
+              echo "- 🖼️ **playwright-test-results** — see the artifacts panel above."
+            fi
+            echo ""
+            echo "### Failing screenshots"
+            echo ""
+            if [ -d test-results ]; then
+              # Enumerate every diff PNG so reviewers can see exactly which
+              # tests regressed without opening the HTML report.
+              diffs=$(find test-results -type f -name '*-diff.png' | sort)
+              if [ -n "$diffs" ]; then
+                echo "| Test | Actual | Expected | Diff |"
+                echo "| --- | --- | --- | --- |"
+                while IFS= read -r diff; do
+                  dir=$(dirname "$diff")
+                  base=$(basename "$diff" -diff.png)
+                  test_name=$(basename "$dir")
+                  actual="$dir/${base}-actual.png"
+                  expected="$dir/${base}-expected.png"
+                  echo "| \`$test_name\` / \`$base\` | \`${actual#test-results/}\` | \`${expected#test-results/}\` | \`${diff#test-results/}\` |"
+                done <<< "$diffs"
+              else
+                echo "_No \`*-diff.png\` files were produced — failures may be non-visual (timeout, navigation, etc.). Check the HTML report._"
+              fi
+            else
+              echo "_No \`test-results/\` directory was produced._"
+            fi
+            echo ""
+            echo "### Accept intentional changes"
             echo ""
             echo '```bash'
+            echo "# Reproduce locally first, confirm the diff is intended, then:"
             echo "bunx playwright test --update-snapshots"
             echo '```'
+            echo ""
+            echo "See \`e2e/README.md\` for the full safe-regeneration checklist."
           } >> "$GITHUB_STEP_SUMMARY"
