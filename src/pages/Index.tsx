@@ -519,7 +519,7 @@ const Index = () => {
 
       {/* Reviews */}
       {(reviewsLoading || dbReviews.length > 0) && (
-      <section className="relative py-10 sm:py-16 lg:py-20">
+      <section data-testid="reviews-section" className="relative py-10 sm:py-16 lg:py-20">
         <div className="absolute inset-0 bg-gradient-to-b from-background via-accent/[0.02] to-background pointer-events-none" />
           <div className="container relative mx-auto px-4">
             <ScrollReveal>
@@ -532,14 +532,25 @@ const Index = () => {
                 <p className="mx-auto mt-2 text-muted-foreground max-w-md">{settings.homepage_reviews_subtitle || "আমাদের শিক্ষার্থীদের মতামত"}</p>
               </div>
             </ScrollReveal>
-            <div className="mt-6 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 sm:mt-10 sm:gap-6">
+            <div
+              data-testid="reviews-carousel"
+              data-reviews-state={reviewsLoading ? "loading" : "loaded"}
+              data-reviews-count={reviewsLoading ? 0 : dbReviews.length}
+              className="mt-6 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 sm:mt-10 sm:gap-6"
+            >
               {reviewsLoading ? (
                 <ReviewCardSkeleton count={4} />
               ) : dbReviews.map((review, idx) => (
                 <ScrollReveal key={review.id} delay={idx * 80}>
-                  <div className="group relative glass-card rounded-2xl p-5 h-full transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/10 overflow-hidden">
+                  <div
+                    data-testid="review-card"
+                    data-review-id={review.id}
+                    data-review-index={idx}
+                    data-review-rating={review.rating}
+                    className="group relative glass-card rounded-2xl p-5 h-full transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/10 overflow-hidden"
+                  >
                     <Quote className="absolute -top-2 -right-2 h-16 w-16 text-primary/5 group-hover:text-primary/10 transition-colors" aria-hidden="true" />
-                    <div className="relative flex items-center gap-1 text-accent">
+                    <div data-testid="review-card-rating" className="relative flex items-center gap-1 text-accent">
                       {Array.from({ length: 5 }).map((_, i) => (
                         <Star
                           key={i}
@@ -547,17 +558,17 @@ const Index = () => {
                         />
                       ))}
                     </div>
-                    <p className="relative mt-3 text-sm text-card-foreground leading-relaxed line-clamp-5">"{review.comment}"</p>
+                    <p data-testid="review-card-comment" className="relative mt-3 text-sm text-card-foreground leading-relaxed line-clamp-5">"{review.comment}"</p>
                     <div className="relative mt-4 flex items-center gap-3 border-t border-border/50 pt-3">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-accent/20 text-sm font-bold text-primary">
                         {review.reviewer_name?.trim()?.charAt(0) || "?"}
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1">
-                          <p className="truncate text-sm font-semibold text-foreground">{review.reviewer_name}</p>
+                          <p data-testid="review-card-reviewer" className="truncate text-sm font-semibold text-foreground">{review.reviewer_name}</p>
                           <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-success" aria-label="ভেরিফাইড" />
                         </div>
-                        {review.course_title && <p className="truncate text-xs text-muted-foreground">{review.course_title}</p>}
+                        {review.course_title && <p data-testid="review-card-course" className="truncate text-xs text-muted-foreground">{review.course_title}</p>}
                       </div>
                     </div>
                   </div>
