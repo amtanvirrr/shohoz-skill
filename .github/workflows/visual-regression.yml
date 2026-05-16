@@ -39,6 +39,26 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      # This project is Vite + React (no Next.js / no .next directory). The
+      # equivalent of Next's build cache is Vite's dep-optimizer cache at
+      # `node_modules/.vite`, which stores prebundled deps so the dev server
+      # the Playwright webServer boots doesn't have to re-optimize the
+      # whole dep graph on every CI run. Cache hit shaves ~15-30s off
+      # `bun run dev` startup.
+      #
+      # Key includes the lockfile hash so the cache is invalidated whenever
+      # dependencies change (matching the frozen-lockfile install above),
+      # plus the vite config hash so config edits also bust it.
+      - name: Cache Vite dep-optimizer
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules/.vite
+            node_modules/.cache
+          key: ${{ runner.os }}-vite-${{ hashFiles('**/bun.lockb', 'vite.config.*') }}
+          restore-keys: |
+            ${{ runner.os }}-vite-
+
       # Resolve the installed @playwright/test version so the browser cache
       # key is tied to *the binaries Playwright actually wants*, not to
       # bun.lockb (which churns on every unrelated dep bump and would
