@@ -16,6 +16,7 @@
     "test:e2e:update-snapshots": "playwright test --update-snapshots",
     "test:e2e:regenerate-baselines": "node scripts/regenerate-visual-baselines.mjs",
     "test:e2e:rerun-failed": "node scripts/rerun-failed-visual-specs.mjs",
+    "test:e2e:open-diff": "node scripts/open-first-failing-diff.mjs",
     "test:e2e:report": "playwright show-report",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
