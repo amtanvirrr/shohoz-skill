@@ -7,15 +7,22 @@
  * Usage:
  *   bun run scripts/update-card-style-snapshots.mjs            # dry-run (diff)
  *   bun run scripts/update-card-style-snapshots.mjs --write    # rewrite snapshot
+ *   bun run scripts/update-card-style-snapshots.mjs --write --write-skeleton
+ *                                                              # also re-derive
+ *                                                              # the SKELETON
+ *                                                              # section from
+ *                                                              # ProductCardSkeleton.tsx
  *
  * Safety:
  *   - Dry-run is the default. Exits 0 when in sync, 1 when drifted (CI-ready).
  *   - --write requires the explicit flag — typos / accidental runs cannot
  *     silently rewrite the contract.
- *   - Only tokens that already live in cardStyles.ts are extracted; SKELETON
- *     placeholder widths are preserved from the previous snapshot (skeletons
- *     live in separate files — re-derive those manually if they intentionally
- *     change).
+ *   - SKELETON placeholder widths live in src/components/ProductCardSkeleton.tsx,
+ *     NOT in cardStyles.ts. By default they're preserved from the previous
+ *     snapshot to avoid accidental drift. Pass `--write-skeleton` (alongside
+ *     `--write`) to explicitly re-derive them from the skeleton component.
+ *     This is an opt-in flag because skeleton widths are a visual contract
+ *     reviewers usually want to eyeball before accepting.
  */
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { resolve, dirname } from "node:path";
@@ -24,12 +31,22 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "..");
 const SRC = resolve(ROOT, "src/lib/cardStyles.ts");
+const SKELETON_SRC = resolve(ROOT, "src/components/ProductCardSkeleton.tsx");
 const SNAPSHOT = resolve(
   ROOT,
   "src/components/__tests__/__snapshots__/cardStyleTokens.json",
 );
 
 const WRITE = process.argv.includes("--write") || process.argv.includes("-w");
+const WRITE_SKELETON = process.argv.includes("--write-skeleton");
+
+if (WRITE_SKELETON && !WRITE) {
+  console.error(
+    "\x1b[31m✗\x1b[0m --write-skeleton requires --write. " +
+      "Run with both flags to re-derive the SKELETON section.",
+  );
+  process.exit(2);
+}
 
 const RED = "\x1b[31m";
 const GREEN = "\x1b[32m";
@@ -57,11 +74,42 @@ function tokensMatching(cls, prefix) {
   return out;
 }
 
+/**
+ * Re-derive the SKELETON section from ProductCardSkeleton.tsx by extracting
+ * every `skeleton-shimmer h-N w-X` placeholder in source order. The first
+ * shimmer is the title bar; the second is the price bar. If the component
+ * ever grows more placeholders the order convention must be kept in sync.
+ */
+function extractSkeletonTokens() {
+  if (!existsSync(SKELETON_SRC)) {
+    throw new Error(`Cannot find ${SKELETON_SRC} to derive SKELETON tokens`);
+  }
+  const src = readFileSync(SKELETON_SRC, "utf8");
+  // Capture the h-* and w-* utilities sitting on the same className as
+  // `skeleton-shimmer`. We deliberately ignore `rounded` and color tokens.
+  const re = /skeleton-shimmer\s+(h-[\w./\-]+)\s+(w-[\w./\-]+)/g;
+  const hits = [];
+  let m;
+  while ((m = re.exec(src)) !== null) hits.push(`${m[1]} ${m[2]}`);
+  if (hits.length < 2) {
+    throw new Error(
+      `Expected at least 2 \`skeleton-shimmer h-… w-…\` placeholders in ` +
+        `ProductCardSkeleton.tsx, found ${hits.length}. Update the convention ` +
+        `or the regex.`,
+    );
+  }
+  return { titleBar: hits[0], priceBar: hits[1] };
+}
+
 const source = readFileSync(SRC, "utf8");
 
 const previous = existsSync(SNAPSHOT)
   ? JSON.parse(readFileSync(SNAPSHOT, "utf8"))
   : {};
+
+const skeleton = WRITE_SKELETON
+  ? extractSkeletonTokens()
+  : previous.SKELETON ?? { titleBar: "h-5 w-4/5", priceBar: "h-6 w-20" };
 
 const next = {
   $schema:
@@ -80,10 +128,12 @@ const next = {
     minHeight: tokensMatching(extractClass(source, "CARD_DESCRIPTION_CLASS"), "min-h"),
     clamp: tokensMatching(extractClass(source, "CARD_DESCRIPTION_CLASS"), "line-clamp"),
   },
-  // Skeleton placeholders don't live in cardStyles.ts — preserve previous
-  // values so the snapshot survives regeneration. Edit them manually with a
-  // matching change in FeaturedCardSkeleton / ProductCardSkeleton.
-  SKELETON: previous.SKELETON ?? { titleBar: "h-5 w-4/5", priceBar: "h-6 w-20" },
+  // Skeleton placeholders don't live in cardStyles.ts. By default we preserve
+  // the previous values so this script can't silently mutate them; pass
+  // `--write-skeleton` to re-derive from ProductCardSkeleton.tsx in source
+  // order (1st shimmer = titleBar, 2nd = priceBar). Keep
+  // FeaturedCardSkeleton.tsx in lockstep when widths change.
+  SKELETON: skeleton,
 };
 
 const previousJson = JSON.stringify(previous, null, 2);
@@ -123,6 +173,12 @@ if (!WRITE) {
 writeFileSync(SNAPSHOT, nextJson);
 console.log(`${GREEN}✓${RESET} Wrote ${SNAPSHOT.replace(ROOT + "/", "")}`);
 console.log(diff.join("\n"));
+if (WRITE_SKELETON) {
+  console.log(
+    `${DIM}Re-derived SKELETON from ProductCardSkeleton.tsx:${RESET} ` +
+      `titleBar=${skeleton.titleBar}, priceBar=${skeleton.priceBar}`,
+  );
+}
 console.log(
   `\n${DIM}Next:${RESET} run \`bunx vitest run src/components/__tests__/cardLayoutStability.test.tsx\` ` +
     `to confirm the cards + skeletons still match the new contract.`,
