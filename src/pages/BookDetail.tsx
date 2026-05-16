@@ -15,6 +15,7 @@ import { usePixel } from "@/components/MetaPixelProvider";
 import OrderSuccessDialog from "@/components/OrderSuccessDialog";
 import PaymentSelector from "@/components/PaymentSelector";
 import SelectedItemSummary from "@/components/checkout/SelectedItemSummary";
+import ProductDetailSkeleton from "@/components/ProductDetailSkeleton";
 import { z } from "zod";
 import { cn } from "@/lib/utils";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
@@ -142,7 +143,7 @@ const BookDetail = () => {
       });
   }, [user, book]);
 
-  if (loading) return <div className="flex min-h-[50vh] items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>;
+  if (loading) return <ProductDetailSkeleton kind="book" />;
 
   if (!book) {
     return (

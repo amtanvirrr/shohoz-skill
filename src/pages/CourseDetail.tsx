@@ -16,6 +16,7 @@ import OrderSuccessDialog from "@/components/OrderSuccessDialog";
 import PaymentSelector from "@/components/PaymentSelector";
 import SelectedItemSummary from "@/components/checkout/SelectedItemSummary";
 import ReviewCardSkeleton from "@/components/ReviewCardSkeleton";
+import ProductDetailSkeleton from "@/components/ProductDetailSkeleton";
 
 interface DbCourse {
   id: string;
@@ -145,7 +146,7 @@ const CourseDetail = () => {
       });
   }, [user, course]);
 
-  if (loading) return <div className="flex min-h-[50vh] items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>;
+  if (loading) return <ProductDetailSkeleton kind="course" />;
 
   if (!course) {
     return (
