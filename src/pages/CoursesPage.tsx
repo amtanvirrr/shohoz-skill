@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { BookOpen, Clock, CheckCircle, GraduationCap } from "lucide-react";
+import { CheckCircle, Clock, GraduationCap } from "lucide-react";
 import { ScrollReveal } from "@/hooks/useScrollReveal";
 import ProductCardSkeleton from "@/components/ProductCardSkeleton";
 import EmptyState from "@/components/EmptyState";
-import Byline from "@/components/Byline";
+import CourseCard from "@/components/cards/CourseCard";
 
 interface DbCourse {
   id: string;
@@ -90,65 +89,22 @@ const CoursesPage = () => {
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {courses.map((course, idx) => {
               const status = orderMap[course.id];
+              const badge = status ? (
+                <div className={`absolute top-3 right-3 z-10 flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
+                  ["confirmed", "delivered"].includes(status)
+                    ? "bg-success/15 text-success"
+                    : "bg-warning/15 text-warning"
+                }`}>
+                  {["confirmed", "delivered"].includes(status) ? (
+                    <><CheckCircle className="h-3 w-3" /> কেনা হয়েছে</>
+                  ) : (
+                    <><Clock className="h-3 w-3" /> পেন্ডিং</>
+                  )}
+                </div>
+              ) : null;
               return (
                 <ScrollReveal key={course.id} delay={idx * 80}>
-                  <Link to={`/course/${course.slug}`} className="group relative block overflow-hidden rounded-xl glass-card shimmer">
-                    {status && (
-                      <div className={`absolute top-3 right-3 z-10 flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
-                        ["confirmed", "delivered"].includes(status)
-                          ? "bg-success/15 text-success"
-                          : "bg-warning/15 text-warning"
-                      }`}>
-                        {["confirmed", "delivered"].includes(status) ? (
-                          <><CheckCircle className="h-3 w-3" /> কেনা হয়েছে</>
-                        ) : (
-                          <><Clock className="h-3 w-3" /> পেন্ডিং</>
-                        )}
-                      </div>
-                    )}
-                    {course.image_url && (
-                      <div className="img-overlay relative aspect-video overflow-hidden">
-                        <img
-                          src={course.image_url}
-                          alt={course.title}
-                          loading="lazy"
-                          className="ken-burns h-full w-full object-cover"
-                        />
-                      </div>
-                    )}
-                    <div className="p-5">
-                      <div className="flex flex-wrap gap-2">
-                        <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">{course.category}</span>
-                        <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-xs font-medium text-primary dark:bg-primary/30 dark:text-primary">🎓 অনলাইন কোর্স</span>
-                      </div>
-                      <h3 className="mt-3 font-display text-lg font-semibold text-card-foreground line-clamp-2 transition-colors group-hover:text-primary">{course.title}</h3>
-                      <Byline value={course.instructor} emptyText="ইন্সট্রাক্টর শীঘ্রই জানানো হবে" />
-                      <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1"><BookOpen className="h-3.5 w-3.5" /> {course.lesson_count} টি লেসন</span>
-                        <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {course.duration}</span>
-                      </div>
-                      <div className="mt-4 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          {course.price === 0 ? (
-                            <>
-                              <span className="text-lg font-bold text-success">ফ্রি</span>
-                              {course.original_price && course.original_price > 0 && (
-                                <span className="text-sm text-muted-foreground line-through">৳{course.original_price.toLocaleString()}</span>
-                              )}
-                            </>
-                          ) : (
-                            <>
-                              <span className="price-tag text-xl">৳{course.price.toLocaleString()}</span>
-                              {course.original_price && <span className="text-sm text-muted-foreground line-through">৳{course.original_price.toLocaleString()}</span>}
-                            </>
-                          )}
-                        </div>
-                        <span className="text-xs font-medium text-primary opacity-0 transition-all duration-300 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0">
-                          বিস্তারিত →
-                        </span>
-                      </div>
-                    </div>
-                  </Link>
+                  <CourseCard course={course} variant="compact" badge={badge} />
                 </ScrollReveal>
               );
             })}

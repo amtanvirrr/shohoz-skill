@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { CheckCircle, Clock, Package, Truck, BookOpen } from "lucide-react";
@@ -7,7 +6,7 @@ import { ScrollReveal } from "@/hooks/useScrollReveal";
 import ProductCardSkeleton from "@/components/ProductCardSkeleton";
 import EmptyState from "@/components/EmptyState";
 import { statusPillClass } from "@/lib/cardStyles";
-import Byline from "@/components/Byline";
+import BookCard from "@/components/cards/BookCard";
 
 interface DbBook {
   id: string;
@@ -131,53 +130,7 @@ const BooksPage = () => {
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {books.map((book, idx) => (
               <ScrollReveal key={book.id} delay={idx * 80}>
-                <Link to={`/book/${(book as any).slug || book.id}`} className="group relative block overflow-hidden rounded-xl glass-card shimmer">
-                  {renderBadge(book)}
-                  {book.image_url && (
-                    <div className="img-overlay relative aspect-[3/4] overflow-hidden">
-                      <img
-                        src={book.image_url}
-                        alt={book.title}
-                        loading="lazy"
-                        className="ken-burns h-full w-full object-cover"
-                      />
-                    </div>
-                  )}
-                  <div className="p-5">
-                    <div className="flex flex-wrap gap-2">
-                      <span className="inline-block rounded-full bg-accent/15 px-3 py-1 text-xs font-medium text-accent">{book.category}</span>
-                      <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
-                        book.book_type === "ebook"
-                          ? "bg-primary/10 text-primary"
-                          : "bg-accent/15 text-accent"
-                      }`}>
-                        {book.book_type === "ebook" ? "📱 ইবুক" : "📦 ফিজিক্যাল বই"}
-                      </span>
-                    </div>
-                    <h3 className="mt-3 font-display text-lg font-semibold text-card-foreground transition-colors group-hover:text-primary">{book.title}</h3>
-                    <Byline value={book.author} emptyText="লেখক উল্লেখ করা হয়নি" />
-                    <div className="mt-3 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        {book.price === 0 ? (
-                          <>
-                            <span className="text-lg font-bold text-success">ফ্রি</span>
-                            {book.original_price && book.original_price > 0 && (
-                              <span className="text-sm text-muted-foreground line-through">৳{book.original_price}</span>
-                            )}
-                          </>
-                        ) : (
-                          <>
-                            <span className="price-tag text-xl">৳{book.price}</span>
-                            {book.original_price && <span className="text-sm text-muted-foreground line-through">৳{book.original_price}</span>}
-                          </>
-                        )}
-                      </div>
-                      <span className="text-xs font-medium text-primary opacity-0 transition-all duration-300 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0">
-                        বিস্তারিত →
-                      </span>
-                    </div>
-                  </div>
-                </Link>
+                <BookCard book={book} variant="compact" badge={renderBadge(book)} />
               </ScrollReveal>
             ))}
           </div>

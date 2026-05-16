@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Star, Search, ArrowRight, BookOpen, GraduationCap, Clock, Users, CheckCircle, Package, Truck, Sparkles, Quote, ShieldCheck, Tag, Flame, AlertTriangle, RefreshCw } from "lucide-react";
+import { Star, Search, ArrowRight, BookOpen, GraduationCap, Clock, Users, CheckCircle, Package, Truck, Sparkles, Quote, ShieldCheck, Tag, AlertTriangle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
@@ -8,19 +8,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { ScrollReveal } from "@/hooks/useScrollReveal";
-import FeaturedImage from "@/components/FeaturedImage";
 
 import HeroBanner from "@/components/HeroBanner";
 import MobileCarousel from "@/components/MobileCarousel";
 import FeaturedCardSkeleton from "@/components/FeaturedCardSkeleton";
 import EmptyState from "@/components/EmptyState";
-import {
-  CARD_TITLE_CLASS,
-  CARD_DESCRIPTION_CLASS,
-  categoryPillClass,
-  statusPillClass,
-} from "@/lib/cardStyles";
-import Byline from "@/components/Byline";
+import { statusPillClass } from "@/lib/cardStyles";
+import CourseCard from "@/components/cards/CourseCard";
+import BookCard from "@/components/cards/BookCard";
 
 /** Strip HTML tags and decode common entities for a safe text-only preview. */
 const htmlToPreview = (html?: string | null): string => {
@@ -309,12 +304,6 @@ const Index = () => {
     return { text: isDigital ? "এখনই কিনুন" : "অর্ডার করুন", tone: "primary" as const };
   };
 
-  const ctaToneClass = (tone: "primary" | "success" | "warning") => {
-    if (tone === "success") return "bg-success text-success-foreground sm:bg-success/15 sm:text-success sm:shadow-none";
-    if (tone === "warning") return "bg-warning text-warning-foreground sm:bg-warning/15 sm:text-warning sm:shadow-none";
-    return "bg-primary text-primary-foreground sm:bg-primary/10 sm:text-primary sm:shadow-none";
-  };
-
   /**
    * Homepage track handler — sends the user to the dedicated /track-order
    * page with the typed value pre-filled into the matching field
@@ -417,57 +406,15 @@ const Index = () => {
             <MobileCarousel count={dbCourses.length} label="ফিচার্ড কোর্স" desktopGridClass="sm:grid-cols-2 lg:grid-cols-3">
               {dbCourses.map((course, idx) => (
                 <ScrollReveal key={course.id} delay={idx * 100} className="snap-start shrink-0 w-[62%] max-w-[260px] sm:w-auto sm:max-w-none sm:shrink h-full">
-                  <Link to={`/course/${(course as any).slug || course.id}?ref=featured#order-form`} className="group relative flex h-full flex-col overflow-hidden rounded-2xl glass-card shimmer ring-1 ring-border/40 transition-all duration-300 hover:-translate-y-1 hover:ring-primary/40 hover:shadow-xl hover:shadow-primary/10">
-                    {renderCourseBadge(course.id)}
-                    <div className="relative">
-                      <FeaturedImage src={course.image_url} alt={course.title} aspect="video" priority={idx === 0} />
-                      {course.original_price && course.original_price > course.price && course.price > 0 && (
-                        <span className="absolute bottom-2 left-2 z-10 inline-flex items-center gap-1 rounded-full bg-destructive/90 px-2 py-0.5 text-[10px] font-bold text-destructive-foreground shadow-md backdrop-blur-sm sm:bottom-3 sm:left-3 sm:px-2.5 sm:py-1 sm:text-[11px]">
-                          <Flame className="h-3 w-3" /> {Math.round(((course.original_price - course.price) / course.original_price) * 100)}% ছাড়
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex flex-1 flex-col p-3 sm:p-5">
-                      <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                        <span className={categoryPillClass("primary")}>{course.category}</span>
-                        <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-medium text-primary dark:bg-primary/30 dark:text-primary sm:px-2.5 sm:py-1 sm:text-xs">🎓 অনলাইন কোর্স</span>
-                      </div>
-                      <h3 className={CARD_TITLE_CLASS}>{course.title}</h3>
-                      <Byline value={course.instructor} emptyText="ইন্সট্রাক্টর শীঘ্রই জানানো হবে" />
-                      {htmlToPreview(course.description) && (
-                        <p className={CARD_DESCRIPTION_CLASS}>
-                          {htmlToPreview(course.description)}
-                        </p>
-                      )}
-                      <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground sm:mt-3">
-                        <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {course.duration}</span>
-                      </div>
-                      <div className="my-3 h-px bg-gradient-to-r from-transparent via-border to-transparent sm:my-4" />
-                      <div className="mt-auto flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
-                        <div className="flex items-baseline gap-1.5 min-w-0">
-                          {course.price === 0 ? (
-                            <>
-                              <span className="text-base font-extrabold text-success sm:text-lg">ফ্রি</span>
-                              {course.original_price && course.original_price > 0 && <span className="text-xs text-muted-foreground line-through sm:text-sm">৳{course.original_price.toLocaleString()}</span>}
-                            </>
-                          ) : (
-                            <>
-                              <span className="text-base font-extrabold text-primary sm:text-lg sm:text-foreground">৳{course.price.toLocaleString()}</span>
-                              {course.original_price && <span className="text-xs text-muted-foreground line-through sm:text-sm">৳{course.original_price.toLocaleString()}</span>}
-                            </>
-                          )}
-                        </div>
-                        {(() => {
-                          const cta = getCourseCta(course);
-                          return (
-                            <span className={`inline-flex shrink-0 items-center justify-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-sm transition-transform group-hover:scale-105 sm:px-3 sm:py-1.5 sm:text-xs ${ctaToneClass(cta.tone)}`}>
-                              {cta.text} <ArrowRight className="h-3.5 w-3.5" />
-                            </span>
-                          );
-                        })()}
-                      </div>
-                    </div>
-                  </Link>
+                  <CourseCard
+                    course={course}
+                    variant="featured"
+                    to={`/course/${(course as any).slug || course.id}?ref=featured#order-form`}
+                    badge={renderCourseBadge(course.id)}
+                    cta={getCourseCta(course)}
+                    descriptionPreview={htmlToPreview(course.description)}
+                    priority={idx === 0}
+                  />
                 </ScrollReveal>
               ))}
             </MobileCarousel>
@@ -533,60 +480,14 @@ const Index = () => {
             <MobileCarousel count={dbBooks.length} label="ফিচার্ড বই" desktopGridClass="sm:grid-cols-2 lg:grid-cols-3">
               {dbBooks.map((book, idx) => (
                 <ScrollReveal key={book.id} delay={idx * 100} className="snap-start shrink-0 w-[62%] max-w-[260px] sm:w-auto sm:max-w-none sm:shrink h-full">
-                  <Link to={`/book/${(book as any).slug || book.id}?ref=featured#order-form`} className="group relative flex h-full flex-col overflow-hidden rounded-2xl glass-card shimmer ring-1 ring-border/40 transition-all duration-300 hover:-translate-y-1 hover:ring-accent/40 hover:shadow-xl hover:shadow-accent/10">
-                    {renderBookBadge(book)}
-                    <div className="relative">
-                      <FeaturedImage src={book.image_url} alt={book.title} aspect="portrait" />
-                      {book.original_price && book.original_price > book.price && book.price > 0 && (
-                        <span className="absolute bottom-2 left-2 z-10 inline-flex items-center gap-1 rounded-full bg-destructive/90 px-2 py-0.5 text-[10px] font-bold text-destructive-foreground shadow-md backdrop-blur-sm sm:bottom-3 sm:left-3 sm:px-2.5 sm:py-1 sm:text-[11px]">
-                          <Flame className="h-3 w-3" /> {Math.round(((book.original_price - book.price) / book.original_price) * 100)}% ছাড়
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex flex-1 flex-col p-3 sm:p-5">
-                      <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                        <span className={categoryPillClass("accent")}>{book.category}</span>
-                        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium sm:px-2.5 sm:py-1 sm:text-xs ${
-                          book.book_type === "ebook"
-                            ? "bg-primary/10 text-primary"
-                            : "bg-accent/15 text-accent"
-                        }`}>
-                          {book.book_type === "ebook" ? "📱 ইবুক" : "📦 ফিজিক্যাল বই"}
-                        </span>
-                      </div>
-                      <h3 className={CARD_TITLE_CLASS}>{book.title}</h3>
-                      <Byline value={book.author} emptyText="লেখক উল্লেখ করা হয়নি" />
-                      {htmlToPreview(book.description) && (
-                        <p className={CARD_DESCRIPTION_CLASS}>
-                          {htmlToPreview(book.description)}
-                        </p>
-                      )}
-                      <div className="my-3 h-px bg-gradient-to-r from-transparent via-border to-transparent sm:my-4" />
-                      <div className="mt-auto flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
-                        <div className="flex items-baseline gap-1.5 min-w-0">
-                          {book.price === 0 ? (
-                            <>
-                              <span className="text-base font-extrabold text-success sm:text-lg">ফ্রি</span>
-                              {book.original_price && book.original_price > 0 && <span className="text-xs text-muted-foreground line-through sm:text-sm">৳{book.original_price}</span>}
-                            </>
-                          ) : (
-                            <>
-                              <span className="text-base font-extrabold text-primary sm:text-lg sm:text-foreground">৳{book.price}</span>
-                              {book.original_price && <span className="text-xs text-muted-foreground line-through sm:text-sm">৳{book.original_price}</span>}
-                            </>
-                          )}
-                        </div>
-                        {(() => {
-                          const cta = getBookCta(book);
-                          return (
-                            <span className={`inline-flex shrink-0 items-center justify-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-sm transition-transform group-hover:scale-105 sm:px-3 sm:py-1.5 sm:text-xs ${ctaToneClass(cta.tone)}`}>
-                              {cta.text} <ArrowRight className="h-3.5 w-3.5" />
-                            </span>
-                          );
-                        })()}
-                      </div>
-                    </div>
-                  </Link>
+                  <BookCard
+                    book={book}
+                    variant="featured"
+                    to={`/book/${(book as any).slug || book.id}?ref=featured#order-form`}
+                    badge={renderBookBadge(book)}
+                    cta={getBookCta(book)}
+                    descriptionPreview={htmlToPreview(book.description)}
+                  />
                 </ScrollReveal>
               ))}
             </MobileCarousel>
