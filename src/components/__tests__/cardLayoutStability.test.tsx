@@ -36,47 +36,75 @@ const DESC_CLAMP_TOKEN = "line-clamp-2";
 const TITLE_SKELETON_TOKEN = "h-5 w-4/5";
 const PRICE_SKELETON_TOKEN = "h-6 w-20";
 
-const expectAllTokens = (cls: string, tokens: string[]) => {
-  for (const t of tokens) expect(cls).toContain(t);
+/**
+ * Assert every expected token is present in `cls`. On failure the message is
+ * structured so the CI summary script (`scripts/card-layout-summary.mjs`) can
+ * extract token/expected/actual triples and render them in the PR check.
+ *
+ * Format (do not change without updating the summary script):
+ *   TOKEN_MISMATCH source="<source>" token="<token>"
+ *   expected: <token>
+ *   actual:   <cls>
+ */
+const expectAllTokens = (cls: string, tokens: string[], source = "class string") => {
+  for (const t of tokens) {
+    if (!cls.includes(t)) {
+      throw new Error(
+        `TOKEN_MISMATCH source="${source}" token="${t}"\n` +
+          `expected: ${t}\n` +
+          `actual:   ${cls}`,
+      );
+    }
+  }
+};
+
+const expectContainsToken = (haystack: string, token: string, source: string) => {
+  if (!haystack.includes(token)) {
+    throw new Error(
+      `TOKEN_MISMATCH source="${source}" token="${token}"\n` +
+        `expected: ${token}\n` +
+        `actual:   <not present in ${source}>`,
+    );
+  }
 };
 
 describe("card layout stability — byline tokens", () => {
   it("BYLINE_LAYOUT_CLASS reserves identical min-heights at every breakpoint", () => {
-    expectAllTokens(BYLINE_LAYOUT_CLASS, MIN_H_TOKENS);
-    expectAllTokens(BYLINE_LAYOUT_CLASS, LEADING_TOKENS);
+    expectAllTokens(BYLINE_LAYOUT_CLASS, MIN_H_TOKENS, "BYLINE_LAYOUT_CLASS");
+    expectAllTokens(BYLINE_LAYOUT_CLASS, LEADING_TOKENS, "BYLINE_LAYOUT_CLASS");
   });
 
   it("bylineClass() output (cards) contains the shared layout tokens", () => {
     const filled = bylineClass("Some Author");
     const empty = bylineClass("");
-    expectAllTokens(filled, MIN_H_TOKENS);
-    expectAllTokens(empty, MIN_H_TOKENS);
+    expectAllTokens(filled, MIN_H_TOKENS, "bylineClass(filled)");
+    expectAllTokens(empty, MIN_H_TOKENS, "bylineClass(empty)");
   });
 
   it("<Byline> renders a <p> using the shared layout tokens", () => {
     const { container } = render(<Byline value="Engr. Test" emptyText="Fallback" />);
     const p = container.querySelector("p")!;
     expect(p).not.toBeNull();
-    expectAllTokens(p.className, MIN_H_TOKENS);
+    expectAllTokens(p.className, MIN_H_TOKENS, "<Byline> <p>.className");
   });
 
   it("FeaturedCardSkeleton byline placeholder uses the same min-height tokens", () => {
     const { container } = render(<FeaturedCardSkeleton aspect="video" />);
     const html = container.innerHTML;
-    expectAllTokens(html, MIN_H_TOKENS);
+    expectAllTokens(html, MIN_H_TOKENS, "FeaturedCardSkeleton.innerHTML");
   });
 
   it("ProductCardSkeleton byline placeholder uses the same min-height tokens", () => {
     const { container } = render(<ProductCardSkeleton count={1} />);
     const html = container.innerHTML;
-    expectAllTokens(html, MIN_H_TOKENS);
+    expectAllTokens(html, MIN_H_TOKENS, "ProductCardSkeleton.innerHTML");
   });
 });
 
 describe("card layout stability — title tokens", () => {
   it("CARD_TITLE_CLASS reserves min-heights and clamps to 2 lines", () => {
-    expectAllTokens(CARD_TITLE_CLASS, TITLE_MIN_H_TOKENS);
-    expect(CARD_TITLE_CLASS).toContain(TITLE_CLAMP_TOKEN);
+    expectAllTokens(CARD_TITLE_CLASS, TITLE_MIN_H_TOKENS, "CARD_TITLE_CLASS");
+    expectContainsToken(CARD_TITLE_CLASS, TITLE_CLAMP_TOKEN, "CARD_TITLE_CLASS");
   });
 
   it("CourseCard featured renders <h3> with CARD_TITLE_CLASS tokens", () => {
@@ -98,8 +126,8 @@ describe("card layout stability — title tokens", () => {
     );
     const h3 = container.querySelector("h3")!;
     expect(h3).not.toBeNull();
-    expectAllTokens(h3.className, TITLE_MIN_H_TOKENS);
-    expect(h3.className).toContain(TITLE_CLAMP_TOKEN);
+    expectAllTokens(h3.className, TITLE_MIN_H_TOKENS, "CourseCard <h3>.className");
+    expectContainsToken(h3.className, TITLE_CLAMP_TOKEN, "CourseCard <h3>.className");
   });
 
   it("BookCard featured renders <h3> with CARD_TITLE_CLASS tokens", () => {
@@ -121,22 +149,22 @@ describe("card layout stability — title tokens", () => {
     );
     const h3 = container.querySelector("h3")!;
     expect(h3).not.toBeNull();
-    expectAllTokens(h3.className, TITLE_MIN_H_TOKENS);
-    expect(h3.className).toContain(TITLE_CLAMP_TOKEN);
+    expectAllTokens(h3.className, TITLE_MIN_H_TOKENS, "BookCard <h3>.className");
+    expectContainsToken(h3.className, TITLE_CLAMP_TOKEN, "BookCard <h3>.className");
   });
 
   it("Skeletons reserve a title bar of identical width to the card title row", () => {
     const featured = render(<FeaturedCardSkeleton aspect="video" />).container.innerHTML;
     const product = render(<ProductCardSkeleton count={1} />).container.innerHTML;
-    expect(featured).toContain(TITLE_SKELETON_TOKEN);
-    expect(product).toContain(TITLE_SKELETON_TOKEN);
+    expectContainsToken(featured, TITLE_SKELETON_TOKEN, "FeaturedCardSkeleton.innerHTML");
+    expectContainsToken(product, TITLE_SKELETON_TOKEN, "ProductCardSkeleton.innerHTML");
   });
 });
 
 describe("card layout stability — description tokens", () => {
   it("CARD_DESCRIPTION_CLASS reserves min-heights and clamps to 2 lines", () => {
-    expectAllTokens(CARD_DESCRIPTION_CLASS, DESC_MIN_H_TOKENS);
-    expect(CARD_DESCRIPTION_CLASS).toContain(DESC_CLAMP_TOKEN);
+    expectAllTokens(CARD_DESCRIPTION_CLASS, DESC_MIN_H_TOKENS, "CARD_DESCRIPTION_CLASS");
+    expectContainsToken(CARD_DESCRIPTION_CLASS, DESC_CLAMP_TOKEN, "CARD_DESCRIPTION_CLASS");
   });
 
   it("CourseCard renders description preview with CARD_DESCRIPTION_CLASS tokens", () => {
@@ -165,19 +193,19 @@ describe("card layout stability — description tokens", () => {
       p.textContent?.includes("Some preview text"),
     )!;
     expect(desc).toBeTruthy();
-    expectAllTokens(desc.className, DESC_MIN_H_TOKENS);
-    expect(desc.className).toContain(DESC_CLAMP_TOKEN);
+    expectAllTokens(desc.className, DESC_MIN_H_TOKENS, "CourseCard description <p>.className");
+    expectContainsToken(desc.className, DESC_CLAMP_TOKEN, "CourseCard description <p>.className");
   });
 });
 
 describe("card layout stability — pricing row", () => {
   it("FeaturedCardSkeleton reserves a price bar matching the card price row", () => {
     const html = render(<FeaturedCardSkeleton aspect="video" />).container.innerHTML;
-    expect(html).toContain(PRICE_SKELETON_TOKEN);
+    expectContainsToken(html, PRICE_SKELETON_TOKEN, "FeaturedCardSkeleton.innerHTML");
   });
 
   it("ProductCardSkeleton reserves a price bar matching the card price row", () => {
     const html = render(<ProductCardSkeleton count={1} />).container.innerHTML;
-    expect(html).toContain(PRICE_SKELETON_TOKEN);
+    expectContainsToken(html, PRICE_SKELETON_TOKEN, "ProductCardSkeleton.innerHTML");
   });
 });
