@@ -114,4 +114,72 @@ Before editing **any** `*_CLASS` constant, verify all of:
   — assertions that lock the contract.
 - [`e2e/card-height-stability.spec.ts`](../e2e/card-height-stability.spec.ts)
   — responsive (desktop / tablet / mobile) skeleton-↔-loaded visual
+
+---
+
+## Contributing: updating the token contract
+
+The card-style token contract is locked by a JSON snapshot at
+`src/components/__tests__/__snapshots__/cardStyleTokens.json`. Any time you
+touch `cardStyles.ts` (or the skeleton placeholders) the snapshot must be
+regenerated in the **same PR** as the source change — otherwise CI fails on
+`cardLayoutStability.test.tsx`.
+
+### Standard flow (token change only)
+
+1. **Edit the tokens** in [`src/lib/cardStyles.ts`](../src/lib/cardStyles.ts).
+   Touch only `min-h-…`, `leading-…`, or `line-clamp-…` utilities — other
+   classes are not part of the locked contract.
+2. **Preview the diff** to confirm only the fields you meant to change moved:
+   ```bash
+   bun run scripts/update-card-style-snapshots.mjs
+   ```
+   Exits `1` with a colored diff when out of sync, `0` when in sync.
+3. **Accept the new contract** by rewriting the snapshot:
+   ```bash
+   bun run scripts/update-card-style-snapshots.mjs --write
+   ```
+4. **Run the unit tests** to confirm cards + skeletons still match the new
+   contract:
+   ```bash
+   bunx vitest run src/components/__tests__/cardLayoutStability.test.tsx
+   ```
+5. **Run the visual regression suite** (Playwright) to catch any pixel-level
+   regressions the token change introduced:
+   ```bash
+   bun run test:e2e
+   ```
+   If a diff is intentional, regenerate baselines with
+   `bun run test:e2e:update-snapshots` (see [`e2e/README.md`](../e2e/README.md)
+   for the safe-regeneration checklist).
+6. **Commit** the edited `cardStyles.ts`, the regenerated
+   `cardStyleTokens.json`, and any updated Playwright PNG baselines together.
+
+### Skeleton width change
+
+Skeleton placeholder widths (`titleBar`, `priceBar`) live in
+[`src/components/ProductCardSkeleton.tsx`](../src/components/ProductCardSkeleton.tsx),
+not in `cardStyles.ts`. To re-derive them into the snapshot:
+
+1. Update both `ProductCardSkeleton.tsx` **and**
+   [`FeaturedCardSkeleton.tsx`](../src/components/FeaturedCardSkeleton.tsx)
+   so the two stay in lockstep.
+2. Regenerate with the explicit opt-in flag:
+   ```bash
+   bun run scripts/update-card-style-snapshots.mjs --write --write-skeleton
+   ```
+3. Re-run the unit + visual tests from steps 4–5 above.
+
+### CI check
+
+CI runs the script in read-only mode:
+
+```bash
+bun run scripts/update-card-style-snapshots.mjs --check-only
+```
+
+It prints a compact `card-style-snapshot DRIFT: N field(s) …` summary and
+exits non-zero if the snapshot doesn't match `cardStyles.ts`. Never bypass
+this by hand-editing the snapshot JSON — always go through the script so the
+`$schema` provenance banner stays accurate.
   regression on the homepage.
