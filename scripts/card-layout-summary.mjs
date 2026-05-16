@@ -103,22 +103,127 @@ if (!existsSync(reportPath)) {
   process.exit(0);
 }
 
-const report = JSON.parse(readFileSync(reportPath, "utf8"));
-const failures = [];
+const rawReport = readFileSync(reportPath, "utf8");
+let report;
+try {
+  report = JSON.parse(rawReport);
+} catch {
+  // Even if the JSON is malformed/truncated, we can still salvage mismatches
+  // by scanning the raw text below.
+  report = null;
+}
 
-const walk = (results) => {
-  for (const r of results ?? []) {
-    if (r.status === "failed" || r.state === "fail") {
-      const msg =
-        r.failureMessages?.join("\n") ??
-        r.errors?.map((e) => e.message).join("\n") ??
-        "";
-      failures.push({ name: r.fullName ?? r.name ?? "(unnamed)", message: msg });
+/**
+ * Resilient extractor: vitest's JSON shape has changed across versions and
+ * may change again (testResults / files / tasks / suites, assertionResults /
+ * tests / tasks, failureMessages / errors / result.errors, status "failed" vs
+ * state "fail" vs ok=false). Instead of hard-coding one shape, deep-walk every
+ * object and collect any node that looks like a failed test.
+ */
+const FAIL_STATUSES = new Set(["failed", "fail"]);
+const NAME_KEYS = ["fullName", "name", "title", "id"];
+const MSG_ARRAY_KEYS = ["failureMessages"];
+const ERROR_ARRAY_KEYS = ["errors", "failureDetails"];
+const CHILD_ARRAY_KEYS = [
+  "testResults", "assertionResults", "tests", "tasks", "suites", "children", "files",
+];
+
+const looksLikeFailure = (node) => {
+  if (!node || typeof node !== "object") return false;
+  // Skip bare result/wrapper objects — only count nodes that ALSO carry a
+  // test identity. Otherwise both `task` and `task.result` get flagged as
+  // separate failures for the same test.
+  const hasIdentity = NAME_KEYS.some((k) => typeof node[k] === "string" && node[k]);
+  if (!hasIdentity) return false;
+  if (FAIL_STATUSES.has(node.status)) return true;
+  if (FAIL_STATUSES.has(node.state)) return true;
+  if (FAIL_STATUSES.has(node?.result?.state)) return true;
+  if (node.ok === false && (node.errors?.length || node.failureMessages?.length)) return true;
+  return false;
+};
+
+const extractName = (node) => {
+  for (const k of NAME_KEYS) if (typeof node?.[k] === "string" && node[k]) return node[k];
+  return "(unnamed)";
+};
+
+const extractMessage = (node) => {
+  const parts = [];
+  for (const k of MSG_ARRAY_KEYS) {
+    if (Array.isArray(node?.[k])) parts.push(...node[k].filter(Boolean));
+  }
+  for (const k of ERROR_ARRAY_KEYS) {
+    const arr = node?.[k];
+    if (Array.isArray(arr)) {
+      for (const e of arr) {
+        if (!e) continue;
+        if (typeof e === "string") parts.push(e);
+        else if (e.message) parts.push(e.message + (e.stack ? `\n${e.stack}` : ""));
+      }
     }
-    if (r.assertionResults) walk(r.assertionResults);
+  }
+  if (node?.result?.errors) {
+    parts.push(extractMessage({ errors: node.result.errors }));
+  }
+  if (Array.isArray(node?.result?.failureMessages)) {
+    parts.push(...node.result.failureMessages.filter(Boolean));
+  }
+  return parts.join("\n");
+};
+
+const failures = [];
+const seen = new WeakSet();
+const visit = (node) => {
+  if (!node || typeof node !== "object" || seen.has(node)) return;
+  seen.add(node);
+  if (Array.isArray(node)) {
+    for (const child of node) visit(child);
+    return;
+  }
+  if (looksLikeFailure(node)) {
+    failures.push({ name: extractName(node), message: extractMessage(node) });
+  }
+  // Recurse into known child arrays first (cheap), then any other nested object.
+  for (const k of CHILD_ARRAY_KEYS) if (node[k]) visit(node[k]);
+  for (const v of Object.values(node)) {
+    if (v && typeof v === "object") visit(v);
   }
 };
-for (const tr of report.testResults ?? []) walk(tr.assertionResults ?? tr.tests ?? []);
+if (report) visit(report);
+
+/**
+ * Last-resort fallback: scan the raw report text for TOKEN_MISMATCH blocks
+ * the structured walker missed (unknown JSON shape, malformed JSON, or
+ * mismatches buried in fields we didn't recognise). Anything found here is
+ * surfaced under a synthetic "(unattributed)" failure so reviewers still see
+ * the drift.
+ */
+(() => {
+  const re =
+    /TOKEN_MISMATCH source="([^"]+)" token="([^"]+)"\s*\n\s*expected:\s*([^\n]+)\n\s*actual:\s*([^\n]+)/g;
+  const seenKeys = new Set(
+    failures.flatMap((f) =>
+      [...f.message.matchAll(re)].map((m) => `${m[1]}::${m[2]}`),
+    ),
+  );
+  // The raw JSON escapes inner quotes as \" — unescape so the regex above
+  // can match TOKEN_MISMATCH blocks embedded in any string field.
+  const haystack = rawReport.replace(/\\"/g, '"').replace(/\\n/g, "\n");
+  const orphans = [];
+  let m;
+  while ((m = re.exec(haystack)) !== null) {
+    const key = `${m[1]}::${m[2]}`;
+    if (seenKeys.has(key)) continue;
+    seenKeys.add(key);
+    orphans.push(m[0]);
+  }
+  if (orphans.length) {
+    failures.push({
+      name: "(unattributed — recovered from raw report)",
+      message: orphans.join("\n---\n"),
+    });
+  }
+})();
 
 if (failures.length === 0) {
   write(`## Card layout stability\n\n✅ All token/class contracts hold.\n`);
