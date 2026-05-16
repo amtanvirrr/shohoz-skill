@@ -51,15 +51,19 @@ const PRICE_SKELETON_TOKEN = snapshot.SKELETON.priceBar;
  *   actual:   <cls>
  */
 const expectAllTokens = (cls: string, tokens: string[], source = "class string") => {
-  for (const t of tokens) {
-    if (!cls.includes(t)) {
-      throw new Error(
+  // Collect every missing token before throwing so the CI summary lists
+  // ALL drifts at once instead of one-per-rerun.
+  const missing = tokens.filter((t) => !cls.includes(t));
+  if (missing.length === 0) return;
+  const blocks = missing
+    .map(
+      (t) =>
         `TOKEN_MISMATCH source="${source}" token="${t}"\n` +
-          `expected: ${t}\n` +
-          `actual:   ${cls}`,
-      );
-    }
-  }
+        `expected: ${t}\n` +
+        `actual:   ${cls}`,
+    )
+    .join("\n---\n");
+  throw new Error(blocks);
 };
 
 const expectContainsToken = (haystack: string, token: string, source: string) => {

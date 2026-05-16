@@ -101,41 +101,56 @@ if (failures.length === 0) {
   process.exit(0);
 }
 
-const parseMismatch = (message) => {
-  // Matches the structured error thrown by expectAllTokens / expectContainsToken
-  // in src/components/__tests__/cardLayoutStability.test.tsx.
+/**
+ * A single failure message can contain MULTIPLE TOKEN_MISMATCH blocks now
+ * (expectAllTokens collects every missing token before throwing). Return them
+ * all so the summary lists each drifted token on its own row.
+ */
+const parseMismatches = (message) => {
   const re =
-    /TOKEN_MISMATCH source="([^"]+)" token="([^"]+)"\s*\n\s*expected:\s*([^\n]+)\n\s*actual:\s*([^\n]+)/;
-  const m = message.match(re);
-  if (!m) return null;
-  return { source: m[1], token: m[2], expected: m[3].trim(), actual: m[4].trim() };
+    /TOKEN_MISMATCH source="([^"]+)" token="([^"]+)"\s*\n\s*expected:\s*([^\n]+)\n\s*actual:\s*([^\n]+)/g;
+  const out = [];
+  let m;
+  while ((m = re.exec(message)) !== null) {
+    out.push({
+      source: m[1],
+      token: m[2],
+      expected: m[3].trim(),
+      actual: m[4].trim(),
+    });
+  }
+  return out;
 };
 
-let md = `## Card layout stability — ❌ ${failures.length} failure(s)\n\n`;
+let md = `## Card layout stability — ❌ ${failures.length} failing test(s)\n\n`;
 md += `The card style token contract (see \`docs/card-style-tokens.md\`) drifted. `;
 md += `Restore the listed tokens or update both the cards and matching skeletons together.\n\n`;
 md += `| Test | Source | Missing token | Expected | Actual | Location |\n`;
 md += `| --- | --- | --- | --- | --- | --- |\n`;
 
 const unstructured = [];
+let mismatchCount = 0;
 for (const f of failures) {
-  const parsed = parseMismatch(f.message);
-  if (parsed) {
-    const actual =
-      parsed.actual.length > 80 ? parsed.actual.slice(0, 77) + "…" : parsed.actual;
-    const loc = locateSource(parsed.source);
-    md += `| ${f.name} | \`${parsed.source}\` | \`${parsed.token}\` | \`${parsed.expected}\` | \`${actual}\` | \`${loc.file}:${loc.line}\` |\n`;
-    annotate({
-      file: loc.file,
-      line: loc.line,
-      title: `Card layout token missing: ${parsed.token}`,
-      message:
-        `${f.name}\n` +
-        `Source: ${parsed.source}\n` +
-        `Expected token: ${parsed.expected}\n` +
-        `Actual: ${actual}\n` +
-        `See docs/card-style-tokens.md — update cards AND skeletons together.`,
-    });
+  const parsedAll = parseMismatches(f.message);
+  if (parsedAll.length > 0) {
+    for (const parsed of parsedAll) {
+      mismatchCount++;
+      const actual =
+        parsed.actual.length > 80 ? parsed.actual.slice(0, 77) + "…" : parsed.actual;
+      const loc = locateSource(parsed.source);
+      md += `| ${f.name} | \`${parsed.source}\` | \`${parsed.token}\` | \`${parsed.expected}\` | \`${actual}\` | \`${loc.file}:${loc.line}\` |\n`;
+      annotate({
+        file: loc.file,
+        line: loc.line,
+        title: `Card layout token missing: ${parsed.token}`,
+        message:
+          `${f.name}\n` +
+          `Source: ${parsed.source}\n` +
+          `Expected token: ${parsed.expected}\n` +
+          `Actual: ${actual}\n` +
+          `See docs/card-style-tokens.md — update cards AND skeletons together.`,
+      });
+    }
   } else {
     unstructured.push(f);
     annotate({
@@ -145,6 +160,10 @@ for (const f of failures) {
       message: f.message.slice(0, 500),
     });
   }
+}
+
+if (mismatchCount > 0) {
+  md += `\n_${mismatchCount} mismatched token(s) across ${failures.length} failing test(s)._\n`;
 }
 
 if (unstructured.length) {
