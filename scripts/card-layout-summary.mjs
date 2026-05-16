@@ -104,6 +104,18 @@ const sourceToDocsAnchor = (source) => {
 
 const reportPath = process.argv[2] || "vitest-report.json";
 const summaryPath = process.env.GITHUB_STEP_SUMMARY;
+/**
+ * `--debug` (or `CARD_LAYOUT_SUMMARY_DEBUG=1`) traces the JSON walk so you
+ * can see exactly which paths were visited and why each node did or didn't
+ * count as a failure. Output goes to stderr so it never pollutes the
+ * Markdown summary on stdout / $GITHUB_STEP_SUMMARY.
+ */
+const DEBUG =
+  process.argv.includes("--debug") ||
+  process.env.CARD_LAYOUT_SUMMARY_DEBUG === "1";
+const dbg = (...args) => {
+  if (DEBUG) process.stderr.write(`[card-layout-summary] ${args.join(" ")}\n`);
+};
 
 const write = (md) => {
   if (summaryPath) appendFileSync(summaryPath, md);
@@ -188,19 +200,31 @@ const CHILD_ARRAY_KEYS = [
   "testResults", "assertionResults", "tests", "tasks", "suites", "children", "files",
 ];
 
-const looksLikeFailure = (node) => {
-  if (!node || typeof node !== "object") return false;
-  // Skip bare result/wrapper objects — only count nodes that ALSO carry a
-  // test identity. Otherwise both `task` and `task.result` get flagged as
-  // separate failures for the same test.
+/**
+ * Classify a node as a failure and, when debug is on, return the reason
+ * the classifier fired so traces can explain WHY a node was picked up
+ * (or rejected). The classifier itself is unchanged — debug only observes.
+ */
+const classifyFailure = (node) => {
+  if (!node || typeof node !== "object") return { failed: false, reason: "not-an-object" };
   const hasIdentity = NAME_KEYS.some((k) => typeof node[k] === "string" && node[k]);
-  if (!hasIdentity) return false;
-  if (FAIL_STATUSES.has(node.status)) return true;
-  if (FAIL_STATUSES.has(node.state)) return true;
-  if (FAIL_STATUSES.has(node?.result?.state)) return true;
-  if (node.ok === false && (node.errors?.length || node.failureMessages?.length)) return true;
-  return false;
+  if (!hasIdentity) return { failed: false, reason: "no-identity-key" };
+  if (FAIL_STATUSES.has(node.status))
+    return { failed: true, reason: `status="${node.status}"` };
+  if (FAIL_STATUSES.has(node.state))
+    return { failed: true, reason: `state="${node.state}"` };
+  if (FAIL_STATUSES.has(node?.result?.state))
+    return { failed: true, reason: `result.state="${node.result.state}"` };
+  if (node.ok === false && (node.errors?.length || node.failureMessages?.length))
+    return {
+      failed: true,
+      reason: `ok=false with ${node.errors?.length ?? 0} errors / ${
+        node.failureMessages?.length ?? 0
+      } failureMessages`,
+    };
+  return { failed: false, reason: "no-fail-signal" };
 };
+const looksLikeFailure = (node) => classifyFailure(node).failed;
 
 const extractName = (node) => {
   for (const k of NAME_KEYS) if (typeof node?.[k] === "string" && node[k]) return node[k];
@@ -233,23 +257,58 @@ const extractMessage = (node) => {
 
 const failures = [];
 const seen = new WeakSet();
-const visit = (node) => {
+/**
+ * `path` is a `$.foo.bar[2]` style JSONPath built as we descend, only used
+ * for debug tracing. We avoid building it when DEBUG is off so production
+ * runs stay zero-overhead.
+ */
+const visit = (node, path = "$") => {
   if (!node || typeof node !== "object" || seen.has(node)) return;
   seen.add(node);
   if (Array.isArray(node)) {
-    for (const child of node) visit(child);
+    for (let i = 0; i < node.length; i++) {
+      visit(node[i], DEBUG ? `${path}[${i}]` : path);
+    }
     return;
   }
-  if (looksLikeFailure(node)) {
+  const verdict = classifyFailure(node);
+  if (DEBUG) {
+    // Only log nodes that COULD have been failures (had an identity key),
+    // otherwise every leaf string field would flood the trace. Always log
+    // when the verdict went either way for an identity-bearing node.
+    const hasIdentity = NAME_KEYS.some(
+      (k) => typeof node[k] === "string" && node[k],
+    );
+    if (hasIdentity || verdict.failed) {
+      const name = extractName(node);
+      dbg(
+        verdict.failed ? "FAIL " : "skip ",
+        path,
+        `"${name}"`,
+        `→ ${verdict.reason}`,
+      );
+    }
+  }
+  if (verdict.failed) {
     failures.push({ name: extractName(node), message: extractMessage(node) });
   }
   // Recurse into known child arrays first (cheap), then any other nested object.
-  for (const k of CHILD_ARRAY_KEYS) if (node[k]) visit(node[k]);
-  for (const v of Object.values(node)) {
-    if (v && typeof v === "object") visit(v);
+  for (const k of CHILD_ARRAY_KEYS) {
+    if (node[k]) visit(node[k], DEBUG ? `${path}.${k}` : path);
+  }
+  for (const [k, v] of Object.entries(node)) {
+    if (v && typeof v === "object" && !CHILD_ARRAY_KEYS.includes(k)) {
+      visit(v, DEBUG ? `${path}.${k}` : path);
+    }
   }
 };
-if (report) visit(report);
+if (report) {
+  dbg(`walking parsed report from ${reportPath}`);
+  visit(report);
+  dbg(`walk complete: ${failures.length} failure node(s) collected`);
+} else {
+  dbg(`report at ${reportPath} could not be JSON.parsed — raw-text fallback only`);
+}
 
 /**
  * Last-resort fallback: scan the raw report text for TOKEN_MISMATCH blocks
