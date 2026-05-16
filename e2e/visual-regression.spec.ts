@@ -48,17 +48,40 @@ test.describe("Homepage featured sections — visual regression", () => {
     test(`${id} grid matches baseline`, async ({ page }, testInfo) => {
       const device = testInfo.project.name;
       await page.goto("/", { waitUntil: "domcontentloaded" });
-      // Prefer the stable test id; fall back to the id for backwards compat.
       const section = page.getByTestId(`${id}-section`);
       await section.scrollIntoViewIfNeeded();
       await expect(section).toBeVisible();
-      await page.waitForLoadState("networkidle");
-      // Wait for any skeleton shimmer to detach.
+      // Wait for explicit loaded-state signals instead of networkidle, which
+      // is flaky on pages with long-lived connections (analytics, websockets,
+      // image lazy-loading). The section is "ready" once:
+      //   1. all skeleton/aria-busy nodes inside it have detached, and
+      //   2. at least one real product link has rendered.
+      const productHref = id === "featured-courses" ? "/course/" : "/book/";
+      await expect
+        .poll(
+          async () =>
+            (await section.locator("[aria-busy='true'], .shimmer").count()) === 0,
+          { timeout: 15_000, message: `${id} skeletons never detached` },
+        )
+        .toBe(true);
       await section
-        .locator(".shimmer, [aria-busy='true']")
+        .locator(`a[href^='${productHref}']`)
         .first()
-        .waitFor({ state: "detached", timeout: 15_000 })
-        .catch(() => {});
+        .waitFor({ state: "visible", timeout: 15_000 });
+      // Ensure any images inside the section have decoded so layout is final.
+      await section.evaluate(async (el) => {
+        const imgs = Array.from(el.querySelectorAll("img"));
+        await Promise.all(
+          imgs.map((img) =>
+            img.complete && img.naturalWidth > 0
+              ? Promise.resolve()
+              : new Promise<void>((resolve) => {
+                  img.addEventListener("load", () => resolve(), { once: true });
+                  img.addEventListener("error", () => resolve(), { once: true });
+                }),
+          ),
+        );
+      });
       await freezeAnimations(page);
 
       await expect(section).toHaveScreenshot(
@@ -82,8 +105,10 @@ test.describe("Product detail — visual regression", () => {
 
       // 1. Pick the first product link on the homepage to derive a real slug.
       await page.goto("/", { waitUntil: "domcontentloaded" });
-      await page.waitForLoadState("networkidle");
-      const href = await page.locator(kind.hrefSel).first().getAttribute("href");
+      // Wait for a product link to actually render instead of networkidle.
+      const firstLink = page.locator(kind.hrefSel).first();
+      await firstLink.waitFor({ state: "attached", timeout: 15_000 }).catch(() => {});
+      const href = await firstLink.getAttribute("href").catch(() => null);
       test.skip(!href, `no ${kind.name} product on homepage to navigate into`);
 
       // 2. Stall Supabase REST so the detail-page skeleton is what renders first.
@@ -108,11 +133,32 @@ test.describe("Product detail — visual regression", () => {
 
       // 3. Release the stall and wait for the real card to render.
       release();
-      await page.waitForLoadState("networkidle");
-      // Loaded state: the same product-hero node re-renders without aria-busy.
+      // Loaded state: the product-hero node re-renders without aria-busy and
+      // its real content (h1 title + primary CTA) is mounted. We deliberately
+      // avoid waitForLoadState("networkidle") — Supabase realtime and image
+      // CDNs keep connections open and make it unreliable.
       const loadedHero = page.getByTestId("product-hero");
-      await expect(loadedHero).not.toHaveAttribute("aria-busy", "true", { timeout: 15_000 });
-      await page.locator("h1").first().waitFor({ timeout: 15_000 });
+      await expect(loadedHero).not.toHaveAttribute("aria-busy", "true", {
+        timeout: 15_000,
+      });
+      await loadedHero.locator("h1").first().waitFor({
+        state: "visible",
+        timeout: 15_000,
+      });
+      // Wait for hero images inside the loaded card to decode.
+      await loadedHero.evaluate(async (el) => {
+        const imgs = Array.from(el.querySelectorAll("img"));
+        await Promise.all(
+          imgs.map((img) =>
+            img.complete && img.naturalWidth > 0
+              ? Promise.resolve()
+              : new Promise<void>((resolve) => {
+                  img.addEventListener("load", () => resolve(), { once: true });
+                  img.addEventListener("error", () => resolve(), { once: true });
+                }),
+          ),
+        );
+      });
       await freezeAnimations(page);
 
       await expect(loadedHero).toHaveScreenshot(
