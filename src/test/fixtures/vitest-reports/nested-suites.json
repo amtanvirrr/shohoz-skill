@@ -1,0 +1,23 @@
+{
+  "testResults": [
+    {
+      "name": "cardLayoutStability.test.tsx",
+      "suites": [
+        {
+          "name": "card layout stability",
+          "tests": [
+            {
+              "fullName": "card layout stability > description reserves height",
+              "status": "failed",
+              "errors": [
+                {
+                  "message": "TOKEN_MISMATCH source=\"CARD_DESCRIPTION_CLASS\" token=\"min-h-[2rem]\"\n        expected: min-h-[2rem]\n        actual: mt-1.5 text-xs leading-relaxed"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

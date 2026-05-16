@@ -1,0 +1,15 @@
+{
+  "testResults": [
+    {
+      "assertionResults": [
+        {
+          "fullName": "card layout stability > FeaturedCardSkeleton matches contract",
+          "status": "failed",
+          "failureMessages": [
+            "TOKEN_MISMATCH source=\"FeaturedCardSkeleton.innerHTML\" token=\"min-h-[2.5rem]\"\n        expected: min-h-[2.5rem]\n        actual: <div class=\"glass-card\">…</div>\nTOKEN_MISMATCH source=\"FeaturedCardSkeleton.innerHTML\" token=\"sm:min-h-[2.75rem]\"\n        expected: sm:min-h-[2.75rem]\n        actual: <div class=\"glass-card\">…</div>\nTOKEN_MISMATCH source=\"FeaturedCardSkeleton.innerHTML\" token=\"md:min-h-[1.5rem]\"\n        expected: md:min-h-[1.5rem]\n        actual: <div class=\"glass-card\">…</div>"
+          ]
+        }
+      ]
+    }
+  ]
+}
