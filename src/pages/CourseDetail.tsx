@@ -74,6 +74,7 @@ const CourseDetail = () => {
   const [quizzes, setQuizzes] = useState<DbQuiz[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [reviews, setReviews] = useState<DbReview[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
   const [orderStatus, setOrderStatus] = useState<string | null>(null);
   const [successDialog, setSuccessDialog] = useState<{
     open: boolean;
@@ -105,6 +106,7 @@ const CourseDetail = () => {
       const lessonData = (lessonsRes.data as DbLesson[]) || [];
       setLessons(lessonData);
       setReviews((reviewsRes.data as DbReview[]) || []);
+      setReviewsLoading(false);
 
       const lessonIds = lessonData.map((l) => l.id);
       if (lessonIds.length > 0) {
@@ -386,7 +388,9 @@ const CourseDetail = () => {
                 </div>
               )}
 
-              {reviews.length === 0 ? (
+              {reviewsLoading ? (
+                <ReviewCardSkeleton variant="compact" count={3} />
+              ) : reviews.length === 0 ? (
                 <p className="mt-4 text-sm text-muted-foreground">এখনো কোনো রিভিউ নেই।</p>
               ) : (
                 <div className="mt-4 space-y-4">
