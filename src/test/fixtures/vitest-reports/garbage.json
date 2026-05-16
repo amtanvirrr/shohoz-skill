@@ -1,0 +1,4 @@
+not even close to JSON {{{ ::: TOKEN_MISMATCH source="CARD_TITLE_CLASS" token="leading-snug"
+        expected: leading-snug
+        actual: leading-tight
+--- garbage tail ---
