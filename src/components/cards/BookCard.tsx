@@ -8,6 +8,7 @@ import {
   CARD_DESCRIPTION_CLASS,
   categoryPillClass,
   ctaToneClass,
+  AUTHOR_FALLBACK,
   type CtaTone,
 } from "@/lib/cardStyles";
 
@@ -90,7 +91,7 @@ const BookCard = ({
             </span>
           </div>
           <h3 className={CARD_TITLE_CLASS}>{book.title}</h3>
-          <Byline value={book.author} emptyText="লেখক উল্লেখ করা হয়নি" />
+          <Byline value={book.author} emptyText={AUTHOR_FALLBACK} />
           <div className="mt-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               {book.price === 0 ? (
@@ -138,7 +139,7 @@ const BookCard = ({
           </span>
         </div>
         <h3 className={CARD_TITLE_CLASS}>{book.title}</h3>
-        <Byline value={book.author} emptyText="লেখক উল্লেখ করা হয়নি" />
+        <Byline value={book.author} emptyText={AUTHOR_FALLBACK} />
         {descriptionPreview && (
           <p className={CARD_DESCRIPTION_CLASS}>{descriptionPreview}</p>
         )}

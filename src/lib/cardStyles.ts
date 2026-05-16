@@ -48,3 +48,11 @@ export const ctaToneClass = (tone: CtaTone): string => {
   if (tone === "warning") return "bg-warning text-warning-foreground sm:bg-warning/15 sm:text-warning sm:shadow-none";
   return "bg-primary text-primary-foreground sm:bg-primary/10 sm:text-primary sm:shadow-none";
 };
+
+/**
+ * Single source of truth for the Bengali fallback strings shown when a
+ * course has no instructor / a book has no author. Used by CourseCard and
+ * BookCard everywhere — do NOT inline these strings in new call sites.
+ */
+export const INSTRUCTOR_FALLBACK = "ইন্সট্রাক্টর শীঘ্রই জানানো হবে";
+export const AUTHOR_FALLBACK = "লেখক উল্লেখ করা হয়নি";

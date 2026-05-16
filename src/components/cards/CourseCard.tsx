@@ -8,6 +8,7 @@ import {
   CARD_DESCRIPTION_CLASS,
   categoryPillClass,
   ctaToneClass,
+  INSTRUCTOR_FALLBACK,
   type CtaTone,
 } from "@/lib/cardStyles";
 
@@ -94,7 +95,7 @@ const CourseCard = ({
             <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-xs font-medium text-primary dark:bg-primary/30 dark:text-primary">🎓 অনলাইন কোর্স</span>
           </div>
           <h3 className={CARD_TITLE_CLASS}>{course.title}</h3>
-          <Byline value={course.instructor} emptyText="ইন্সট্রাক্টর শীঘ্রই জানানো হবে" />
+          <Byline value={course.instructor} emptyText={INSTRUCTOR_FALLBACK} />
           <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
             {typeof course.lesson_count === "number" && (
               <span className="flex items-center gap-1"><BookOpen className="h-3.5 w-3.5" /> {course.lesson_count} টি লেসন</span>
@@ -147,7 +148,7 @@ const CourseCard = ({
           <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-medium text-primary dark:bg-primary/30 dark:text-primary sm:px-2.5 sm:py-1 sm:text-xs">🎓 অনলাইন কোর্স</span>
         </div>
         <h3 className={CARD_TITLE_CLASS}>{course.title}</h3>
-        <Byline value={course.instructor} emptyText="ইন্সট্রাক্টর শীঘ্রই জানানো হবে" />
+        <Byline value={course.instructor} emptyText={INSTRUCTOR_FALLBACK} />
         {descriptionPreview && (
           <p className={CARD_DESCRIPTION_CLASS}>{descriptionPreview}</p>
         )}
