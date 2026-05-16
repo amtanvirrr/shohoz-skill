@@ -1,0 +1,1 @@
+{ "testResults": [ { "assertionResults": [ { "fullName": "card layout > truncated", "status": "failed", "failureMessages": [ "TOKEN_MISMATCH source=\"ProductCardSkeleton.innerHTML\" token=\"h-6 w-20\"\n        expected: h-6 w-20\n        actual: h-5 w-16" ] }
