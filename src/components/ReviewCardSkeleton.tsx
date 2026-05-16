@@ -18,9 +18,9 @@ interface Props {
 const ReviewCardSkeleton = ({ count = 4, variant = "card", className }: Props) => {
   if (variant === "compact") {
     return (
-      <div className={cn("mt-4 space-y-4", className)} aria-hidden="true">
+      <div data-testid="review-card-skeleton-list" className={cn("mt-4 space-y-4", className)} aria-hidden="true">
         {Array.from({ length: count }).map((_, i) => (
-          <div key={i} className="rounded-lg glass-card p-4">
+          <div key={i} data-testid="review-card-skeleton" data-skeleton-index={i} className="rounded-lg glass-card p-4">
             <div className="flex items-center justify-between">
               <div className="h-4 w-32 rounded skeleton-shimmer bg-muted/50" />
               <div className="flex items-center gap-0.5">
@@ -47,6 +47,8 @@ const ReviewCardSkeleton = ({ count = 4, variant = "card", className }: Props) =
       {Array.from({ length: count }).map((_, i) => (
         <div
           key={i}
+          data-testid="review-card-skeleton"
+          data-skeleton-index={i}
           className={cn("glass-card rounded-xl p-5 h-full", className)}
           aria-hidden="true"
         >
