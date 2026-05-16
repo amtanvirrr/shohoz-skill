@@ -261,21 +261,60 @@ if (report) visit(report);
 (() => {
   const re =
     /TOKEN_MISMATCH source="([^"]+)" token="([^"]+)"\s*\n\s*expected:\s*([^\n]+)\n\s*actual:\s*([^\n]+)/g;
-  const seenKeys = new Set(
-    failures.flatMap((f) =>
-      [...f.message.matchAll(re)].map((m) => `${m[1]}::${m[2]}`),
-    ),
-  );
+
+  // Dedup key includes the full mismatch identity (source + token + expected
+  // + actual, whitespace-normalised) so two *distinct* drifts that happen to
+  // share a source/token pair are NOT collapsed, while exact repeats across
+  // the structured walker and the raw-text scanner ARE.
+  //
+  // Strip trailing JSON-escape artifacts (`"`, `\`, whitespace) — when the
+  // raw-text scanner reads through escaped JSON, the `[^\n]+` capture for
+  // `actual:` greedily consumes the closing string quote, so the same drift
+  // would otherwise produce `clipped` (structured) vs `clipped"` (raw) and
+  // slip past dedup.
+  const norm = (s) =>
+    String(s).replace(/[\s"\\]+$/, "").replace(/^[\s"\\]+/, "").replace(/\s+/g, " ");
+  const fingerprint = (m) =>
+    `${m[1]}::${m[2]}::${norm(m[3])}::${norm(m[4])}`;
+
+  // Index structured hits by source so we can ATTACH newly recovered
+  // mismatches to the originating failure (instead of bucketing them under
+  // a synthetic "(unattributed)" row) whenever a failure for the same source
+  // already exists. This matters when vitest truncates `failureMessages` and
+  // only some of the batched mismatches survived the structured walk.
+  const seenKeys = new Set();
+  const failureBySource = new Map(); // source -> failure ref
+  for (const f of failures) {
+    for (const m of f.message.matchAll(re)) {
+      seenKeys.add(fingerprint(m));
+      if (!failureBySource.has(m[1])) failureBySource.set(m[1], f);
+    }
+  }
+
   // The raw JSON escapes inner quotes as \" — unescape so the regex above
   // can match TOKEN_MISMATCH blocks embedded in any string field.
   const haystack = rawReport.replace(/\\"/g, '"').replace(/\\n/g, "\n");
+  /** @type {Map<import('./types').Failure, string[]>} */
+  const appendBuckets = new Map();
   const orphans = [];
   let m;
   while ((m = re.exec(haystack)) !== null) {
-    const key = `${m[1]}::${m[2]}`;
+    const key = fingerprint(m);
     if (seenKeys.has(key)) continue;
     seenKeys.add(key);
-    orphans.push(m[0]);
+    const owner = failureBySource.get(m[1]);
+    if (owner) {
+      // Same source as an existing structured failure → attach there so the
+      // table row keeps the real test name, not the synthetic bucket.
+      const bucket = appendBuckets.get(owner) ?? [];
+      bucket.push(m[0]);
+      appendBuckets.set(owner, bucket);
+    } else {
+      orphans.push(m[0]);
+    }
+  }
+  for (const [failure, extras] of appendBuckets) {
+    failure.message = `${failure.message}\n${extras.join("\n")}`;
   }
   if (orphans.length) {
     failures.push({
