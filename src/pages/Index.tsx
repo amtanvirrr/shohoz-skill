@@ -365,7 +365,11 @@ const Index = () => {
       <HeroBanner />
 
       {/* Featured Courses */}
-      <section id="featured-courses" className="relative scroll-mt-24 py-10 sm:py-16 lg:py-20">
+      <section
+        id="featured-courses"
+        data-testid="featured-courses-section"
+        className="relative scroll-mt-24 py-10 sm:py-16 lg:py-20"
+      >
         {/* Subtle gradient background */}
         <div className="absolute inset-0 bg-gradient-to-b from-background via-primary/[0.02] to-background pointer-events-none" />
         <div className="container relative mx-auto px-4">
