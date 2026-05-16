@@ -130,6 +130,11 @@ const CHILD_ARRAY_KEYS = [
 
 const looksLikeFailure = (node) => {
   if (!node || typeof node !== "object") return false;
+  // Skip bare result/wrapper objects — only count nodes that ALSO carry a
+  // test identity. Otherwise both `task` and `task.result` get flagged as
+  // separate failures for the same test.
+  const hasIdentity = NAME_KEYS.some((k) => typeof node[k] === "string" && node[k]);
+  if (!hasIdentity) return false;
   if (FAIL_STATUSES.has(node.status)) return true;
   if (FAIL_STATUSES.has(node.state)) return true;
   if (FAIL_STATUSES.has(node?.result?.state)) return true;
@@ -157,7 +162,12 @@ const extractMessage = (node) => {
       }
     }
   }
-  if (node?.result?.errors) parts.push(...extractMessage({ errors: node.result.errors }).split("\n").filter(Boolean));
+  if (node?.result?.errors) {
+    parts.push(extractMessage({ errors: node.result.errors }));
+  }
+  if (Array.isArray(node?.result?.failureMessages)) {
+    parts.push(...node.result.failureMessages.filter(Boolean));
+  }
   return parts.join("\n");
 };
 
@@ -196,9 +206,12 @@ if (report) visit(report);
       [...f.message.matchAll(re)].map((m) => `${m[1]}::${m[2]}`),
     ),
   );
+  // The raw JSON escapes inner quotes as \" — unescape so the regex above
+  // can match TOKEN_MISMATCH blocks embedded in any string field.
+  const haystack = rawReport.replace(/\\"/g, '"').replace(/\\n/g, "\n");
   const orphans = [];
   let m;
-  while ((m = re.exec(rawReport)) !== null) {
+  while ((m = re.exec(haystack)) !== null) {
     const key = `${m[1]}::${m[2]}`;
     if (seenKeys.has(key)) continue;
     seenKeys.add(key);
