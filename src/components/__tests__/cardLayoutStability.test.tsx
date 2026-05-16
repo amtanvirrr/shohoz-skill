@@ -41,19 +41,34 @@ const TITLE_SKELETON_TOKEN = snapshot.SKELETON.titleBar;
 const PRICE_SKELETON_TOKEN = snapshot.SKELETON.priceBar;
 
 /**
- * Assert every expected token is present in `cls`. On failure the message is
- * structured so the CI summary script (`scripts/card-layout-summary.mjs`) can
- * extract token/expected/actual triples and render them in the PR check.
+ * Split a className string (or arbitrary HTML blob) into the discrete
+ * Tailwind class tokens it contains. We tokenize on whitespace and on the
+ * HTML attribute boundaries (`"`, `'`, `\``) so the same helper works both
+ * for direct `element.className` strings AND for `container.innerHTML`
+ * blobs that wrap class lists in attribute quotes.
+ */
+const tokenize = (input: string): Set<string> => {
+  const out = new Set<string>();
+  for (const piece of input.split(/[\s"'`<>=]+/)) {
+    if (piece) out.add(piece);
+  }
+  return out;
+};
+
+/**
+ * Assert every expected token is present in `cls` as an exact class token.
+ * Substring matching is unsafe for breakpoint-prefixed tokens — e.g.
+ * `"sm:min-h-[2.5rem]".includes("min-h-[2.5rem]")` is true, which would let
+ * a regression that drops the base variant slip through. By tokenizing on
+ * whitespace we require `sm:` / `md:` / `lg:` prefixes to match exactly.
  *
- * Format (do not change without updating the summary script):
- *   TOKEN_MISMATCH source="<source>" token="<token>"
- *   expected: <token>
- *   actual:   <cls>
+ * Failure format is preserved (see scripts/card-layout-summary.mjs).
  */
 const expectAllTokens = (cls: string, tokens: string[], source = "class string") => {
+  const present = tokenize(cls);
   // Collect every missing token before throwing so the CI summary lists
   // ALL drifts at once instead of one-per-rerun.
-  const missing = tokens.filter((t) => !cls.includes(t));
+  const missing = tokens.filter((t) => !present.has(t));
   if (missing.length === 0) return;
   const blocks = missing
     .map(
@@ -67,7 +82,12 @@ const expectAllTokens = (cls: string, tokens: string[], source = "class string")
 };
 
 const expectContainsToken = (haystack: string, token: string, source: string) => {
-  if (!haystack.includes(token)) {
+  const present = tokenize(haystack);
+  // `token` may be a space-separated combo (e.g. skeleton "h-5 w-4/5") — all
+  // sub-tokens must appear as discrete class names in the haystack.
+  const parts = token.split(/\s+/).filter(Boolean);
+  const ok = parts.every((p) => present.has(p));
+  if (!ok) {
     throw new Error(
       `TOKEN_MISMATCH source="${source}" token="${token}"\n` +
         `expected: ${token}\n` +
