@@ -82,7 +82,12 @@ const expectAllTokens = (cls: string, tokens: string[], source = "class string")
 };
 
 const expectContainsToken = (haystack: string, token: string, source: string) => {
-  if (!tokenize(haystack).has(token)) {
+  const present = tokenize(haystack);
+  // `token` may be a space-separated combo (e.g. skeleton "h-5 w-4/5") — all
+  // sub-tokens must appear as discrete class names in the haystack.
+  const parts = token.split(/\s+/).filter(Boolean);
+  const ok = parts.every((p) => present.has(p));
+  if (!ok) {
     throw new Error(
       `TOKEN_MISMATCH source="${source}" token="${token}"\n` +
         `expected: ${token}\n` +
