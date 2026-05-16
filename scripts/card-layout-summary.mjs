@@ -149,8 +149,8 @@ const parseMismatches = (message) => {
 let md = `## Card layout stability — ❌ ${failures.length} failing test(s)\n\n`;
 md += `The card style token contract (see \`docs/card-style-tokens.md\`) drifted. `;
 md += `Restore the listed tokens or update both the cards and matching skeletons together.\n\n`;
-md += `| Test | Source | Missing token | Expected | Actual | Location |\n`;
-md += `| --- | --- | --- | --- | --- | --- |\n`;
+md += `| Test | Source | Missing token | Expected | Actual | Location | Docs |\n`;
+md += `| --- | --- | --- | --- | --- | --- | --- |\n`;
 
 const unstructured = [];
 let mismatchCount = 0;
@@ -162,7 +162,9 @@ for (const f of failures) {
       const actual =
         parsed.actual.length > 80 ? parsed.actual.slice(0, 77) + "…" : parsed.actual;
       const loc = locateSource(parsed.source);
-      md += `| ${f.name} | \`${parsed.source}\` | \`${parsed.token}\` | \`${parsed.expected}\` | \`${actual}\` | \`${loc.file}:${loc.line}\` |\n`;
+      const anchor = sourceToDocsAnchor(parsed.source);
+      const docs = docsUrl(anchor);
+      md += `| ${f.name} | \`${parsed.source}\` | \`${parsed.token}\` | \`${parsed.expected}\` | \`${actual}\` | \`${loc.file}:${loc.line}\` | [${anchor}](${docs}) |\n`;
       annotate({
         file: loc.file,
         line: loc.line,
@@ -172,7 +174,7 @@ for (const f of failures) {
           `Source: ${parsed.source}\n` +
           `Expected token: ${parsed.expected}\n` +
           `Actual: ${actual}\n` +
-          `See docs/card-style-tokens.md — update cards AND skeletons together.`,
+          `See ${docs} — update cards AND skeletons together.`,
       });
     }
   } else {
