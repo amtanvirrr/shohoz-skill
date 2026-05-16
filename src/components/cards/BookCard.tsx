@@ -70,11 +70,16 @@ const BookCard = ({
     return (
       <Link
         to={href}
+        data-testid="book-card"
+        data-card-variant="compact"
+        data-book-id={book.id}
+        data-book-slug={book.slug || book.id}
+        data-book-type={book.book_type}
         className={`group relative block overflow-hidden rounded-xl glass-card shimmer ${className ?? ""}`}
       >
         {badge}
         {book.image_url && (
-          <div className="img-overlay relative aspect-[3/4] overflow-hidden">
+          <div data-testid="book-card-image" className="img-overlay relative aspect-[3/4] overflow-hidden">
             <img
               src={book.image_url}
               alt={book.title}
@@ -90,10 +95,10 @@ const BookCard = ({
               {typeLabel(book.book_type)}
             </span>
           </div>
-          <h3 className={CARD_TITLE_CLASS}>{book.title}</h3>
+          <h3 data-testid="book-card-title" className={CARD_TITLE_CLASS}>{book.title}</h3>
           <Byline value={book.author} emptyText={AUTHOR_FALLBACK} />
           <div className="mt-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
+            <div data-testid="book-card-price" data-price={book.price} className="flex items-center gap-2">
               {book.price === 0 ? (
                 <>
                   <span className="text-lg font-bold text-success">ফ্রি</span>
@@ -120,13 +125,18 @@ const BookCard = ({
   return (
     <Link
       to={href}
+      data-testid="book-card"
+      data-card-variant="featured"
+      data-book-id={book.id}
+      data-book-slug={book.slug || book.id}
+      data-book-type={book.book_type}
       className={`group relative flex h-full flex-col overflow-hidden rounded-2xl glass-card shimmer ring-1 ring-border/40 transition-all duration-300 hover:-translate-y-1 hover:ring-accent/40 hover:shadow-xl hover:shadow-accent/10 ${className ?? ""}`}
     >
       {badge}
-      <div className="relative">
+      <div data-testid="book-card-image" className="relative">
         <FeaturedImage src={book.image_url} alt={book.title} aspect="portrait" />
         {hasDiscount && (
-          <span className="absolute bottom-2 left-2 z-10 inline-flex items-center gap-1 rounded-full bg-destructive/90 px-2 py-0.5 text-[10px] font-bold text-destructive-foreground shadow-md backdrop-blur-sm sm:bottom-3 sm:left-3 sm:px-2.5 sm:py-1 sm:text-[11px]">
+          <span data-testid="book-card-discount" className="absolute bottom-2 left-2 z-10 inline-flex items-center gap-1 rounded-full bg-destructive/90 px-2 py-0.5 text-[10px] font-bold text-destructive-foreground shadow-md backdrop-blur-sm sm:bottom-3 sm:left-3 sm:px-2.5 sm:py-1 sm:text-[11px]">
             <Flame className="h-3 w-3" /> {Math.round(((book.original_price! - book.price) / book.original_price!) * 100)}% ছাড়
           </span>
         )}
@@ -138,14 +148,14 @@ const BookCard = ({
             {typeLabel(book.book_type)}
           </span>
         </div>
-        <h3 className={CARD_TITLE_CLASS}>{book.title}</h3>
+        <h3 data-testid="book-card-title" className={CARD_TITLE_CLASS}>{book.title}</h3>
         <Byline value={book.author} emptyText={AUTHOR_FALLBACK} />
         {descriptionPreview && (
           <p className={CARD_DESCRIPTION_CLASS}>{descriptionPreview}</p>
         )}
         <div className="my-3 h-px bg-gradient-to-r from-transparent via-border to-transparent sm:my-4" />
         <div className="mt-auto flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
-          <div className="flex items-baseline gap-1.5 min-w-0">
+          <div data-testid="book-card-price" data-price={book.price} className="flex items-baseline gap-1.5 min-w-0">
             {book.price === 0 ? (
               <>
                 <span className="text-base font-extrabold text-success sm:text-lg">ফ্রি</span>
@@ -161,7 +171,7 @@ const BookCard = ({
             )}
           </div>
           {cta && (
-            <span className={`inline-flex shrink-0 items-center justify-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-sm transition-transform group-hover:scale-105 sm:px-3 sm:py-1.5 sm:text-xs ${ctaToneClass(cta.tone)}`}>
+            <span data-testid="book-card-cta" data-cta-tone={cta.tone} className={`inline-flex shrink-0 items-center justify-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-sm transition-transform group-hover:scale-105 sm:px-3 sm:py-1.5 sm:text-xs ${ctaToneClass(cta.tone)}`}>
               {cta.text} <ArrowRight className="h-3.5 w-3.5" />
             </span>
           )}
