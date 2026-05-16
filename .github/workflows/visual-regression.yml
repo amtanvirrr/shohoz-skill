@@ -370,6 +370,108 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+      # ────────────────────────────────────────────────────────────────────────
+      # Publish HTML report to GitHub Pages (stable link)
+      # ────────────────────────────────────────────────────────────────────────
+      # The artifact URL above expires with the run's retention window (14d)
+      # and forces reviewers to download a ZIP. To give reviewers a stable
+      # always-on link, we mirror `playwright-report/` to a `gh-pages` orphan
+      # branch under:
+      #   reports/pr-<n>/<sha>/   for PR runs
+      #   reports/main/<sha>/     for push-to-main runs
+      # …and surface the resulting Pages URL in the job summary + sticky PR
+      # comment. Runs on success AND failure so reviewers can also inspect
+      # passing report runs.
+      #
+      # Prereq (one-time, repo setting): enable GitHub Pages → Source =
+      # "Deploy from a branch" → branch `gh-pages` / folder `/ (root)`.
+      # Forked PRs get a read-only token; this step skips itself in that case
+      # and reviewers fall back to the artifact link.
+      - name: Publish HTML report to gh-pages
+        id: publish-report
+        if: always() && github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          if [ ! -d playwright-report ] || [ -z "$(ls -A playwright-report 2>/dev/null)" ]; then
+            echo "no playwright-report/ — skipping Pages publish"
+            echo "published=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          BRANCH=gh-pages
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            DEST_REL="reports/pr-${PR_NUMBER}/${HEAD_SHA}"
+          else
+            DEST_REL="reports/main/${HEAD_SHA}"
+          fi
+          WORK=$(mktemp -d)
+
+          git config --global user.name  "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
+            git clone --depth 1 --branch "$BRANCH" \
+              "https://x-access-token:${GITHUB_TOKEN:-${{ github.token }}}@github.com/${{ github.repository }}.git" "$WORK"
+          else
+            git clone --depth 1 \
+              "https://x-access-token:${GITHUB_TOKEN:-${{ github.token }}}@github.com/${{ github.repository }}.git" "$WORK"
+            ( cd "$WORK" && git checkout --orphan "$BRANCH" && git rm -rf . >/dev/null 2>&1 || true )
+          fi
+
+          # Replace this run's directory so re-runs always overwrite cleanly.
+          rm -rf "${WORK:?}/${DEST_REL:?}"
+          mkdir -p "$WORK/$DEST_REL"
+          cp -R playwright-report/. "$WORK/$DEST_REL/"
+
+          # Drop a .nojekyll so Pages serves underscore-prefixed Playwright
+          # asset paths verbatim instead of treating them as Jekyll partials.
+          touch "$WORK/.nojekyll"
+
+          # Root index lists the latest reports per PR/branch so the
+          # https://<owner>.github.io/<repo>/ landing page isn't a 404.
+          cat > "$WORK/README.md" <<'MD'
+          # Playwright visual-regression reports
+
+          Auto-published by `.github/workflows/visual-regression.yml`. Each
+          run mirrors `playwright-report/` to:
+
+          - `reports/pr-<n>/<sha>/` — PR runs
+          - `reports/main/<sha>/`   — push-to-main runs
+
+          Open `index.html` inside any of those directories for the
+          interactive actual vs. expected vs. diff viewer. Linked from the
+          PR job summary and sticky PR comment.
+          MD
+
+          (
+            cd "$WORK"
+            git add -A
+            if git diff --cached --quiet; then
+              echo "nothing changed — skipping push"
+            else
+              git commit -m "ci(report): ${EVENT_NAME} ${DEST_REL}"
+              git push origin "HEAD:${BRANCH}"
+            fi
+          )
+
+          owner_lc=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          repo_name="${GITHUB_REPOSITORY#*/}"
+          PAGES_URL="https://${owner_lc}.github.io/${repo_name}/${DEST_REL}/"
+          echo "published=true"          >> "$GITHUB_OUTPUT"
+          echo "url=${PAGES_URL}"        >> "$GITHUB_OUTPUT"
+          echo "dest=${DEST_REL}"        >> "$GITHUB_OUTPUT"
+          {
+            echo "## Playwright HTML report — stable link"
+            echo ""
+            echo "🔗 [Open report on GitHub Pages](${PAGES_URL})"
+            echo ""
+            echo "_Mirrored from \`playwright-report/\` to \`${BRANCH}\` branch at \`${DEST_REL}\`._"
+          } >> "$GITHUB_STEP_SUMMARY"
+
       # On failure, surface the uploaded artifacts directly in the run
       # summary: a clickable link to download the HTML report + diff bundle,
       # plus an enumerated table of every failing test's actual / expected /
@@ -380,12 +482,16 @@ jobs:
         env:
           REPORT_URL: ${{ steps.upload-report.outputs.artifact-url }}
           DIFFS_URL: ${{ steps.upload-diffs.outputs.artifact-url }}
+          PAGES_URL: ${{ steps.publish-report.outputs.url }}
         run: |
           {
             echo "## Visual regression — ❌ failure"
             echo ""
             echo "### Artifacts"
             echo ""
+            if [ -n "$PAGES_URL" ]; then
+              echo "- 🌐 [**Live HTML report (GitHub Pages)**]($PAGES_URL) — stable link, survives artifact retention."
+            fi
             if [ -n "$REPORT_URL" ]; then
               echo "- 📊 [**playwright-report**]($REPORT_URL) — open \`index.html\` for the interactive actual vs expected vs diff viewer."
             else
