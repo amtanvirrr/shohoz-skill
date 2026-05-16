@@ -17,6 +17,30 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "..");
 
+/**
+ * Build a docs deep-link. In GitHub Actions we have the repo + commit SHA, so
+ * we link to the exact file on the PR's commit; locally we fall back to a
+ * repo-relative path that still works in many Markdown renderers.
+ */
+const DOCS_PATH = "docs/card-style-tokens.md";
+const docsUrl = (anchor) => {
+  const server = process.env.GITHUB_SERVER_URL;
+  const repo = process.env.GITHUB_REPOSITORY;
+  const sha = process.env.GITHUB_SHA;
+  const frag = anchor ? `#${anchor}` : "";
+  if (server && repo && sha) return `${server}/${repo}/blob/${sha}/${DOCS_PATH}${frag}`;
+  return `${DOCS_PATH}${frag}`;
+};
+
+/** Map TOKEN_MISMATCH `source` → anchor in docs/card-style-tokens.md. */
+const sourceToDocsAnchor = (source) => {
+  if (/^BYLINE_LAYOUT_CLASS|^bylineClass\(|^<Byline>/.test(source)) return "byline-layout-class";
+  if (/^CARD_TITLE_CLASS|<h3>/.test(source)) return "card-title-class";
+  if (/^CARD_DESCRIPTION_CLASS|description/.test(source)) return "card-description-class";
+  if (/Skeleton/.test(source)) return "price-row";
+  return "tokens";
+};
+
 const reportPath = process.argv[2] || "vitest-report.json";
 const summaryPath = process.env.GITHUB_STEP_SUMMARY;
 
