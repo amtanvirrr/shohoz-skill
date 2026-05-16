@@ -162,6 +162,10 @@ for (const f of failures) {
   }
 }
 
+if (mismatchCount > 0) {
+  md += `\n_${mismatchCount} mismatched token(s) across ${failures.length} failing test(s)._\n`;
+}
+
 if (unstructured.length) {
   md += `\n### Other failures\n\n`;
   for (const f of unstructured) {
